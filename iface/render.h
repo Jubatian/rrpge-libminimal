@@ -1,0 +1,45 @@
+/**
+**  \file
+**  \brief     Graphics rendering
+**  \author    Sandor Zsuga (Jubatian)
+**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**             License) extended as RRPGEv1 (version 1 of the RRPGE License):
+**             see LICENSE.GPLv3 and LICENSE.RRPGEv1 in the project root.
+**  \date      2014.03.23
+**
+**
+** Graphics rendering: produces the graphics output from the lines provided by
+** the emulator. It also provides the palette callback to set the colors. When
+** resetting or starting, the palette has to be filled. It also automatically
+** updates display when reaching line 399 after outputting it.
+*/
+
+
+#ifndef RENDER_H
+#define RENDER_H
+
+
+#include "../host/types.h"
+#include "../librrpge/rrpge_tp.h"
+
+
+
+/*
+** Line callback service routine.
+*/
+void render_line(rrpge_object_t* hnd, rrpge_uint32 ln, rrpge_uint32 const* buf);
+
+/*
+** Palette callback service routine.
+*/
+void render_pal(rrpge_object_t* hnd, const void* par);
+
+/*
+** Initializes or resets rendering subsystem by the given ROPD (extracted from
+** an emulator state). This sets the display mode (640x400x16 or 320x400x256)
+** and the initial palette.
+*/
+void render_reset(uint16 const* ropd);
+
+
+#endif

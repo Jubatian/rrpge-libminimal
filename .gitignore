@@ -1,0 +1,5 @@
+# _obj_ directory if exists contains objects
+/_obj_
+# rrpge or rrpge.exe are the output binaries
+/rrpge
+/rrpge.exe
