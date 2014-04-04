@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv1 (version 1 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv1 in the project root.
-**  \date      2014.03.29
+**  \date      2014.04.04
 */
 
 
@@ -84,17 +84,17 @@ void rrpge_m_grop_accel(void)
 {
  auint  dfrac = ((auint)(rrpge_m_edat->stat.ropd[0xEF2U]) << 16) + (auint)(rrpge_m_edat->stat.ropd[0xEF3U]);
  auint  dwhol = ((auint)(rrpge_m_edat->stat.ropd[0xEFBU]) << 16);
- auint  dincr = ((auint)(rrpge_m_edat->stat.ropd[0xEF4U]) << 16); /* Whole part only */
- auint  sfrbb = ((auint)(rrpge_m_edat->stat.ropd[0xEF0U]) << 16);
+ auint  dincr = ((auint)(rrpge_m_edat->stat.ropd[0xEF5U]) << 16); /* Whole part only */
+ auint  sfrbb = ((auint)(rrpge_m_edat->stat.ropd[0xEF0U]) << 16) + (auint)(rrpge_m_edat->stat.ropd[0xEF1U]);
  auint  swhbb = ((auint)(rrpge_m_edat->stat.ropd[0xEFAU]) << 16);
- auint  sinbb = ((auint)(rrpge_m_edat->stat.ropd[0xEF1U]) << 16);
+ auint  sinbb = ((auint)(rrpge_m_edat->stat.ropd[0xEF4U]) << 16);
  auint  sfxsc = ((auint)(rrpge_m_edat->stat.ropd[0xEE8U]) << 16) + (auint)(rrpge_m_edat->stat.ropd[0xEE9U]);
  auint  swxsc = swhbb;
  auint  sixsc = ((auint)(rrpge_m_edat->stat.ropd[0xEECU]) << 16) + (auint)(rrpge_m_edat->stat.ropd[0xEEDU]);
  auint  sfysc = ((auint)(rrpge_m_edat->stat.ropd[0xEEAU]) << 16) + (auint)(rrpge_m_edat->stat.ropd[0xEEBU]);
  auint  swysc = swhbb;
  auint  siysc = ((auint)(rrpge_m_edat->stat.ropd[0xEEEU]) << 16) + (auint)(rrpge_m_edat->stat.ropd[0xEEFU]);
- auint  sspsc = ((auint)(rrpge_m_edat->stat.ropd[0xEF5U]));
+ auint  sspsc = ((auint)(rrpge_m_edat->stat.ropd[0xEFCU]));
  auint  spart;  /* Partition mask for source - controls the swhol - sfrac split */
  auint  dpart;  /* Partition mask for destination - controls the dwhol - dfrac split */
  uint32 wmask = ((uint32)(rrpge_m_edat->stat.ropd[0xEE0U]) << 16) + (uint32)(rrpge_m_edat->stat.ropd[0xEE1U]);
@@ -240,6 +240,24 @@ void rrpge_m_grop_accel(void)
 
  codst = (count << 2) + dshfr;
 
+ /* Prepare for the Block Blitter: apply the source fraction, and set up the
+ ** omission of the first destination combine if necessary. */
+
+ flags &= 0xBFFFU;                   /* bit 14 will hold the need for omission */
+ if ((flags & 0x0C00U) == 0U){       /* Block Blitter */
+  i = (dfrac & 0xFFFFU) - (sfrbb & 0xFFFFU);
+  flags |= (i >> 2) & 0x4000U;       /* Wrapped around - so omit first combine */
+  if ((flags & 0x8000U) == 0U){ i &= 0xE000U; }  /* 4bit mode */
+  else{                         i &= 0xC000U; }  /* 8bit mode */
+  dshfr = i >> 11;
+  i = (sfrbb + (count << 13));       /* Calculate new source fraction */
+  if ((flags & 0x8000U) == 0U){      /* 4bit mode */
+   sfrbb = (sfrbb & 0xFFFF1FFFU) | (i & 0xE000U);
+  }else{                             /* 8bit mode */
+   sfrbb = (sfrbb & 0xFFFF3FFFU) | (i & 0xC000U);
+  }
+ }
+
  /* Run the main rendering loop. Each iteration processes one Video RAM cell,
  ** while the loop mostly relies on a proper branch predictor to lock on the
  ** appropriate path through it (most of the conditionals branch by the
@@ -304,16 +322,16 @@ void rrpge_m_grop_accel(void)
 
     if (count != 0U){                     /* Within trailing destination cell? */
      sdata = rrpge_m_edat->stat.vram[swhbb | (sfrbb >> 16)];
+    }
+    if (count >= 8U){
+     count -= 8U;
      sfrbb = (sfrbb + sinbb) & spart;
+    }else{
+     count  = 0U;
     }
 
     /* Note that count is not needed at all for the Line filler, it can
-    ** operate solely on codst. Here count is only needed to detect trailing
-    ** destination condition (when to write the last destination Video RAM
-    ** cell no source read should be carried out). */
-
-    if (count > 8U){ count -= 8U; }
-    else{            count  = 0U; }
+    ** operate solely on codst. */
 
    }
 
@@ -337,60 +355,70 @@ void rrpge_m_grop_accel(void)
    prevs = (t32 << dshfl) << dshfl;
   }
 
-  /* Destination combine stage begins, common for all modes. First prepare the
-  ** colorkey. */
+  /* Start destination combine */
 
-  if ((flags & 0x0200U) != 0U){           /* Has colorkey */
-   t32 = sdata ^ ckey;
-   if ((flags & 0x8000U) == 0U){          /* 4 bit mode */
-    t32 = (((t32 & 0x77777777U) + 0x77777777U) | t32) & 0x88888888U;
-    t32 = (t32 - (t32 >> 3)) + t32;       /* Colorkey mask (0: background) */
-   }else{                                 /* 8 bit mode */
-    t32 = (((t32 & 0x7F7F7F7FU) + 0x7F7F7F7FU) | t32) & 0x80808080U;
-    t32 = (t32 - (t32 >> 7)) + t32;       /* Colorkey mask (0: background) */
+  if ((flags & 0x4000U) != 0U){           /* Omit first combine requested */
+
+   flags &= 0xBFFFU;                      /* Clear it, no combine */
+
+  }else{                                  /* Destination combine proceeds */
+
+   /* Destination combine stage begins, common for all modes. First prepare the
+   ** colorkey. */
+
+   if ((flags & 0x0200U) != 0U){          /* Has colorkey */
+    t32 = sdata ^ ckey;
+    if ((flags & 0x8000U) == 0U){         /* 4 bit mode */
+     t32 = (((t32 & 0x77777777U) + 0x77777777U) | t32) & 0x88888888U;
+     t32 = (t32 - (t32 >> 3)) + t32;      /* Colorkey mask (0: background) */
+    }else{                                /* 8 bit mode */
+     t32 = (((t32 & 0x7F7F7F7FU) + 0x7F7F7F7FU) | t32) & 0x80808080U;
+     t32 = (t32 - (t32 >> 7)) + t32;      /* Colorkey mask (0: background) */
+    }
+    bmems &= t32;                         /* Add it to the write mask */
    }
-   bmems &= t32;                          /* Add it to the write mask */
+
+   /* Load destination and perform reindexing if it was requested */
+
+   i   = dwhol | (dfrac >> 16);
+   t32 = rrpge_m_edat->stat.vram[i];
+   if ((flags & 0x1000U) != 0U){          /* Reindexing is required */
+    if ((flags & 0x8000U) == 0U){         /* 4 bit mode */
+     sdata = rrpge_m_grop_rec4(sdata, t32 & reinm);
+    }else{                                /* 8 bit mode */
+     sdata = rrpge_m_grop_rec8(sdata, t32 & reinm);
+    }
+   }
+
+   /* Combine source over destination */
+
+   rrpge_m_edat->stat.vram[i] = (t32   & (~bmems)) |
+                                (sdata &   bmems );
+
+   /* The rendering loop ends when it ran out of source pixels. Reaching this
+   ** everything except the new destination pointer is properly generated.
+   ** Note that the destination pointer whole part has to update as many times
+   ** as many completed destination writes are performed, that's why there are
+   ** 2 exit points. */
+
+   if (renex != 0U){ break; }
+
+   dfrac = (dfrac + dincr) & dpart;
+
+   if (codst == 0U){ break; }
+
+   /* Update begin-mid-end mask: Just the write mask */
+
+   bmems = wmask;
+
   }
 
-  /* Load destination and perform reindexing if it was requested */
-
-  i   = dwhol | (dfrac >> 16);
-  t32 = rrpge_m_edat->stat.vram[i];
-  if ((flags & 0x1000U) != 0U){           /* Reindexing is required */
-   if ((flags & 0x8000U) == 0U){          /* 4 bit mode */
-    sdata = rrpge_m_grop_rec4(sdata, t32 & reinm);
-   }else{                                 /* 8 bit mode */
-    sdata = rrpge_m_grop_rec8(sdata, t32 & reinm);
-   }
-  }
-
-  /* Combine source over destination */
-
-  rrpge_m_edat->stat.vram[i] = (t32   & (~bmems)) |
-                               (sdata &   bmems );
-
-  /* The rendering loop ends when it ran out of source pixels. Reaching this
-  ** everything except the new destination pointer is properly generated. Note
-  ** that the destination pointer whole part has to update as many times as
-  ** many completed destination writes are performed, that's why there are 2
-  ** exit points. */
-
-  if (renex != 0U){ break; }
-
-  dfrac = (dfrac + dincr) & dpart;
-
-  if (codst == 0U){ break; }
-
-  /* Update begin-mid-end mask: Just the write mask */
-
-  bmems = wmask;
-
- };
+ }; /* End of rendering loop */
 
  /* The destination pointer fractional part updates according to what was
  ** produced in the end area, to reflect the count of pixels output. */
 
- if ((rrpge_m_info.vbm & 0x80U) == 0U){   /* 4bit mode */
+ if ((flags & 0x8000U) == 0U){            /* 4bit mode */
   dfrac = (dfrac & 0xFFFF1FFFU) | ((codst << 11) & 0xE000U);
  }else{                                   /* 8bit mode */
   dfrac = (dfrac & 0xFFFF3FFFU) | ((codst << 11) & 0xC000U);
@@ -404,6 +432,7 @@ void rrpge_m_grop_accel(void)
  rrpge_m_edat->stat.ropd[0xEEAU] = (uint16)(swysc | (sfysc >> 16)); /* Source whole */
  rrpge_m_edat->stat.ropd[0xEEBU] = (uint16)(sfysc);                 /* Source fraction */
  rrpge_m_edat->stat.ropd[0xEF0U] = (uint16)(swhbb | (sfrbb >> 16)); /* Source whole */
+ rrpge_m_edat->stat.ropd[0xEF1U] = (uint16)(sfrbb);                 /* Source fraction */
  rrpge_m_edat->stat.ropd[0xEF2U] = (uint16)(dwhol | (dfrac >> 16)); /* Destination whole */
  rrpge_m_edat->stat.ropd[0xEF3U] = (uint16)(dfrac);                 /* Destination fraction */
 
