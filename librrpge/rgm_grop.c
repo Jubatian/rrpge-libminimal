@@ -222,10 +222,6 @@ void rrpge_m_grop_accel(void)
  maskl |= maskl << 16;
  maskr |= maskr << 16;
 
- /* Calculate source to destination shift. Used in Scaled & Block Blitter */
-
- dshfl = (32U - dshfr) >> 1;         /* Could be 32, so split up the shift in two parts */
-
  /* Prepare pattern for Line mode */
 
  sdata |= sdata << 16;
@@ -258,6 +254,10 @@ void rrpge_m_grop_accel(void)
   }
  }
 
+ /* Calculate source to destination shift. Used in Scaled & Block Blitter */
+
+ dshfl = (32U - dshfr) >> 1;         /* Could be 32, so split up the shift in two parts */
+
  /* Run the main rendering loop. Each iteration processes one Video RAM cell,
  ** while the loop mostly relies on a proper branch predictor to lock on the
  ** appropriate path through it (most of the conditionals branch by the
@@ -269,11 +269,13 @@ void rrpge_m_grop_accel(void)
   ** than 0 pixels are remaining at this point which is relied upon for
   ** generating the shift. */
 
-  if (codst < 32U){ /* Fewer than 8 (4bit) destination pixels remaining */
-   bmems &= 0xFFFFFFFFU << (32U - codst);
-   renex  = 1U;     /* Ask exit from render at end */
-  }else{
-   codst -= 32U;
+  if ((flags & 0x4000) == 0U){       /* Destination combine enabled for this run */
+   if (codst < 32U){                 /* Fewer than 8 (4bit) destination pixels remaining */
+    bmems &= 0xFFFFFFFFU << (32U - codst);
+    renex  = 1U;                     /* Ask exit from render at end */
+   }else{
+    codst -= 32U;
+   }
   }
 
   /* Source preparation and pixel counting. This stage produces the initial
