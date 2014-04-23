@@ -32,6 +32,9 @@ void rrpge_m_grpr(void)
  auint*  pptr;                 /* Pointer to the layer pointers to use */
  auint   ln;                   /* Line to render */
  auint   i;
+ auint   p;
+ auint   dpart;                /* Partitioning setting */
+ auint   bgent;                /* Background display list entry */
  auint   vpart;                /* Video RAM partition mask */
 
  ln   = rrpge_m_edat->frln;
@@ -60,45 +63,28 @@ void rrpge_m_grpr(void)
   pptr[3] = 0;
  }
 
- /* Read Video RAM partitioning setting */
+ /* Read background display list to get the appropriate partition masks */
 
- vpart = (rrpge_m_edat->stat.ropd[0xEE2U] & 0x7U); /* vpart: 0 - 7 */
- vpart = (512U << vpart) - 1U; /* Global partition mask */
- vpart = (vpart << 16) | 0xFFFFU;
+ p = ((auint)(rrpge_m_edat->stat.ropd[0xEE3U]) << 9) & (VRAMS - 1U);
+ bgent = rrpge_m_edat->stat.vram[p + ln]; /* Background layer display list entry */
 
  /* Read layer display lists & set up pointers */
 
- /* Layer 0 */
- i = ((auint)(rrpge_m_edat->stat.ropd[0xEE4U]) << 9) & (VRAMS - 1U);
- i = rrpge_m_edat->stat.vram[i + ln]; /* Layer 0 display list entry */
- if ((i & 0x100U) == 0U){             /* Relative pointer */
-  i = (i & (~vpart)) | ((i + pptr[0]) & vpart);
- }
- pptr[4] = i & 0xFFFFFE00U;
+ dpart = rrpge_m_edat->stat.ropd[0xEE2U];
 
- /* Layer 1 */
- i = ((auint)(rrpge_m_edat->stat.ropd[0xEE5U]) << 9) & (VRAMS - 1U);
- i = rrpge_m_edat->stat.vram[i + ln]; /* Layer 1 display list entry */
- if ((i & 0x100U) == 0U){             /* Relative pointer */
-  i = (i & (~vpart)) | ((i + pptr[1]) & vpart);
- }
- pptr[5] = i & 0xFFFFFE00U;
+ for (i = 0; i < 4; i++){
 
- /* Layer 2 */
- i = ((auint)(rrpge_m_edat->stat.ropd[0xEE6U]) << 9) & (VRAMS - 1U);
- i = rrpge_m_edat->stat.vram[i + ln]; /* Layer 2 display list entry */
- if ((i & 0x100U) == 0U){             /* Relative pointer */
-  i = (i & (~vpart)) | ((i + pptr[2]) & vpart);
- }
- pptr[6] = i & 0xFFFFFE00U;
+  p = ((auint)(rrpge_m_edat->stat.ropd[0xEE4U + i]) << 9) & (VRAMS - 1U);
+  p = rrpge_m_edat->stat.vram[p + ln]; /* Layer display list entry */
+  if ((p & 0x100U) == 0U){             /* Relative pointer */
+   vpart = (dpart >> (((bgent >> (30U - (i << 1))) & 3U) << 2) ) & 0x7U;
+   vpart = (512U << vpart) - 1U;
+   vpart = (vpart << 16) | 0xFFFFU;
+   p = (p & (~vpart)) | ((p + pptr[i + 0U]) & vpart);
+  }
+  pptr[i + 4U] = p & 0xFFFFFE00U;
 
- /* Layer 3 */
- i = ((auint)(rrpge_m_edat->stat.ropd[0xEE7U]) << 9) & (VRAMS - 1U);
- i = rrpge_m_edat->stat.vram[i + ln]; /* Layer 3 display list entry */
- if ((i & 0x100U) == 0U){             /* Relative pointer */
-  i = (i & (~vpart)) | ((i + pptr[3]) & vpart);
  }
- pptr[7] = i & 0xFFFFFE00U;
 
 }
 
@@ -123,8 +109,10 @@ void rrpge_m_grln(void)
  uint32  ck0,  ck1,  ck2,  ck3;   /* Mask or colorkey, depending on layer's mode */
  auint   p0sl, p1sl, p2sl, p3sl;  /* Source left shift */
  auint   p0sr, p1sr, p2sr, p3sr;  /* Source right shift (halved) */
- uint32  vpart;                /* Video RAM partition mask */
+ uint32  vpart[4];             /* Video RAM partition mask */
  auint   i;
+ auint   t;
+ auint   d;
  auint   lmod;                 /* Display mode of the line */
  auint   gmsk;                 /* Global mask of the line */
 
@@ -137,48 +125,43 @@ void rrpge_m_grln(void)
  lptr = &rrpge_m_grln_buf[0];
  pptr = &rrpge_m_edat->frep[(ln * 4U) + 4U];
 
- /* Read Video RAM partitioning setting */
+ /* Read Video RAM partitioning setting for each layer */
 
- vpart = (rrpge_m_edat->stat.ropd[0xEE2U] & 0x7U); /* vpart: 0 - 7 */
- vpart = (512U << vpart) - 1U; /* Global partition mask */
+ i = ((auint)(rrpge_m_edat->stat.ropd[0xEE3U]) << 9) & (VRAMS - 1U);
+ bg = rrpge_m_edat->stat.vram[i + ln]; /* Background display list entry */
+
+ d = rrpge_m_edat->stat.ropd[0xEE2U];
+ for (i = 0; i < 4U; i++){
+  t = d >> (((bg >> (30U - (i << 1))) & 3U) << 2);
+  if ((t & 0x8U) != 0U){ t = 0x7FU; }
+  else                 { t = (512U << (t & 0x7U)) - 1U; }
+  vpart[i] = t;
+ }
 
  /* Read display list data & set up line parameters */
 
- i = ((auint)(rrpge_m_edat->stat.ropd[0xEE3U]) << 9) & (VRAMS - 1U);
- i = rrpge_m_edat->stat.vram[i + ln]; /* Background display list entry */
- bg = (i & 0xFFFFU);
- bg |= bg << 16;               /* Background color pattern */
- lmod = (i >> 16) & 0x1FU;     /* Layer display configuration & mask/key setting */
- gmsk = (i >> 21) & 0x07U;     /* Global mask */
+ lmod = (bg >> 16) & 0x1FU;    /* Layer display configuration & mask/key setting */
+ gmsk = (bg >> 21) & 0x07U;    /* Global mask */
  gmsk = (1U << (8U - gmsk)) - 1U;
- pb0 = ((i >> 30) & 0x3U) << 16;
- pb1 = ((i >> 28) & 0x3U) << 16;
- pb2 = ((i >> 26) & 0x3U) << 16;
- pb3 = ((i >> 24) & 0x3U) << 16;
+ pb0 = ((bg >> 30) & 0x3U) << 16;
+ pb1 = ((bg >> 28) & 0x3U) << 16;
+ pb2 = ((bg >> 26) & 0x3U) << 16;
+ pb3 = ((bg >> 24) & 0x3U) << 16;
+ bg = (bg & 0xFFFFU);
+ bg |= bg << 16;               /* Background color pattern */
 
  /* Read layer display lists & set up layer parameters. Only the colorkey or
  ** mask data has to be read at this point (pointers were done in
  ** rrpge_m_grpr()). */
 
- /* Layer 0 */
  i = ((auint)(rrpge_m_edat->stat.ropd[0xEE4U]) << 9) & (VRAMS - 1U);
- i = rrpge_m_edat->stat.vram[i + ln]; /* Layer 0 display list entry */
- ck0 = i & 0xFFU;
-
- /* Layer 1 */
+ ck0 = rrpge_m_edat->stat.vram[i + ln];
  i = ((auint)(rrpge_m_edat->stat.ropd[0xEE5U]) << 9) & (VRAMS - 1U);
- i = rrpge_m_edat->stat.vram[i + ln]; /* Layer 1 display list entry */
- ck1 = i & 0xFFU;
-
- /* Layer 2 */
+ ck1 = rrpge_m_edat->stat.vram[i + ln];
  i = ((auint)(rrpge_m_edat->stat.ropd[0xEE6U]) << 9) & (VRAMS - 1U);
- i = rrpge_m_edat->stat.vram[i + ln]; /* Layer 2 display list entry */
- ck2 = i & 0xFFU;
-
- /* Layer 3 */
+ ck2 = rrpge_m_edat->stat.vram[i + ln];
  i = ((auint)(rrpge_m_edat->stat.ropd[0xEE7U]) << 9) & (VRAMS - 1U);
- i = rrpge_m_edat->stat.vram[i + ln]; /* Layer 3 display list entry */
- ck3 = i & 0xFFU;
+ ck3 = rrpge_m_edat->stat.vram[i + ln];
 
  /* Fix layer masks depending on their priority order so all masks (ckx) will
  ** only have the bits set which are to be displayed, or colorkeys will be
@@ -222,14 +205,14 @@ void rrpge_m_grln(void)
  pb1 += pptr[1] >> 16;
  pb2 += pptr[2] >> 16;
  pb3 += pptr[3] >> 16;
- pp0  = pb0 & vpart;
- pb0 &= ~vpart;
- pp1  = pb1 & vpart;
- pb1 &= ~vpart;
- pp2  = pb2 & vpart;
- pb2 &= ~vpart;
- pp3  = pb3 & vpart;
- pb3 &= ~vpart;
+ pp0  = pb0 & vpart[0];
+ pb0 &= ~vpart[0];
+ pp1  = pb1 & vpart[1];
+ pb1 &= ~vpart[1];
+ pp2  = pb2 & vpart[2];
+ pb2 &= ~vpart[2];
+ pp3  = pb3 & vpart[3];
+ pb3 &= ~vpart[3];
 
  /* Calculate layer shifts, first part (mode indifferent) */
  p0sl = pptr[0] >> 11;
@@ -319,7 +302,7 @@ void rrpge_m_grln(void)
 
    s2 = rrpge_m_edat->stat.vram[pb2 + pp2] << p2sl;
    for (i = 0; i < 80U; i++){
-    pp2 = (pp2 + 1U) & vpart;
+    pp2 = (pp2 + 1U) & vpart[2];
     c2 = rrpge_m_edat->stat.vram[pb2 + pp2];
     s2 |= (c2 >> p2sr) >> p2sr;
     lptr[i] = (bg & (~ck2)) | (s2 & ck2);
@@ -335,8 +318,8 @@ void rrpge_m_grln(void)
    s0 = rrpge_m_edat->stat.vram[pb0 + pp0] << p0sl;
    s2 = rrpge_m_edat->stat.vram[pb2 + pp2] << p2sl;
    for (i = 0; i < 80U; i++){
-    pp0 = (pp0 + 1U) & vpart;
-    pp2 = (pp2 + 1U) & vpart;
+    pp0 = (pp0 + 1U) & vpart[0];
+    pp2 = (pp2 + 1U) & vpart[2];
     c0 = rrpge_m_edat->stat.vram[pb0 + pp0];
     c2 = rrpge_m_edat->stat.vram[pb2 + pp2];
     s0 |= (c0 >> p0sr) >> p0sr;
@@ -359,9 +342,9 @@ void rrpge_m_grln(void)
    s2 = rrpge_m_edat->stat.vram[pb2 + pp2] << p2sl;
    s3 = rrpge_m_edat->stat.vram[pb3 + pp3] << p3sl;
    for (i = 0; i < 80U; i++){
-    pp0 = (pp0 + 1U) & vpart;
-    pp2 = (pp2 + 1U) & vpart;
-    pp3 = (pp3 + 1U) & vpart;
+    pp0 = (pp0 + 1U) & vpart[0];
+    pp2 = (pp2 + 1U) & vpart[2];
+    pp3 = (pp3 + 1U) & vpart[3];
     c0 = rrpge_m_edat->stat.vram[pb0 + pp0];
     c2 = rrpge_m_edat->stat.vram[pb2 + pp2];
     c3 = rrpge_m_edat->stat.vram[pb3 + pp3];
@@ -389,10 +372,10 @@ void rrpge_m_grln(void)
    s2 = rrpge_m_edat->stat.vram[pb2 + pp2] << p2sl;
    s3 = rrpge_m_edat->stat.vram[pb3 + pp3] << p3sl;
    for (i = 0; i < 80U; i++){
-    pp0 = (pp0 + 1U) & vpart;
-    pp1 = (pp1 + 1U) & vpart;
-    pp2 = (pp2 + 1U) & vpart;
-    pp3 = (pp3 + 1U) & vpart;
+    pp0 = (pp0 + 1U) & vpart[0];
+    pp1 = (pp1 + 1U) & vpart[1];
+    pp2 = (pp2 + 1U) & vpart[2];
+    pp3 = (pp3 + 1U) & vpart[3];
     c0 = rrpge_m_edat->stat.vram[pb0 + pp0];
     c1 = rrpge_m_edat->stat.vram[pb1 + pp1];
     c2 = rrpge_m_edat->stat.vram[pb2 + pp2];
@@ -423,7 +406,7 @@ void rrpge_m_grln(void)
 
    s0 = rrpge_m_edat->stat.vram[pb0 + pp0] << p0sl;
    for (i = 0; i < 80U; i++){
-    pp0 = (pp0 + 1U) & vpart;
+    pp0 = (pp0 + 1U) & vpart[0];
     c0 = rrpge_m_edat->stat.vram[pb0 + pp0];
     s0 |= (c0 >> p0sr) >> p0sr;
     m0 = (s0 & gmsk) ^ ck0;
@@ -440,9 +423,9 @@ void rrpge_m_grln(void)
    s1 = rrpge_m_edat->stat.vram[pb1 + pp1] << p1sl;
    s2 = rrpge_m_edat->stat.vram[pb2 + pp2] << p2sl;
    for (i = 0; i < 80U; i++){
-    pp0 = (pp0 + 1U) & vpart;
-    pp1 = (pp1 + 1U) & vpart;
-    pp2 = (pp2 + 1U) & vpart;
+    pp0 = (pp0 + 1U) & vpart[0];
+    pp1 = (pp1 + 1U) & vpart[1];
+    pp2 = (pp2 + 1U) & vpart[2];
     c0 = rrpge_m_edat->stat.vram[pb0 + pp0];
     c1 = rrpge_m_edat->stat.vram[pb1 + pp1];
     c2 = rrpge_m_edat->stat.vram[pb2 + pp2];
@@ -470,10 +453,10 @@ void rrpge_m_grln(void)
    s2 = rrpge_m_edat->stat.vram[pb2 + pp2] << p2sl;
    s3 = rrpge_m_edat->stat.vram[pb3 + pp3] << p3sl;
    for (i = 0; i < 80U; i++){
-    pp0 = (pp0 + 1U) & vpart;
-    pp1 = (pp1 + 1U) & vpart;
-    pp2 = (pp2 + 1U) & vpart;
-    pp3 = (pp3 + 1U) & vpart;
+    pp0 = (pp0 + 1U) & vpart[0];
+    pp1 = (pp1 + 1U) & vpart[1];
+    pp2 = (pp2 + 1U) & vpart[2];
+    pp3 = (pp3 + 1U) & vpart[3];
     c0 = rrpge_m_edat->stat.vram[pb0 + pp0];
     c1 = rrpge_m_edat->stat.vram[pb1 + pp1];
     c2 = rrpge_m_edat->stat.vram[pb2 + pp2];
@@ -506,9 +489,9 @@ void rrpge_m_grln(void)
    s1 = rrpge_m_edat->stat.vram[pb1 + pp1] << p1sl;
    s2 = rrpge_m_edat->stat.vram[pb2 + pp2] << p2sl;
    for (i = 0; i < 80U; i++){
-    pp0 = (pp0 + 1U) & vpart;
-    pp1 = (pp1 + 1U) & vpart;
-    pp2 = (pp2 + 1U) & vpart;
+    pp0 = (pp0 + 1U) & vpart[0];
+    pp1 = (pp1 + 1U) & vpart[1];
+    pp2 = (pp2 + 1U) & vpart[2];
     c0 = rrpge_m_edat->stat.vram[pb0 + pp0];
     c1 = rrpge_m_edat->stat.vram[pb1 + pp1];
     c2 = rrpge_m_edat->stat.vram[pb2 + pp2];
@@ -536,7 +519,7 @@ void rrpge_m_grln(void)
 
    s2 = rrpge_m_edat->stat.vram[pb2 + pp2] << p2sl;
    for (i = 0; i < 80U; i++){
-    pp2 = (pp2 + 1U) & vpart;
+    pp2 = (pp2 + 1U) & vpart[2];
     c2 = rrpge_m_edat->stat.vram[pb2 + pp2];
     s2 |= (c2 >> p2sr) >> p2sr;
     m2 = (s2 & gmsk) ^ ck2;
@@ -555,8 +538,8 @@ void rrpge_m_grln(void)
    s0 = rrpge_m_edat->stat.vram[pb0 + pp0] << p0sl;
    s2 = rrpge_m_edat->stat.vram[pb2 + pp2] << p2sl;
    for (i = 0; i < 80U; i++){
-    pp0 = (pp0 + 1U) & vpart;
-    pp2 = (pp2 + 1U) & vpart;
+    pp0 = (pp0 + 1U) & vpart[0];
+    pp2 = (pp2 + 1U) & vpart[2];
     c0 = rrpge_m_edat->stat.vram[pb0 + pp0];
     c2 = rrpge_m_edat->stat.vram[pb2 + pp2];
     s0 |= (c0 >> p0sr) >> p0sr;
@@ -581,9 +564,9 @@ void rrpge_m_grln(void)
    s2 = rrpge_m_edat->stat.vram[pb2 + pp2] << p2sl;
    s3 = rrpge_m_edat->stat.vram[pb3 + pp3] << p3sl;
    for (i = 0; i < 80U; i++){
-    pp0 = (pp0 + 1U) & vpart;
-    pp2 = (pp2 + 1U) & vpart;
-    pp3 = (pp3 + 1U) & vpart;
+    pp0 = (pp0 + 1U) & vpart[0];
+    pp2 = (pp2 + 1U) & vpart[2];
+    pp3 = (pp3 + 1U) & vpart[3];
     c0 = rrpge_m_edat->stat.vram[pb0 + pp0];
     c2 = rrpge_m_edat->stat.vram[pb2 + pp2];
     c3 = rrpge_m_edat->stat.vram[pb3 + pp3];
@@ -614,10 +597,10 @@ void rrpge_m_grln(void)
    s2 = rrpge_m_edat->stat.vram[pb2 + pp2] << p2sl;
    s3 = rrpge_m_edat->stat.vram[pb3 + pp3] << p3sl;
    for (i = 0; i < 80U; i++){
-    pp0 = (pp0 + 1U) & vpart;
-    pp1 = (pp1 + 1U) & vpart;
-    pp2 = (pp2 + 1U) & vpart;
-    pp3 = (pp3 + 1U) & vpart;
+    pp0 = (pp0 + 1U) & vpart[0];
+    pp1 = (pp1 + 1U) & vpart[1];
+    pp2 = (pp2 + 1U) & vpart[2];
+    pp3 = (pp3 + 1U) & vpart[3];
     c0 = rrpge_m_edat->stat.vram[pb0 + pp0];
     c1 = rrpge_m_edat->stat.vram[pb1 + pp1];
     c2 = rrpge_m_edat->stat.vram[pb2 + pp2];
@@ -654,9 +637,9 @@ void rrpge_m_grln(void)
    s1 = rrpge_m_edat->stat.vram[pb1 + pp1] << p1sl;
    s2 = rrpge_m_edat->stat.vram[pb2 + pp2] << p2sl;
    for (i = 0; i < 80U; i++){
-    pp0 = (pp0 + 1U) & vpart;
-    pp1 = (pp1 + 1U) & vpart;
-    pp2 = (pp2 + 1U) & vpart;
+    pp0 = (pp0 + 1U) & vpart[0];
+    pp1 = (pp1 + 1U) & vpart[1];
+    pp2 = (pp2 + 1U) & vpart[2];
     c0 = rrpge_m_edat->stat.vram[pb0 + pp0];
     c1 = rrpge_m_edat->stat.vram[pb1 + pp1];
     c2 = rrpge_m_edat->stat.vram[pb2 + pp2];
@@ -688,9 +671,9 @@ void rrpge_m_grln(void)
    s2 = rrpge_m_edat->stat.vram[pb2 + pp2] << p2sl;
    s3 = rrpge_m_edat->stat.vram[pb3 + pp3] << p3sl;
    for (i = 0; i < 80U; i++){
-    pp0 = (pp0 + 1U) & vpart;
-    pp2 = (pp2 + 1U) & vpart;
-    pp3 = (pp3 + 1U) & vpart;
+    pp0 = (pp0 + 1U) & vpart[0];
+    pp2 = (pp2 + 1U) & vpart[2];
+    pp3 = (pp3 + 1U) & vpart[3];
     c0 = rrpge_m_edat->stat.vram[pb0 + pp0];
     c2 = rrpge_m_edat->stat.vram[pb2 + pp2];
     c3 = rrpge_m_edat->stat.vram[pb3 + pp3];
@@ -723,10 +706,10 @@ void rrpge_m_grln(void)
    s2 = rrpge_m_edat->stat.vram[pb2 + pp2] << p2sl;
    s3 = rrpge_m_edat->stat.vram[pb3 + pp3] << p3sl;
    for (i = 0; i < 80U; i++){
-    pp0 = (pp0 + 1U) & vpart;
-    pp1 = (pp1 + 1U) & vpart;
-    pp2 = (pp2 + 1U) & vpart;
-    pp3 = (pp3 + 1U) & vpart;
+    pp0 = (pp0 + 1U) & vpart[0];
+    pp1 = (pp1 + 1U) & vpart[1];
+    pp2 = (pp2 + 1U) & vpart[2];
+    pp3 = (pp3 + 1U) & vpart[3];
     c0 = rrpge_m_edat->stat.vram[pb0 + pp0];
     c1 = rrpge_m_edat->stat.vram[pb1 + pp1];
     c2 = rrpge_m_edat->stat.vram[pb2 + pp2];

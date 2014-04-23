@@ -137,7 +137,7 @@ void rrpge_m_ires_initg(rrpge_object_t* obj)
  /* Init video peripheral data where necessary */
  obj->stat.ropd[0xEE0U] = 0xFFFFU; /* Write mask high */
  obj->stat.ropd[0xEE1U] = 0xFFFFU; /* Write mask low */
- obj->stat.ropd[0xEE2U] = 0x0007U; /* Partition size */
+ obj->stat.ropd[0xEE2U] = 0x7777U; /* Partition size */
  obj->stat.ropd[0xEE3U] = 0x01FEU; /* Bg. display list */
  obj->stat.ropd[0xEE4U] = 0x01FDU; /* Layer 0 disp. list */
  obj->stat.ropd[0xEE5U] = 0x01FAU; /* Layer 1 disp. list */

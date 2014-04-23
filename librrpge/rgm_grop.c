@@ -131,9 +131,10 @@ void rrpge_m_grop_accel(void)
 
  spart  = (rrpge_m_edat->stat.ropd[0xEF7U] >> 11);   /* spart: 0 - 31 */
  spart  = ((auint)(  1U) << spart) - 1U;             /* Source partition mask */
- dpart  = (rrpge_m_edat->stat.ropd[0xEE2U] & 0x7U);  /* dpart: 0 - 7 */
- dpart  = ((auint)(512U) << dpart) - 1U;             /* Global partition mask */
- spart  = spart & dpart;             /* Source mask is restricted to global mask */
+ dpart  = (rrpge_m_edat->stat.ropd[0xEE2U] >> ((dwhol >> 14) & 0xCU));
+ if ((dpart & 0x8U) != 0U){ flags |= 0x10000U; }     /* Carry disable request */
+ dpart  = ((auint)(512U) << (dpart & 0x7U)) - 1U;    /* Global partition mask */
+
  swhbb |= sfrbb >> 16;
  swxsc |= sfxsc >> 16;
  swysc |= sfysc >> 16;
@@ -405,7 +406,12 @@ void rrpge_m_grop_accel(void)
 
    if (renex != 0U){ break; }
 
-   dfrac = (dfrac + dincr) & dpart;
+   if ((flags & 0x10000U) != 0U){         /* Carry disable required */
+    dfrac = ((dfrac + dincr) & 0x007FFFFFU) | (dfrac & 0xFF800000U);
+    dfrac = (dfrac + (dincr & 0xFF800000U)) & dpart;
+   }else{                                 /* No carry disable */
+    dfrac = (dfrac + dincr) & dpart;
+   }
 
    if (codst == 0U){ break; }
 
