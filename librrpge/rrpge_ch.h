@@ -78,22 +78,4 @@ rrpge_uint32 rrpge_isstatecomp(rrpge_header_t const* sta,
                                rrpge_header_t const* app);
 
 
-
-/**
-**  \brief     Nonvolatile save compatibility check.
-**
-**  Checks nonvolatile save - application compatibility. A nonvolatile save is
-**  only compatible if the author and the name matches, the major version
-**  matches, and the minor version of the save is lower or equal. The patch
-**  version is indifferent. Returns 1 if they are compatible, 0 otherwise.
-**  Does not check the type of the header provided for the application.
-**
-**  \param[in]   nvs   The nonvolatile save to check.
-**  \param[in]   app   The application to check against.
-**  \return            Result of check: 1: compatible, 0: not compatible.
-*/
-rrpge_uint32 rrpge_isnvsavecomp(rrpge_header_t const* nvs,
-                                rrpge_header_t const* app);
-
-
 #endif

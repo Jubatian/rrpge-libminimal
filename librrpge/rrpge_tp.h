@@ -43,28 +43,10 @@ typedef struct rrpge_object_s rrpge_object_t;
 
 
 /**
-**  \brief     User specific data
-**
-**  User specific data to be transferred in/out the Read Only Process
-**  Descriptor.
-*/
-typedef struct{
- rrpge_uint16 name[4][8];  /**< Names (user IDs) for the 4 users */
- rrpge_uint32 lnex[4];     /**< User's preferred languages in order. The high
-                                byte contains the first character in
-                                uppercase. Padded with zeroes. */
- rrpge_uint16 clfg;        /**< Preferred foreground color */
- rrpge_uint16 clbg;        /**< Preferred background color. If no colors are
-                                set, the two are equal. */
-}rrpge_udata_t;
-
-
-
-/**
 **  \brief     Binary header extract
 **
 **  A more managable extract for the first 96 bytes of RRPGE related binary
-**  headers (application, state saves, nvram saves).
+**  headers (application binary and state saves).
 */
 typedef struct{
  rrpge_uint32 vmaj;        /**< Major version number */
@@ -72,7 +54,7 @@ typedef struct{
  rrpge_uint32 vpat;        /**< Patch version number */
  rrpge_uint32 tp;          /**< Binary type (ASCII 'A', 'N' or 'S') */
  rrpge_uint8  auth[16];    /**< Author name bytes */
- rrpge_uint8  name[36];    /**< Application name bytes */
+ rrpge_uint8  name[34];    /**< Application name bytes */
 }rrpge_header_t;
 
 

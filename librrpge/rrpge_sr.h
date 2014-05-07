@@ -57,27 +57,4 @@ void rrpge_state2raw(rrpge_state_t const* src, rrpge_uint8* dst);
 
 
 
-/**
-**  \brief     Extract user data from a Read Only Process Descriptor page.
-**
-**  \param[in]   src   Read Only Process Descriptor page (4096 elements).
-**  \param[out]  dst   Exported user data.
-*/
-void rrpge_ropd2udata(rrpge_uint16 const* src, rrpge_udata_t* dst);
-
-
-
-/**
-**  \brief     Write user data into a Read Only Process Descriptor page.
-**
-**  Writes new user data into a Read Only Process Descriptor page. It does not
-**  alter any other field.
-**
-**  \param[in]   src   Source user data.
-**  \param[out]  dst   Read Only Process Descriptor page (4096 elements).
-*/
-void rrpge_udata2ropd(rrpge_udata_t const* src, rrpge_uint16* dst);
-
-
-
 #endif

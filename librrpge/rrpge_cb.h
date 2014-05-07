@@ -157,6 +157,33 @@ typedef struct{
 
 
 /**
+**  \anchor    rrpge_fileio_fault
+**  \name      File I/O fault codes for file I/O kernel task returns
+**
+**  These codes should be used to indicate various file I/O related faults.
+**
+**  \{ */
+/** Unsupported feature. The host does not implement the feature. */
+#define RRPGE_SFI_UNSUPP  0xC000U
+/** Improper or Invalid file name. */
+#define RRPGE_SFI_NAME    0xC001U
+/** Source file does not exists. */
+#define RRPGE_SFI_SNEXIST 0xC002U
+/** Target file exists (for file moves). */
+#define RRPGE_SFI_TEXIST  0xC003U
+/** Target file exists, but it is not writeable. */
+#define RRPGE_SFI_TNWRITE 0xC004U
+/** Source file exists, but can not be renamed or deleted. */
+#define RRPGE_SFI_SNMOVE  0xC005U
+/** Can not create the file or directory. */
+#define RRPGE_SFI_NCREATE 0xC006U
+/** Can not write more data into the file. */
+#define RRPGE_SFI_NWRMORE 0xC007U
+/** \} */
+
+
+
+/**
 **  \brief     Kernel task: Load binary data.
 **
 **  Requests a page from the application binary.
@@ -166,110 +193,84 @@ typedef struct{
 **  \brief     Extra parameters for Load binary data.
 */
 typedef struct{
- rrpge_uint32   spg;   /**< The source page to supply. */
- rrpge_uint16*  buf;   /**< The memory page to fill in (4096 elements). */
+ rrpge_uint32        spg; /**< The source page to supply. */
+ rrpge_uint16*       buf; /**< The memory page to fill in (4096 elements). */
 }rrpge_cbp_loadbin_t;
 
 
 
 /**
-**  \brief     Kernel task: Load nonvolatile save.
+**  \brief     Kernel task: Load page from file.
 **
-**  Loads a nonvolatile save. Note that the library zeroes out the target
-**  pages before this callback, so it is not necessary to do so if the save is
-**  smaller than requested or it is not possible to load it.
+**  Loads a page from a file. The library clears the target page to zero
+**  before calling this callback. Note that the file name may contain
+**  arbitrary data, it is the host's responsibility to check it for it's file
+**  name constraints. It may not even have a terminator.
 */
-#define RRPGE_CB_LOADNV        1U
+#define RRPGE_CB_LOAD          1U
 /**
-**  \brief     Extra parameters for Load nonvolatile save.
+**  \brief     Extra parameters for Load page from file.
 */
 typedef struct{
- rrpge_uint16   id[3]; /**< Save ID */
- rrpge_uint16   no;    /**< Maximal number of pages (4096 words) to fill */
- rrpge_uint16*  buf;   /**< The memory to fill in. */
-}rrpge_cbp_loadnv_t;
+ rrpge_uint32        spg; /**< The page in the file to load. */
+ rrpge_uint32        sno; /**< The number of bytes to load from the file (0 - 8192). */
+ rrpge_uint16*       buf; /**< The memory page to fill in (4096 elements). */
+ rrpge_uint16 const* nam; /**< The file name (128 words: 256 bytes, might not terminate). */
+}rrpge_cbp_load_t;
 
 
 
 /**
-**  \brief     Kernel task: Save nonvolatile save.
+**  \brief     Kernel task: Save page to file.
 **
-**  Saves a nonvolatile save. The first 96 bytes of the save must be generated
-**  from the application header (replacing only the beginning "RPA" to "RPN").
-**  This replace has to be performed by the host!
+**  Saves a page into a file. Note that the file name may contain arbitrary
+**  data, it is the host's responsibility to check it for it's file name
+**  constraints. It may not even have a terminator.
 */
-#define RRPGE_CB_SAVENV        2U
+#define RRPGE_CB_SAVE          2U
 /**
-**  \brief     Extra parameters for Save nonvolatile save.
+**  \brief     Extra parameters for Save page to file.
 */
 typedef struct{
- rrpge_uint16   id[3]; /**< Save ID */
- rrpge_uint16   no;    /**< Number of pages (4096 words) to save */
- rrpge_uint16
-        const*  buf;   /**< The source data. */
-}rrpge_cbp_savenv_t;
+ rrpge_uint32        tpg; /**< The page in the file to write. */
+ rrpge_uint32        tno; /**< The number of bytes to write into the file (0 - 8192). */
+ rrpge_uint16 const* buf; /**< The memory page to load data from (4096 elements). */
+ rrpge_uint16 const* nam; /**< The file name (128 words: 256 bytes, might not terminate). */
+}rrpge_cbp_save_t;
 
 
 
 /**
-**  \brief     Kernel task: List nonvolatile saves.
+**  \brief     Kernel task: Find next file.
 **
-**  Lists existing nonvolatile saves. Note that the library zeroes out the
-**  target pages before this callback, so it is not necessary to do so if the
-**  list is smaller than 1024 elements. Also note that saves can not have a
-**  size of zero, if such exists on the host, it should be treated
-**  nonexistent.
+**  Finds the next file by file name. Note that the file name may contain
+**  arbitrary data. It may not even have a terminator.
 */
-#define RRPGE_CB_LISTNV        3U
+#define RRPGE_CB_NEXT          3U
 /**
-**  \brief     Extra parameters for Load nonvolatile save.
+**  \brief     Extra parameters for Find next file.
 */
 typedef struct{
- rrpge_uint16*  buf;   /**< The memory to fill in (4096 words). */
-}rrpge_cbp_listnv_t;
+ rrpge_uint16*       nam; /**< The file name (128 words: 256 bytes, might not terminate). */
+}rrpge_cbp_find_t;
 
 
 
 /**
-**  \brief     Function: Load arbitrary file.
+**  \brief     Kernel task: Move file.
 **
-**  This callback needs some kind of file selector to be presented for proper
-**  servicing. If it is not economical to do this from the callback, the host
-**  may note this and catch the RRPGE_HLT_CALLBACK cause to service it. Note
-**  that the library clears the target area to zero before calling this, so it
-**  is not necessary to do so if the file is smaller, can not be loaded, or
-**  the load was cancelled.
+**  Moves or deletes a file. Deletes if the target file name is empty (begins
+**  with a terminator). Note that the file names may contain arbitrary data.
+**  They may not even have a terminator.
 */
-#define RRPGE_CB_LOADFILE      4U
+#define RRPGE_CB_MOVE          4U
 /**
-**  \brief     Extra parameters for Load arbitrary file.
+**  \brief     Extra parameters for Find next file.
 */
 typedef struct{
- rrpge_uint32   no;    /**< Maximal number of pages (4096 words) to fill */
- rrpge_uint16*  buf;   /**< The memory to fill in (4096 words). */
-}rrpge_cbp_loadfile_t;
-
-
-
-/**
-**  \brief     Function: Save arbitrary file.
-**
-**  This callback needs some kind of file selector to be presented for proper
-**  servicing. If it is not economical to do this from the callback, the host
-**  may note this and catch the RRPGE_HLT_CALLBACK cause to service it. The
-**  bytes to save parameter might not be used if the host only supports page
-**  size blocks.
-*/
-#define RRPGE_CB_SAVEFILE      5U
-/**
-**  \brief     Extra parameters for Load arbitrary file.
-*/
-typedef struct{
- rrpge_uint16   no;    /**< Number of pages to save (1 - 224). */
- rrpge_uint16   byt;   /**< Bytes to save from last page (1 - 8192). */
- rrpge_uint16
-        const*  buf;   /**< The memory to read from. */
-}rrpge_cbp_savefile_t;
+ rrpge_uint16 const* snm; /**< The source file name (128 words: 256 bytes, might not terminate). */
+ rrpge_uint16 const* tnm; /**< The target file name (128 words: 256 bytes, might not terminate). */
+}rrpge_cbp_move_t;
 
 
 
@@ -286,136 +287,177 @@ typedef struct{
 **  action the host has to reconstruct the palette on it's own using the color
 **  table in the ROPD (0xC00 - 0xCFF).
 */
-#define RRPGE_CB_SETCOLOR      6U
+#define RRPGE_CB_SETPAL        5U
 /**
 **  \brief     Extra parameters for Set palette entry.
 */
 typedef struct{
- rrpge_uint16   id;    /**< Color index (0 - 255). */
- rrpge_uint16   col;   /**< Color in 5-6-5 RGB (Red high) encoding. */
-}rrpge_cbp_setcolor_t;
+ rrpge_uint32        id;  /**< Color index (0 - 255). */
+ rrpge_uint32        col; /**< Color in 5-6-5 RGB (Red high) encoding. */
+}rrpge_cbp_setpal_t;
 
 
 
 /**
-**  \brief     Inpud device functions: Common parameter structure
+**  \brief     Subroutine: Change video mode.
 **
-**  All input device functions share the same parameter layout: they take one
-**  parameter selecting the device to query.
+**  Sets the video mode (640x400; 4bit or 320x400; 8bit). Note that the
+**  callback only executes from rrpge_run() like the rest, and only when the
+**  running application explicitly asks for mode change through a kernel call.
+**  On init, state load, reset, ROPD page update or any other (such as context
+**  switching) action the host has to set the appropriate mode on it's own
+**  using the mode field in the ROPD (0xD57).
+*/
+#define RRPGE_CB_MODE          6U
+/**
+**  \brief     Extra parameters for Change video mode.
 */
 typedef struct{
- rrpge_uint32   sel;   /**< Device selector (0 - 15). */
-}rrpge_cbp_inputcom_t;
+ rrpge_uint32        mod; /**< Requested video mode (0: 640x400; 4bit, 1: 320x400; 8bit). */
+}rrpge_cbp_mode_t;
 
 
 
 /**
-**  \brief     Function: Digital joystick: Read device availability.
+**  \brief     Function: Get input device availability.
 **
-**  Reads current availability of digital joysticks. Has no parameters.
+**  Returns which input devices are available from the possible 16 devices.
+**  Bit 0 of the return value corresponds to device 0, set if available.
 */
-#define RRPGE_CB_IDIG_AVA      7U
+#define RRPGE_CB_GETDEV        7U
 
 
 
 /**
-**  \brief     Function: Digital joystick: Read controls.
+**  \brief     Function: Get device properties.
 **
-**  Reads active controls of the device. Uses rrpge_cbp_inputcomm_t for
-**  parameters.
+**  Returns the properties of the given input device. The return value has to
+**  be formatted according to the specification (returning the device type and
+**  optionally the device it maps to if any).
 */
-#define RRPGE_CB_IDIG_CTR      8U
+#define RRPGE_CB_GETPROPS      8U
+/**
+**  \brief     Extra parameters for Get device properties.
+*/
+typedef struct{
+ rrpge_uint32        dev; /**< The device to query. */
+}rrpge_cbp_getprops_t;
 
 
 
 /**
-**  \brief     Function: Analog joystick: Read device availability.
+**  \brief     Function: Get digital input description symbols.
 **
-**  Reads current availability of analog joysticks. Has no parameters.
+**  Returns a descriptive symbol for the given digital input as an UTF32
+**  character code or a special code according to the specification. May
+**  return 0 indicating the input does not exist.
 */
-#define RRPGE_CB_IANA_AVA      9U
+#define RRPGE_CB_GETDIDESC     9U
+/**
+**  \brief     Extra parameters for Get digital input description symbols.
+*/
+typedef struct{
+ rrpge_uint32        dev; /**< The device to query. */
+ rrpge_uint32        inp; /**< Input number to query (group * 16 + input id). */
+}rrpge_cbp_getdidesc_t;
 
 
 
 /**
-**  \brief     Function: Analog joystick: Read controls.
+**  \brief     Function: Get digital inputs.
 **
-**  Reads active controls of the device. Uses rrpge_cbp_inputcomm_t for
-**  parameters.
+**  Returns digital input states for an input group of a given device (16
+**  digital inputs per group).
 */
-#define RRPGE_CB_IANA_CTR     10U
+#define RRPGE_CB_GETDI         11U
+/**
+**  \brief     Extra parameters for Get digital inputs.
+*/
+typedef struct{
+ rrpge_uint32        dev; /**< The device to query. */
+ rrpge_uint32        ing; /**< Input group to query. */
+}rrpge_cbp_getdi_t;
 
 
 
 /**
-**  \brief     Function: Analog joystick: Read position.
+**  \brief     Function: Get analog inputs.
 **
-**  Reads position (directions) of the analog joystick. Uses
-**  rrpge_cbp_inputcomm_t for parameters.
+**  Returns analog input state for an analog input of a given device. The
+**  return is 16 bits 2's complement.
 */
-#define RRPGE_CB_IANA_POS     11U
+#define RRPGE_CB_GETAI         12U
+/**
+**  \brief     Extra parameters for Get analog inputs.
+*/
+typedef struct{
+ rrpge_uint32        dev; /**< The device to query. */
+ rrpge_uint32        inp; /**< Input to query. */
+}rrpge_cbp_getai_t;
 
 
 
 /**
-**  \brief     Function: Mice: Read device availability.
+**  \brief     Function: Pop text FIFO.
 **
-**  Reads current availability of mice. Has no parameters.
+**  Pops the last UTF32 character or control code off the text FIFO of a text
+**  input device.
 */
-#define RRPGE_CB_IMOU_AVA     12U
+#define RRPGE_CB_POPCHAR       13U
+/**
+**  \brief     Extra parameters for Pop text FIFO.
+*/
+typedef struct{
+ rrpge_uint32        dev; /**< The device to query. */
+}rrpge_cbp_popchar_t;
 
 
 
 /**
-**  \brief     Function: Mice: Read controls.
+**  \brief     Function: Define touch sensitive area.
 **
-**  Reads active controls of the device. Uses rrpge_cbp_inputcomm_t for
-**  parameters.
+**  Requests defining or redefining a touch sensitive area. The parameters are
+**  sanitized by the library (constrained between 0 and 639 for X, 0 and 399
+**  for Y). If the width or height is zero, the touch sensitive area has to be
+**  disabled. Note that this is only called back by rrpge_run(), when loading
+**  a state the touch sensitive areas have to be set up from the ROPD. On init
+**  and reset they need to be disabled. This callback needs to be implemented
+**  even if the host has no touch device (but has a mouse) to support buttons
+**  specified as touch areas.
 */
-#define RRPGE_CB_IMOU_CTR     13U
+#define RRPGE_CB_SETTOUCH      14U
+/**
+**  \brief     Extra parameters for Define touch sensitive area.
+*/
+typedef struct{
+ rrpge_uint32        aid; /**< Area ID to (re)define (0 - 15). */
+ rrpge_uint32        x;   /**< Upper left X (0 - 639). */
+ rrpge_uint32        y;   /**< Upper left Y (0 - 399). */
+ rrpge_uint32        w;   /**< Width (0 - 639). */
+ rrpge_uint32        h;   /**< Height (0 - 399). */
+}rrpge_cbp_settouch_t;
 
 
 
 /**
-**  \brief     Function: Mice: Read position.
+**  \brief     Subroutine: Get local users.
 **
-**  Reads position of the mouse. Uses rrpge_cbp_inputcomm_t for parameters.
+**  Requests local users (user using the device), up to four. A 32 word target
+**  area is provided to fill in with these User IDs. The area is zeroed out
+**  before calling the callback.
 */
-#define RRPGE_CB_IMOU_POS     14U
+#define RRPGE_CB_GETLOCAL      15U
+/**
+**  \brief     Extra parameters for Get local users.
+*/
+typedef struct{
+ rrpge_uint16*       buf; /**< Target area to load User ID's into (32 words) */
+}
 
 
 
 /**
-**  \brief     Function: Mice: Read cursor requirement.
-**
-**  Reads whether a cursor is necessary to be displayed for the given mouse.
-**  Uses rrpge_cbp_inputcomm_t for parameters.
-*/
-#define RRPGE_CB_IMOU_CUR     15U
-
-
-
-/**
-**  \brief     Function: Text: Read device availability.
-**
-**  Reads current availability of text input devices. Has no parameters.
-*/
-#define RRPGE_CB_ITXT_AVA     16U
-
-
-
-/**
-**  \brief     Function: Text: Read input fifo.
-**
-**  Reads next character from text device's fifo. Uses rrpge_cbp_inputcomm_t
-**  for parameters.
-*/
-#define RRPGE_CB_ITXT_RFI     17U
-
-
-
-/**
-**  \brief     Kernel task: Read UTF-8 representation of user.
+**  \brief     Kernel task: Get UTF-8 representation of User ID.
 **
 **  Servicing this call may require network queries when the host is connected
 **  to request user names. Note that the library zeroes out the target area
@@ -424,14 +466,43 @@ typedef struct{
 **  take care to leave a terminating zero word intact for each part (at
 **  buf+127 and buf+255).
 */
-#define RRPGE_CB_GETUUTF      18U
+#define RRPGE_CB_GETUTF        16U
 /**
 **  \brief     Extra parameters for Read UTF-8 representation of user.
 */
 typedef struct{
- rrpge_uint16   id[8]; /**< User ID. */
- rrpge_uint16*  buf;   /**< The memory to fill in (256 elements). */
-}rrpge_cbp_getuutf_t;
+ rrpge_uint16      id[8]; /**< User ID. */
+ rrpge_uint16*       buf; /**< The memory to fill in (256 elements). */
+}rrpge_cbp_getutf_t;
+
+
+
+/**
+**  \brief     Function: Get user preferred language.
+**
+**  Asks for the preferred languages of an user. In the return up to 4
+**  characters may occur, high first, containing a language code. Zero
+**  indicates no language.
+*/
+#define RRPGE_CB_GETLANG       17U
+/**
+**  \brief     Extra parameters for Get user preferred language.
+*/
+typedef struct{
+ rrpge_uint32        lno; /**< Language number to return (0: most preferred) */
+}rrpge_cbp_getlang_t;
+
+
+
+/**
+**  \brief     Subroutine: Get user preferred colors.
+**
+**  Ask for user's preferred colors. High word of the return is the foreground
+**  in 4-4-4 RGB (high 4 bits zero), low word is the background color. Set the
+**  two the same (return zero) to indicate no preferred colors are set by the
+**  user.
+*/
+#define RRPGE_CB_GETCOLORS     18U
 
 
 
@@ -443,16 +514,15 @@ typedef struct{
 **  it must prefer sending to the network user (so it may be possible to
 **  connect two RRPGE systems with no user name set, and play).
 */
-#define RRPGE_CB_SENDTO       19U
+#define RRPGE_CB_SEND          19U
 /**
 **  \brief     Extra parameters for Send out network packet.
 */
 typedef struct{
- rrpge_uint16   id[8]; /**< User ID to target. */
- rrpge_uint32   no;    /**< Number of words to send (1 - 4096). */
- rrpge_uint16
-        const*  buf;   /**< The source data to send. */
-}rrpge_cbp_sendto_t;
+ rrpge_uint16      id[8]; /**< User ID to target. */
+ rrpge_uint32        no;  /**< Number of words to send (1 - 4096). */
+ rrpge_uint16 const* buf; /**< The source data to send. */
+}rrpge_cbp_send_t;
 
 
 
@@ -463,14 +533,14 @@ typedef struct{
 **  with the passed ID. It must only return users who are running the same
 **  app. and report they are available for connection.
 */
-#define RRPGE_CB_LISTUSER     20U
+#define RRPGE_CB_LISTUSERS     20U
 /**
 **  \brief     Extra parameters for List accessible network users.
 */
 typedef struct{
- rrpge_uint16   id[8]; /**< User ID to start the list from. */
- rrpge_uint16*  buf;   /**< The memory to fill in (4096 words). */
-}rrpge_cbp_listuser_t;
+ rrpge_uint16      id[8]; /**< User ID to start the list from. */
+ rrpge_uint16*       buf; /**< The memory to fill in (4096 words). */
+}rrpge_cbp_listusers_t;
 
 
 

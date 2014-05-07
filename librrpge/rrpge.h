@@ -154,7 +154,7 @@ rrpge_uint32 rrpge_getnetavail(rrpge_object_t* hnd);
 **
 **  If a network packet is received targeting the user running the
 **  application, it should be submitted to the emulator using this method.
-**  Note that the application may also except packets when it is not available
+**  Note that the application may also expect packets when it is not available
 **  for network connections. (The availability flag is only used to note that
 **  the user is available for new connections).
 **
@@ -195,18 +195,16 @@ rrpge_uint32 rrpge_gethaltcause(rrpge_object_t* hnd);
 **  applications (which fail to service audio interrupts themselves) it might
 **  be more. This indicates skipping.
 **
-**  The provided left and right buffers are filled according to the audio
-**  setup in the application header with either 512 or 1024 samples each from
-**  the last audio event. The format is 8 bit unsigned. In mono mode both
-**  buffers receive the same data.
+**  The provided left and right buffers are filled with the data fetched in
+**  the last audio tick, 512 samples each. The format is 8 bit unsigned.
 **
 **  When called without experiencing an audio halt cause the return value is
 **  zero, and it is implementation defined whether the buffers receive any
 **  data.
 **
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
-**  \param[out]  lbuf  8bit audio buffer to receive left / mono data.
-**  \param[out]  rbuf  8bit audio buffer to receive right / mono data.
+**  \param[out]  lbuf  8bit audio buffer to receive left sample data.
+**  \param[out]  rbuf  8bit audio buffer to receive right sample data.
 **  \return            Number of audio events pending.
 */
 rrpge_uint32 rrpge_getaudio(rrpge_object_t* hnd, rrpge_uint8* lbuf, rrpge_uint8* rbuf);
