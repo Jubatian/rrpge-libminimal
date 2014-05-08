@@ -17,7 +17,6 @@
 #include "rgm_grop.h"
 #include "rgm_prng.h"
 #include "rgm_task.h"
-#include "rgm_abuf.h"
 
 
 
@@ -57,16 +56,7 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
  rrpge_m_info.vac = ((auint)(rrpge_m_edat->stat.ropd[0xD54U]) << 16) +
                     ((auint)(rrpge_m_edat->stat.ropd[0xD55U]));
  rrpge_m_info.sbt = rrpge_m_edat->stat.ropd[0xD7EU];
- i = rrpge_m_edat->stat.ropd[0xBC2U] & 0x3000U; /* Audio settings */
- if       (i == 0x0000U){ /* 512 samples; 24KHz */
-  rrpge_m_info.adv = ((RRPGE_M_OSC / 1000U) *  512U + 12U) / 24U;
- }else if (i == 0x1000U){ /* 512 samples; 48KHz */
-  rrpge_m_info.adv = ((RRPGE_M_OSC / 1000U) *  512U + 24U) / 48U;
- }else if (i == 0x2000U){ /* 1024 samples; 24KHz */
-  rrpge_m_info.adv = ((RRPGE_M_OSC / 1000U) * 1024U + 12U) / 24U;
- }else{                   /* 1024 samples; 48KHz */
-  rrpge_m_info.adv = ((RRPGE_M_OSC / 1000U) * 1024U + 24U) / 48U;
- }
+ rrpge_m_info.adv = ((RRPGE_M_OSC / 1000U) *  512U + 24U) / 48U; /* 512 samples; 48KHz */
  rrpge_m_info.grr = 1U;   /* Reload recolor banks */
  if ((rrpge_m_edat->stat.ropd[0xBC0U] & 0xFFU) == 0){ /* 4bit mode */
   rrpge_m_info.vbm = 0x0FU;
@@ -129,11 +119,6 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
    /* Enter the interrupt */
    if ((rrpge_m_edat->stat.ropd[0xD6FU] & 0x3U) == 0x1U){ /* Audio interrupt request */
     rrpge_m_info.pc = rrpge_m_edat->stat.ropd[0xD31U];
-    rrpge_m_abuf_getptr(rrpge_m_edat->stat.ropd[0xBC2U],      /* Audio config is here */
-                        rrpge_m_edat->stat.ropd[0xD56U] ^ 1U, /* Need the non-outputting half */
-                        &t0, &t1);             /* Sample pointers are received here */
-    rrpge_m_stk_push(t0);
-    rrpge_m_stk_push(t1);
     rrpge_m_edat->stat.ropd[0xD6FU] = 0x2U;    /* Remove flag, within audio interrupt */
    }else{                                      /* Video interrupt request */
     rrpge_m_info.pc = rrpge_m_edat->stat.ropd[0xD30U];
@@ -248,9 +233,8 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
    rrpge_m_edat->stat.ropd[0xD6FU] |= 0x1U;
    i = cy - rrpge_m_info.auc;  /* Cycles left after audio event */
    while (1){
-    rrpge_m_edat->stat.ropd[0xD56U] ^= 1U; /* Other half of audio buffers */
     rrpge_m_edat->aco ++;      /* One more audio event needing service */
-    if (i < rrpge_m_info.adv) break;       /* No more audio events happen here */
+    if (i < rrpge_m_info.adv) break;    /* No more audio events happen here */
     i -= rrpge_m_info.adv;
    }
    rrpge_m_info.auc = rrpge_m_info.adv - i;

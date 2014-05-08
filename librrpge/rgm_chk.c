@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.05.08
 */
 
 
@@ -349,17 +349,5 @@ rrpge_uint32 rrpge_isstatecomp(rrpge_header_t const* sta,
  if ((sta->tp) != (auint)('S'))    return 0;
  if ((sta->vmin) != (app->vmin))   return 0;
  if ((sta->vpat) != (app->vpat))   return 0;
- return 1;
-}
-
-
-
-/* Check nv-save - app. comp. - Implementation of RRPGE library function */
-rrpge_uint32 rrpge_isnvsavecomp(rrpge_header_t const* nvs,
-                                rrpge_header_t const* app)
-{
- if (!rrpge_m_checkcomp(nvs, app)) return 0;
- if (nvs->tp != (auint)('S'))      return 0;
- if ((nvs->vmin) > (app->vmin))    return 0;
  return 1;
 }

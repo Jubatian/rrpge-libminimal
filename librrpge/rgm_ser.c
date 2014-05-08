@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.05.08
 */
 
 
@@ -70,42 +70,4 @@ void rrpge_state2raw(rrpge_state_t const* src, rrpge_uint8* dst)
   dst[233U * 4096U + (i << 2) + 3U] = (uint8)(t      );
  }
 
-}
-
-
-
-/* Extracts user data - Implementation of RRPGE library function. */
-void rrpge_ropd2udata(rrpge_uint16 const* src, rrpge_udata_t* dst)
-{
- auint i;
-
- for (i=0; i<8; i++){ dst->name[0][i] = src[0xE80U + i]; }
- for (i=0; i<8; i++){ dst->name[1][i] = src[0xE88U + i]; }
- for (i=0; i<8; i++){ dst->name[2][i] = src[0xE90U + i]; }
- for (i=0; i<8; i++){ dst->name[3][i] = src[0xE98U + i]; }
- for (i=0; i<4; i++){
-  dst->lnex[i] = ((auint)(src[0xEA0U + (i<<1)]) << 16) +
-                  (auint)(src[0xEA1U + (i<<1)]);
- }
- dst->clfg = src[0xEA8U];
- dst->clbg = src[0xEA9U];
-}
-
-
-
-/* Writes user data into ROPD - Implementation of RRPGE library function. */
-void rrpge_udata2ropd(rrpge_udata_t const* src, rrpge_uint16* dst)
-{
- auint i;
-
- for (i=0; i<8; i++){ dst[0xE80U + i] = src->name[0][i]; }
- for (i=0; i<8; i++){ dst[0xE88U + i] = src->name[1][i]; }
- for (i=0; i<8; i++){ dst[0xE90U + i] = src->name[2][i]; }
- for (i=0; i<8; i++){ dst[0xE98U + i] = src->name[3][i]; }
- for (i=0; i<4; i++){
-  dst[0xEA0U + (i<<1)] = (uint16)((src->lnex[i]) >> 16);
-  dst[0xEA1U + (i<<1)] = (uint16)( src->lnex[i]       );
- }
- dst[0xEA8U] = src->clfg;
- dst[0xEA9U] = src->clbg;
 }

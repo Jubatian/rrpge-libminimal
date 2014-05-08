@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.05.08
 */
 
 
@@ -14,14 +14,13 @@
 #include "rgm_chk.h"
 #include "rgm_cb.h"
 #include "rgm_ser.h"
-#include "rgm_abuf.h"
 
 
 
 /* Initialize emulator - implementation of RRPGE library function */
 rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb,   rrpge_uint16 const* apph,
                         rrpge_uint16   const* crom, rrpge_uint32 crn,
-                        rrpge_udata_t  const* udat, rrpge_object_t* hnd)
+                        rrpge_object_t* hnd)
 {
  auint f;
  auint i;
@@ -48,8 +47,6 @@ rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb,   rrpge_uint16 const* apph,
  for (i = (crn << 12); i < (16U << 12); i++){
   hnd->crom[i] = 0;
  }
-
- rrpge_udata2ropd(udat, &(hnd->stat.ropd[0]));
 
  /* Now do a reset to finish the initialization so emulation may start. */
 
@@ -255,7 +252,6 @@ rrpge_uint32 rrpge_getaudio(rrpge_object_t* hnd, rrpge_uint8* lbuf, rrpge_uint8*
  auint i;
  auint pl;
  auint pr;
- auint l;
 
  if ((hnd->aco) == 0) return 0; /* No audio event present */
 
@@ -263,18 +259,12 @@ rrpge_uint32 rrpge_getaudio(rrpge_object_t* hnd, rrpge_uint8* lbuf, rrpge_uint8*
  hnd->aco =  0;
  hnd->hlt &= ~(auint)(RRPGE_HLT_AUDIO);
 
- /* Fill in the buffers with the half currently marked for outputting */
+ /* Fill in the buffers according to the buffer selection */
 
- rrpge_m_abuf_getptr(hnd->stat.ropd[0xBC2U],
-                     hnd->stat.ropd[0xD56U],
-                     &pl, &pr);
- pl >>= 1;                      /* Make word offsets */
- pr >>= 1;
+ pl = ((auint)(hnd->stat.ropd[0xEDEU]) & 0x00FFU) << 8;
+ pr = ((auint)(hnd->stat.ropd[0xEDEU]) & 0xFF00U);
 
- if ((hnd->stat.ropd[0xBC2U] & 0x2000U) != 0U){ l = 512U; }
- else                                         { l = 256U; }
-
- for (i = 0; i < l; i++){
+ for (i = 0; i < 256U; i++){
   lbuf[(i << 1)     ] = (uint8)(hnd->stat.dram[pl + i] >> 8);
   lbuf[(i << 1) + 1U] = (uint8)(hnd->stat.dram[pl + i]     );
   rbuf[(i << 1)     ] = (uint8)(hnd->stat.dram[pr + i] >> 8);

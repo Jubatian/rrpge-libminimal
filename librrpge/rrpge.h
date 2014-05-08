@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.05.08
 */
 
 
@@ -39,13 +39,12 @@
 **  \param[in]   apph  Application binary header as-is (4096 elements).
 **  \param[in]   crom  Code pages (up to 16 pages, 4096 elements per page).
 **  \param[in]   crn   Number of code pages passed.
-**  \param[in]   udat  Initial user specific data for the ROPD.
 **  \param[out]  hnd   Emulation instance to initialize.
 **  \return            0 on success, failure code otherwise.
 */
 rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb,   rrpge_uint16 const* apph,
                         rrpge_uint16   const* crom, rrpge_uint32 crn,
-                        rrpge_udata_t  const* udat, rrpge_object_t* hnd);
+                        rrpge_object_t* hnd);
 
 
 

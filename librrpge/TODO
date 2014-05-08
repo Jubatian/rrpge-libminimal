@@ -29,3 +29,7 @@ to request all parameters, and another to inject back a return value,
 preferably something nicer than telling to stuff it in C:A. This interface
 could work for the arbitrary file load & save as well.
 
+
+
+Audio stuff needs randomization later (to prevent relying on undefined
+behavior).

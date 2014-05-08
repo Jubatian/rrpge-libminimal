@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.05.08
 */
 
 
@@ -197,18 +197,15 @@ void rrpge_m_ires_initl(rrpge_object_t* obj)
 
 /* Initializes starting resources for an RRPGE emulator object. This includes
 ** areas of the ROPD and data memory areas. It does not depend on the
-** application loaded or to be loaded. Keeps user area of ROPD intact. */
+** application loaded or to be loaded. */
 void rrpge_m_ires_init(rrpge_object_t* obj)
 {
  auint i;
  auint j;
  uint8 r;
 
- /* Reset ROPD areas (excluding user area) */
- for (i = 0xC00U; i < 0xE80U; i++){
-  obj->stat.ropd[i] = 0;
- }
- for (i = 0xEAAU; i < 0x1000U; i++){
+ /* Reset ROPD areas */
+ for (i = 0xC00U; i < 0x1000U; i++){
   obj->stat.ropd[i] = 0;
  }
 
