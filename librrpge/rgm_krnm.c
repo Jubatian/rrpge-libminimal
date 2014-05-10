@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.05.10
 */
 
 
@@ -23,15 +23,15 @@ static auint rrpge_m_ktsalloc(uint16 const* par, auint n)
 {
  auint i;
  auint j;
- for (i=0xD80U; i<0xE80U; i+=0x10U){
-  if (rrpge_m_edat->stat.ropd[i + 0xFU] == 0){
-   for (j=0; j<n; j++){
+ for (i = 0xD80U; i < 0xE80U; i += 0x10U){
+  if (rrpge_m_edat->stat.ropd[i + 0xFU] == 0U){
+   for (j = 0U; j < n; j++){
     rrpge_m_edat->stat.ropd[i + j] = par[j];
    }
    rrpge_m_edat->stat.ropd[i + 0xFU] = 0x0001U;
    j = ((i - 0xD80U) >> 4);
-   rrpge_m_edat->tsfl &= ~(1U << j); /* Task not started yet! */
-   rrpge_m_info.xr[0] = j;
+   rrpge_m_edat->tsfl &= ~((auint)(1U) << j); /* Task not started yet! */
+   rrpge_m_info.xr[0] = j;                    /* Fill in register 'a' */
    return rrpge_m_taskcheck(&(rrpge_m_edat->stat.ropd[0]), j);
   }
  }
@@ -183,69 +183,56 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
   case 0x0100U:   /* Kernel task: Start loading binary data page */
 
-   if (n!=4){     /* Needs 1+3 parameters */
+   if (n != 4U){  /* Needs 1+3 parameters */
     goto fault_inv;
    }
 
-   if (rrpge_m_ktsalloc(par, n)!=0) goto fault_inv;
+   if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
    r = 800;
    break;
 
 
-  case 0x0110U:   /* Kernel task: Start loading nonvolatile save */
+  case 0x0110U:   /* Kernel task: Start loading page from file */
 
-   if (n!=6){     /* Needs 1+5 parameters */
+   if (n != 7U){  /* Needs 1+6 parameters */
     goto fault_inv;
    }
 
-   if (rrpge_m_ktsalloc(par, n)!=0) goto fault_inv;
+   if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
    r = 800;
    break;
 
 
-  case 0x0111U:   /* Kernel task: Start saving nonvolatile save */
+  case 0x0111U:   /* Kernel task: Start saving page into file */
 
-   if (n!=6){     /* Needs 1+5 parameters */
+   if (n != 7U){  /* Needs 1+6 parameters */
     goto fault_inv;
    }
 
-   if (rrpge_m_ktsalloc(par, n)!=0) goto fault_inv;
+   if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
    r = 800;
    break;
 
 
-  case 0x0112U:   /* Kernel task: List available NV saves */
+  case 0x0112U:   /* Kernel task: Find next file */
 
-   if (n!=3){     /* Needs 1+2 parameters */
+   if (n != 3U){  /* Needs 1+2 parameters */
     goto fault_inv;
    }
 
-   if (rrpge_m_ktsalloc(par, n)!=0) goto fault_inv;
+   if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
    r = 800;
    break;
 
 
-  case 0x0120U:   /* Load arbitrary file */
+  case 0x0113U:   /* Kernel task: Move a file */
 
-   if (n!=3){     /* Needs 1+2 parameters */
+   if (n != 5U){  /* Needs 1+4 parameters */
     goto fault_inv;
    }
 
-   /* !!! Not implemented yet. Needs the reset state of the Video peripheral !!! */
-   goto fault_inv;
-   r = 0;         /* No defined cycle count */
-   break;
-
-
-  case 0x0121U:   /* Save arbitrary file */
-
-   if (n!=4){     /* Needs 1+3 parameters */
-    goto fault_inv;
-   }
-
-   /* !!! Not implemented yet. Needs the reset state of the Video peripheral !!! */
-   goto fault_inv;
-   r = 0;         /* No defined cycle count */
+   if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
+   r = 800;
    break;
 
 
@@ -495,13 +482,13 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    break;
 
 
-  case 0x0601U:   /* Kernel task: Read UTF-8 representation of user */
+  case 0x0601U:   /* Kernel task: Read UTF-8 representation of User ID */
 
-   if (n!=11){    /* Needs 1+10 parameters */
+   if (n != 11U){ /* Needs 1+10 parameters */
     goto fault_inv;
    }
 
-   if (rrpge_m_ktsalloc(par, n)!=0) goto fault_inv;
+   if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
    r = 1200;
    break;
 
@@ -539,11 +526,11 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
   case 0x0700U:   /* Kernel task: Send data to user */
 
-   if (n!=11){    /* Needs 1+10 parameters */
+   if (n != 11U){ /* Needs 1+10 parameters */
     goto fault_inv;
    }
 
-   if (rrpge_m_ktsalloc(par, n)!=0) goto fault_inv;
+   if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
    r = 2400;
    break;
 
@@ -601,11 +588,11 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
   case 0x0710U:   /* Kernel task: List accessible users */
 
-   if (n!=11){    /* Needs 1+10 parameters */
+   if (n != 11U){ /* Needs 1+10 parameters */
     goto fault_inv;
    }
 
-   if (rrpge_m_ktsalloc(par, n)!=0) goto fault_inv;
+   if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
    r = 2400;
    break;
 
@@ -625,7 +612,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
   case 0x0800U:   /* Query task */
 
-   if (n!=2){     /* Needs 1+1 parameters */
+   if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
    }
 
@@ -638,15 +625,15 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
   case 0x0801U:   /* Discard task */
 
-   if (n!=2){     /* Needs 1+1 parameters */
+   if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
    }
 
    if (par[1] < 0x10U){
     o = 0xD8FU + (par[1] << 4);
     /* Only discards completed tasks */
-    if ((rrpge_m_edat->stat.ropd[o] & 0x8000U) != 0){
-     rrpge_m_edat->stat.ropd[o] = 0;
+    if ((rrpge_m_edat->stat.ropd[o] & 0x8000U) != 0U){
+     rrpge_m_edat->stat.ropd[o] = 0U;
     }
    }
 

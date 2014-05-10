@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.05.10
 */
 
 
@@ -27,37 +27,34 @@ static void rrpge_m_cb_line(rrpge_object_t* hnd, rrpge_uint32 ln, rrpge_uint32 c
 static void rrpge_m_cb_loadbin(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
 {
  rrpge_taskend(hnd, tsh, 0x8000U);
- rrpge_m_info.hlt |= RRPGE_HLT_FAULT; /* This callback should really really be provided... */
+ rrpge_m_info.hlt |= RRPGE_HLT_FAULT; /* This callback is mandatory */
 }
 
-/* Task: Load nonvolatile save */
-static void rrpge_m_cb_loadnv(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
+/* Task: Load page from file */
+static void rrpge_m_cb_load(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
 {
- rrpge_taskend(hnd, tsh, 0x8000U);  /* No pages loaded */
+ rrpge_taskend(hnd, tsh, RRPGE_SFI_UNSUPP); /* Load failed */
 }
 
-/* Task: Save nonvolatile save */
-static void rrpge_m_cb_savenv(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
+/* Task: Save page into file */
+static void rrpge_m_cb_save(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
 {
- rrpge_taskend(hnd, tsh, 0x8001U);  /* Failed save */
+ rrpge_taskend(hnd, tsh, RRPGE_SFI_UNSUPP); /* Save failed */
 }
 
-/* Task: List nonvolatile saves */
-static void rrpge_m_cb_listnv(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
+/* Task: Find next file */
+static void rrpge_m_cb_next(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
 {
- rrpge_taskend(hnd, tsh, 0x8000U);  /* No saves found */
+ auint i;
+ rrpge_cbp_next_t const* p = (rrpge_cbp_next_t const*)(par);
+ for (i = 0U; i < 128U; i++){ p.nam[i] = 0U; } /* No files can be found */
+ rrpge_taskend(hnd, tsh, 0x8000U);    /* Normal termination */
 }
 
-/* Function: Load arbitrary file */
-static rrpge_uint32 rrpge_m_cb_loadfile(rrpge_object_t* hnd, const void* par)
+/* Task: Move a file */
+static void rrpge_m_cb_move(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
 {
- return 0;                            /* Not supported */
-}
-
-/* Function: Save arbitrary file */
-static rrpge_uint32 rrpge_m_cb_savefile(rrpge_object_t* hnd, const void* par)
-{
- return 1;                            /* Not supported */
+ rrpge_taskend(hnd, tsh, RRPGE_SFI_UNSUPP); /* Move failed */
 }
 
 /* Subroutine: Set palette entry */
@@ -131,22 +128,22 @@ static rrpge_uint32 rrpge_m_cb_itxt_rfi(rrpge_object_t* hnd, const void* par)
  return 0;                            /* No input */
 }
 
-/* Task: Read UTF-8 representation of user. */
-static void rrpge_m_cb_getuutf(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
+/* Task: Read UTF-8 representation of User ID. */
+static void rrpge_m_cb_getutf(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
 {
- rrpge_taskend(hnd, tsh, 0x8000U);  /* Does nothing (empty strings) and returns. */
+ rrpge_taskend(hnd, tsh, 0x8000U);    /* Does nothing (empty strings) and returns. */
 }
 
 /* Task: Send out network packet. */
-static void rrpge_m_cb_sendto(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
+static void rrpge_m_cb_send(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
 {
- rrpge_taskend(hnd, tsh, 0x8000U);  /* Packet went up in smoke, fine with that. */
+ rrpge_taskend(hnd, tsh, 0x8000U);    /* Packet went up in smoke, fine with that. */
 }
 
 /* Task: List accessible users. */
-static void rrpge_m_cb_listuser(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
+static void rrpge_m_cb_listusers(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
 {
- rrpge_taskend(hnd, tsh, 0x8000U);  /* No users found. */
+ rrpge_taskend(hnd, tsh, 0x8000U);    /* No users found. */
 }
 
 
@@ -154,16 +151,15 @@ static void rrpge_m_cb_listuser(rrpge_object_t* hnd, rrpge_uint32 tsh, const voi
 /* Check ID for validity. Returns nonzero if valid, 0 otherwise. */
 static auint rrpge_m_cbid_isvalid(auint id)
 {
- if (id == RRPGE_CB_LOADBIN) { return 1; }
- if (id == RRPGE_CB_LOADNV)  { return 1; }
- if (id == RRPGE_CB_SAVENV)  { return 1; }
- if (id == RRPGE_CB_LISTNV)  { return 1; }
- if (id == RRPGE_CB_GETUUTF) { return 1; }
- if (id == RRPGE_CB_SENDTO)  { return 1; }
- if (id == RRPGE_CB_LISTUSER){ return 1; }
+ if (id == RRPGE_CB_LOADBIN)  { return 1; }
+ if (id == RRPGE_CB_LOAD)     { return 1; }
+ if (id == RRPGE_CB_SAVE)     { return 1; }
+ if (id == RRPGE_CB_NEXT)     { return 1; }
+ if (id == RRPGE_CB_MOVE)     { return 1; }
+ if (id == RRPGE_CB_GETUTF)   { return 1; }
+ if (id == RRPGE_CB_SEND)     { return 1; }
+ if (id == RRPGE_CB_LISTUSERS){ return 1; }
  if (id == RRPGE_CB_SETCOLOR){ return 1; }
- if (id == RRPGE_CB_LOADFILE){ return 1; }
- if (id == RRPGE_CB_SAVEFILE){ return 1; }
  if (id == RRPGE_CB_IDIG_AVA){ return 1; }
  if (id == RRPGE_CB_IDIG_CTR){ return 1; }
  if (id == RRPGE_CB_IANA_AVA){ return 1; }
@@ -189,16 +185,15 @@ void rrpge_m_cb_process(rrpge_object_t* obj, rrpge_cbpack_t const* cbp)
 
  /* First fill in the defaults */
  obj->cb_lin = &rrpge_m_cb_line;
- obj->cb_tsk[RRPGE_CB_LOADBIN]  = &rrpge_m_cb_loadbin;
- obj->cb_tsk[RRPGE_CB_LOADNV]   = &rrpge_m_cb_loadnv;
- obj->cb_tsk[RRPGE_CB_SAVENV]   = &rrpge_m_cb_savenv;
- obj->cb_tsk[RRPGE_CB_LISTNV]   = &rrpge_m_cb_listnv;
- obj->cb_tsk[RRPGE_CB_GETUUTF]  = &rrpge_m_cb_getuutf;
- obj->cb_tsk[RRPGE_CB_SENDTO]   = &rrpge_m_cb_sendto;
- obj->cb_tsk[RRPGE_CB_LISTUSER] = &rrpge_m_cb_listuser;
+ obj->cb_tsk[RRPGE_CB_LOADBIN]   = &rrpge_m_cb_loadbin;
+ obj->cb_tsk[RRPGE_CB_LOAD]      = &rrpge_m_cb_load;
+ obj->cb_tsk[RRPGE_CB_SAVE]      = &rrpge_m_cb_save;
+ obj->cb_tsk[RRPGE_CB_NEXT]      = &rrpge_m_cb_next;
+ obj->cb_tsk[RRPGE_CB_MOVE]      = &rrpge_m_cb_move;
+ obj->cb_tsk[RRPGE_CB_GETUTF]    = &rrpge_m_cb_getutf;
+ obj->cb_tsk[RRPGE_CB_SEND]      = &rrpge_m_cb_send;
+ obj->cb_tsk[RRPGE_CB_LISTUSERS] = &rrpge_m_cb_listusers;
  obj->cb_sub[RRPGE_CB_SETCOLOR] = &rrpge_m_cb_setcolor;
- obj->cb_fun[RRPGE_CB_LOADFILE] = &rrpge_m_cb_loadfile;
- obj->cb_fun[RRPGE_CB_SAVEFILE] = &rrpge_m_cb_savefile;
  obj->cb_fun[RRPGE_CB_IDIG_AVA] = &rrpge_m_cb_idig_ava;
  obj->cb_fun[RRPGE_CB_IDIG_CTR] = &rrpge_m_cb_idig_ctr;
  obj->cb_fun[RRPGE_CB_IANA_AVA] = &rrpge_m_cb_iana_ava;

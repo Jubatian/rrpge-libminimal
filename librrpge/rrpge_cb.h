@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.08
+**  \date      2014.05.10
 */
 
 
@@ -183,6 +183,11 @@ typedef struct{
 
 
 
+/** Maximal callback ID plus one (may be used to allocate related storage) */
+#define RRPGE_CB_IDRANGE       21U
+
+
+
 /**
 **  \brief     Kernel task: Load binary data.
 **
@@ -252,7 +257,7 @@ typedef struct{
 */
 typedef struct{
  rrpge_uint16*       nam; /**< The file name (128 words: 256 bytes, might not terminate). */
-}rrpge_cbp_find_t;
+}rrpge_cbp_next_t;
 
 
 
@@ -531,7 +536,8 @@ typedef struct{
 **
 **  The host should gather network users in incremential order by ID starting
 **  with the passed ID. It must only return users who are running the same
-**  app. and report they are available for connection.
+**  app. and report they are available for connection. The library zeroes out
+**  the area before calling the callback.
 */
 #define RRPGE_CB_LISTUSERS     20U
 /**

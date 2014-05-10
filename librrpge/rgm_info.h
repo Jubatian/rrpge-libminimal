@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.05.10
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -91,10 +91,10 @@ struct rrpge_object_s{
                      ** that line + 1 contains the pointers used to render the
                      ** given line, the first four values are always zero. */
 
- rrpge_cb_line_t*     cb_lin;     /* Line renderer callback */
- rrpge_cb_kcalltsk_t* cb_tsk[21]; /* Kernel task callbacks */
- rrpge_cb_kcallsub_t* cb_sub[21]; /* Kernel subroutine callbacks */
- rrpge_cb_kcallfun_t* cb_fun[21]; /* Kernel function callbacks */
+ rrpge_cb_line_t*     cb_lin; /* Line renderer callback */
+ rrpge_cb_kcalltsk_t* cb_tsk[RRPGE_CB_IDRANGE]; /* Kernel task callbacks */
+ rrpge_cb_kcallsub_t* cb_sub[RRPGE_CB_IDRANGE]; /* Kernel subroutine callbacks */
+ rrpge_cb_kcallfun_t* cb_fun[RRPGE_CB_IDRANGE]; /* Kernel function callbacks */
 
  auint  rebr;        /* Receive data buffer read pointer */
  auint  rebw;        /* Receive data buffer write pointer */
