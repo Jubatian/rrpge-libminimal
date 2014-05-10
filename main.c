@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.05.10
 */
 
 
@@ -38,7 +38,7 @@ static auint  main_appbs;
 
 /* Subroutines */
 static const rrpge_cbd_sub_t main_cbsub[1] = {
- { RRPGE_CB_SETCOLOR, &render_pal }
+ { RRPGE_CB_SETPAL, &render_pal }
 };
 /* Tasks */
 static const rrpge_cbd_tsk_t main_cbtsk[1] = {
@@ -157,7 +157,6 @@ int main(int argc, char** argv)
  SDL_Event event;      /* The event got from the queue */
  rrpge_object_t*      emu = NULL;
  rrpge_state_t const* sta = NULL;
- rrpge_udata_t        udat;
 
 
 
@@ -208,15 +207,11 @@ int main(int argc, char** argv)
   goto loadfault;
  }
 
- /* Prepare user data. Empty is sufficient for now. */
- memset(&udat, 0U, sizeof(udat));
-
  /* Attempt to initialize the emulator over this stuff. */
  t = rrpge_init(&main_cbpack,         /* Callback set */
                 &(main_tpg16[0]),     /* Application header */
                 &(main_crom[0]),      /* Code memory */
                 t,                    /* Number of code pages */
-                &udat,                /* User data */
                 emu);                 /* Emulator object to fill in */
  if (t != RRPGE_ERR_OK){
   printf("Failed to initialize emulator\n");

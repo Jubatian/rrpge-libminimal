@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.05.10
 **
 **
 ** Graphics rendering: produces the graphics output from the lines provided by
@@ -33,6 +33,11 @@ void render_line(rrpge_object_t* hnd, rrpge_uint32 ln, rrpge_uint32 const* buf);
 ** Palette callback service routine.
 */
 void render_pal(rrpge_object_t* hnd, const void* par);
+
+/*
+** Mode change callback service routine.
+*/
+void render_mode(rrpge_object_t* hnd, const void* par);
 
 /*
 ** Initializes or resets rendering subsystem by the given ROPD (extracted from

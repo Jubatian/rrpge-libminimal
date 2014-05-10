@@ -172,8 +172,8 @@ void rrpge_m_tasksched(void)
       t3 = t3 +                                        /* File name start offset got */
            (((auint)(rrpge_m_edat->stat.ropd[0xD86U + (i << 4)])) & 0x0F80U);
 
-      cbp_save.spg = t1;
-      cbp_save.sno = t2;
+      cbp_save.tpg = t1;
+      cbp_save.tno = t2;
       cbp_save.buf = &rrpge_m_edat->stat.dram[t0];
       cbp_save.nam = &rrpge_m_edat->stat.dram[t3];
       rrpge_m_edat->cb_tsk[RRPGE_CB_SAVE](rrpge_m_edat, i, &cbp_save);
@@ -205,8 +205,8 @@ void rrpge_m_tasksched(void)
       t1 = t1 +                                        /* File name start offset got */
            (((auint)(rrpge_m_edat->stat.ropd[0xD84U + (i << 4)])) & 0x0F80U);
 
-      cbp_next.snm = &rrpge_m_edat->stat.dram[t1];
-      cbp_next.tnm = &rrpge_m_edat->stat.dram[t0];
+      cbp_move.snm = &rrpge_m_edat->stat.dram[t1];
+      cbp_move.tnm = &rrpge_m_edat->stat.dram[t0];
       rrpge_m_edat->cb_tsk[RRPGE_CB_MOVE](rrpge_m_edat, i, &cbp_move);
 
       break;

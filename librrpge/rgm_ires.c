@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.08
+**  \date      2014.05.10
 */
 
 
@@ -121,45 +121,6 @@ static void rrpge_m_ires_setb(uint16* d, auint o, uint8 v)
 
 
 
-/* Initializes graphics peripheral as required after arbitrary file loads and
-** saves (and also as required when resetting). This includes the peripheral
-** area, zeroing the first 32 video RAM pages, and resetting all cycle
-** counters & display list data (0xD50 - 0xD5F area). */
-void rrpge_m_ires_initg(rrpge_object_t* obj)
-{
- auint i;
-
- /* Reset all video peripheral related to zero */
- for (i = 0xEE0U; i < 0x1000U; i++){
-  obj->stat.ropd[i] = 0;
- }
-
- /* Init video peripheral data where necessary */
- obj->stat.ropd[0xEE0U] = 0xFFFFU; /* Write mask high */
- obj->stat.ropd[0xEE1U] = 0xFFFFU; /* Write mask low */
- obj->stat.ropd[0xEE2U] = 0x7777U; /* Partition size */
- obj->stat.ropd[0xEE3U] = 0x01FEU; /* Bg. display list */
- obj->stat.ropd[0xEE4U] = 0x01FDU; /* Layer 0 disp. list */
- obj->stat.ropd[0xEE5U] = 0x01FAU; /* Layer 1 disp. list */
- obj->stat.ropd[0xEE6U] = 0x01FCU; /* Layer 2 disp. list */
- obj->stat.ropd[0xEE7U] = 0x01FBU; /* Layer 3 disp. list */
-
- /* Reset cycle counters & display list */
- for (i = 0xD50U; i < 0xD60U; i++){
-  obj->stat.ropd[i] = 0;
- }
-
- /* Init where necessary */
- obj->stat.ropd[0xD50U] = 0x0190U; /* Start at 400 decimal (VBlank) */
-
- /* Clear first 32 pages of VRAM */
- for (i = 0U * 2048U; i < 32U * 2048U; i++){
-  obj->stat.vram[i] = 0;
- }
-}
-
-
-
 /* Initializes library specific portions of the emulation instance, also used
 ** when loading state. */
 void rrpge_m_ires_initl(rrpge_object_t* obj)
@@ -210,18 +171,15 @@ void rrpge_m_ires_init(rrpge_object_t* obj)
  }
 
  /* Reset memories */
- for (i =  0U * 4096U; i < 224U * 4096U; i++){
+ for (i = 0U * 4096U; i < 224U * 4096U; i++){
   obj->stat.dram[i] = 0;
  }
- for (i =  0U * 4096U; i <   8U * 4096U; i++){
+ for (i = 0U * 4096U; i <   8U * 4096U; i++){
   obj->stat.sram[i] = 0;
  }
- for (i = 32U * 2048U; i < 128U * 2048U; i++){
+ for (i = 0U * 2048U; i < 128U * 2048U; i++){
   obj->stat.vram[i] = 0;
  }
-
- /* Init video */
- rrpge_m_ires_initg(obj);
 
 
  /* Populate Data RAM page 0 */
@@ -342,7 +300,21 @@ void rrpge_m_ires_init(rrpge_object_t* obj)
  }
 
 
+ /* Init video (where nonzero) */
+
+ obj->stat.ropd[0xEE0U] = 0xFFFFU; /* Write mask high */
+ obj->stat.ropd[0xEE1U] = 0xFFFFU; /* Write mask low */
+ obj->stat.ropd[0xEE2U] = 0x7777U; /* Partition size */
+ obj->stat.ropd[0xEE3U] = 0x01FEU; /* Bg. display list */
+ obj->stat.ropd[0xEE4U] = 0x01FDU; /* Layer 0 disp. list */
+ obj->stat.ropd[0xEE5U] = 0x01FAU; /* Layer 1 disp. list */
+ obj->stat.ropd[0xEE6U] = 0x01FCU; /* Layer 2 disp. list */
+ obj->stat.ropd[0xEE7U] = 0x01FBU; /* Layer 3 disp. list */
+ obj->stat.ropd[0xD50U] = 0x0190U; /* Start display at 400 decimal (VBlank) */
+
+
  /* Set up audio mixer */
+
  obj->stat.ropd[0xED3U] = 0x0100U; /* Amplitudo: max (multiplier off) */
  obj->stat.ropd[0xEDAU] = 0x000CU; /* Freq. table whole pointer */
  obj->stat.ropd[0xEDBU] = 0x000DU; /* Freq. table fraction pointer */
@@ -350,6 +322,7 @@ void rrpge_m_ires_init(rrpge_object_t* obj)
 
 
  /* Populate ROPD areas (only the CPU R/W address space, rest are zero) */
+
  for (i = 0U; i < 32U;  i++){
   obj->stat.ropd[0xD00U + i] = rrpge_m_ires_cpurw[i];
  }

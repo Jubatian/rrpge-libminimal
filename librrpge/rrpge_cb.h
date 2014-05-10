@@ -457,7 +457,7 @@ typedef struct{
 */
 typedef struct{
  rrpge_uint16*       buf; /**< Target area to load User ID's into (32 words) */
-}rrpge_cb_getlocal_t;
+}rrpge_cbp_getlocal_t;
 
 
 

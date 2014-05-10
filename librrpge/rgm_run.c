@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.05.10
 */
 
 
@@ -28,8 +28,6 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
  auint cm;                     /* Cycle limit for inner loop */
  auint r = 0;                  /* Return number of cycles */
  auint fo = 1;                 /* Is this the first operation? (For breakpoints) */
- auint t0;
- auint t1;
 
  rrpge_m_edat = hnd;
 
@@ -58,7 +56,7 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
  rrpge_m_info.sbt = rrpge_m_edat->stat.ropd[0xD7EU];
  rrpge_m_info.adv = ((RRPGE_M_OSC / 1000U) *  512U + 24U) / 48U; /* 512 samples; 48KHz */
  rrpge_m_info.grr = 1U;   /* Reload recolor banks */
- if ((rrpge_m_edat->stat.ropd[0xBC0U] & 0xFFU) == 0){ /* 4bit mode */
+ if ((rrpge_m_edat->stat.ropd[0xD57U] & 0xFFFFU) != 1U){ /* 4bit mode */
   rrpge_m_info.vbm = 0x0FU;
  }else{                   /* 8bit mode */
   rrpge_m_info.vbm = 0xFFU;

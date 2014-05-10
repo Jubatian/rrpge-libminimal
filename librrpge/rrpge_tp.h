@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.08
+**  \date      2014.05.10
 */
 
 
@@ -39,23 +39,6 @@ typedef uint8_t  rrpge_uint8;   /**< 8 bit unsigned integer */
 **  implementation fills it up with content the way it needs.
 */
 typedef struct rrpge_object_s rrpge_object_t;
-
-
-
-/**
-**  \brief     Binary header extract
-**
-**  A more managable extract for the first 96 bytes of RRPGE related binary
-**  headers (application binary and state saves).
-*/
-typedef struct{
- rrpge_uint32 vmaj;        /**< Major version number */
- rrpge_uint32 vmin;        /**< Minor version number */
- rrpge_uint32 vpat;        /**< Patch version number */
- rrpge_uint32 tp;          /**< Binary type (ASCII 'A', 'N' or 'S') */
- rrpge_uint8  auth[16];    /**< Author name bytes */
- rrpge_uint8  name[34];    /**< Application name bytes */
-}rrpge_header_t;
 
 
 

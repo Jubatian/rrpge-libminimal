@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.08
+**  \date      2014.05.10
 */
 
 
@@ -116,76 +116,55 @@ static auint rrpge_m_chk_str(uint16 const* d, auint s, auint e, uint8 const* c)
 
 
 
-/* Check and import header info - Implementation of RRPGE library function */
-rrpge_uint32 rrpge_checkcommhead(rrpge_uint16 const* d, rrpge_header_t* inf)
-{
- auint i;
- auint f;
- uint8 c;
-
- f = rrpge_m_chk_str(d,  0U,  2U, (uint8 const*)("RP"));
- if (f != 2U) goto commh_fault;
-
- f = 2U;
- c = (uint8)(d[f >> 1] >> 8);
- if ((c != 'A') && (c != 'N') && (c != 'S')) goto commh_fault;
- inf->tp = c;
-
- f = rrpge_m_chk_str(d,  3U, 14U, (uint8 const*)("\n\nAppAuth: "));
- if (f != 14U) goto commh_fault;
-
- f = rrpge_m_chk_userid(d, 14U, 30U);
- if (f != 30U) goto commh_fault;
- for (i = 0; i < 16U; i++){ inf->auth[i] = rrpge_m_chk_getb(d, i + 14U); }
-
- f = rrpge_m_chk_str(d, 30U, 40U, (uint8 const*)("\nAppName: "));
- if (f != 40U) goto commh_fault;
-
- f = rrpge_m_chk_ascii7(d, 40U, 74U);
- if (f != 74U) goto commh_fault;
- for (i = 0; i < 34U; i++){ inf->name[i] = rrpge_m_chk_getb(d, i + 40U); }
-
- f = rrpge_m_chk_str(d, 74U, 84U, (uint8 const*)("\nVersion: "));
- if (f != 84U) goto commh_fault;
-
- f = rrpge_m_chk_numeric(d, 84U, 86U, &(inf->vmaj));
- if (f != 86U) goto commh_fault;
-
- f = rrpge_m_chk_str(d, 86U, 87U, (uint8 const*)("."));
- if (f != 87U) goto commh_fault;
-
- f = rrpge_m_chk_numeric(d, 87U, 90U, &(inf->vmin));
- if (f != 90U) goto commh_fault;
-
- f = rrpge_m_chk_str(d, 90U, 91U, (uint8 const*)("."));
- if (f != 91U) goto commh_fault;
-
- f = rrpge_m_chk_numeric(d, 91U, 94U, &(inf->vpat));
- if (f != 94U) goto commh_fault;
-
- f = rrpge_m_chk_str(d, 94U, 96U, (uint8 const*)("\nE"));
- if (f != 96U) goto commh_fault;
-
- return RRPGE_ERR_OK;
-
-commh_fault:
-
- return RRPGE_ERR_INV + (f >> 1);
-}
-
-
-
 /* Check application header - Implementation of RRPGE library function */
 rrpge_uint32 rrpge_checkapphead(rrpge_uint16 const* d)
 {
  auint f;
- rrpge_header_t dum;
+ uint8 c;
+ auint dum;
  auint smaj;      /* RRPGE specification version */
  auint smin;
  auint spat;
 
- f = rrpge_checkcommhead(d, &dum);
- if (f != RRPGE_ERR_OK) return f;
+ f = rrpge_m_chk_str(d,  0U,  2U, (uint8 const*)("RP"));
+ if (f != 2U) goto apph_fault;
+
+ f = 2U;
+ c = (uint8)(d[f >> 1] >> 8);
+ if ((c != 'A') && (c != 'S')) goto apph_fault;
+
+ f = rrpge_m_chk_str(d,  3U, 14U, (uint8 const*)("\n\nAppAuth: "));
+ if (f != 14U) goto apph_fault;
+
+ f = rrpge_m_chk_userid(d, 14U, 30U);
+ if (f != 30U) goto apph_fault;
+
+ f = rrpge_m_chk_str(d, 30U, 40U, (uint8 const*)("\nAppName: "));
+ if (f != 40U) goto apph_fault;
+
+ f = rrpge_m_chk_ascii7(d, 40U, 74U);
+ if (f != 74U) goto apph_fault;
+
+ f = rrpge_m_chk_str(d, 74U, 84U, (uint8 const*)("\nVersion: "));
+ if (f != 84U) goto apph_fault;
+
+ f = rrpge_m_chk_numeric(d, 84U, 86U, &dum); /* App. major version */
+ if (f != 86U) goto apph_fault;
+
+ f = rrpge_m_chk_str(d, 86U, 87U, (uint8 const*)("."));
+ if (f != 87U) goto apph_fault;
+
+ f = rrpge_m_chk_numeric(d, 87U, 90U, &dum); /* App. minor version */
+ if (f != 90U) goto apph_fault;
+
+ f = rrpge_m_chk_str(d, 90U, 91U, (uint8 const*)("."));
+ if (f != 91U) goto apph_fault;
+
+ f = rrpge_m_chk_numeric(d, 91U, 94U, &dum); /* App. patch version */
+ if (f != 94U) goto apph_fault;
+
+ f = rrpge_m_chk_str(d, 94U, 96U, (uint8 const*)("\nE"));
+ if (f != 96U) goto apph_fault;
 
  f = rrpge_m_chk_str(d,  96U, 104U, (uint8 const*)("ngSpec: "));
  if (f != 104U) goto apph_fault;
@@ -213,13 +192,16 @@ rrpge_uint32 rrpge_checkapphead(rrpge_uint16 const* d)
  ** checked !!! */
 
  f = 0xBC0U;
- if (d[f] > 1U) goto apph_fault;                /* 0xBC0: RRPGE variant */
+ if (d[f] != 0U) goto apph_fault;               /* 0xBC0: RRPGE variant */
 
  f++;
- if ( (d[f] & 0x8FF0U) != 0U ) goto apph_fault; /* 0xBC1: Peripheral req. */
+ if ( (d[f] & 0x0004U) != 0U ) goto apph_fault; /* 0xBC1: Application properties */
 
  f++;
- if ( (d[f] & 0x8000U) != 0U ) goto apph_fault; /* 0xBC2: Data high, sound, code pg. */
+ if ( (d[f] & 0xF000U) != 0U ) goto apph_fault; /* 0xBC2: Code & Data high pages */
+
+ f+=2;
+ if ( (d[f] & 0xF800U) != 0xF800U ) goto apph_fault; /* 0xBC4: Extra field usage */
 
  return RRPGE_ERR_OK;
 
@@ -284,10 +266,10 @@ rrpge_uint32 rrpge_checkropd(rrpge_uint16 const* d)
  if ((d[f] & 0xFF80U) != 0) goto ropd_fault;   /* There shouldn't be this many cycles */
 
  f = 0xD56;
- if (d[f] > 1U) goto ropd_fault;            /* Current audio buffer lo/hi */
+ if (d[f] != 0) goto ropd_fault;            /* Reserved area */
 
  f = 0xD57;
- if (d[f] != 0) goto ropd_fault;            /* Reserved area */
+ if (d[f] > 1U) goto ropd_fault;            /* Video mode */
 
  f = 0xD6D;
  if (d[f] != 0) goto ropd_fault;            /* Reserved area */
@@ -308,7 +290,18 @@ rrpge_uint32 rrpge_checkropd(rrpge_uint16 const* d)
   }
  }
 
- for (f = 0xEAAU; f < 0xED0U; f++){         /* Reserved areas */
+ for (i = 0; i < 16U; i++){                 /* Touch sensitive areas */
+  f = 0xE80U + i;
+  if (d[f] >= 640U) goto ropd_fault;        /* X position */
+  f = 0xE90U + i;
+  if (d[f] >= 400U) goto ropd_fault;        /* Y position */
+  f = 0xEA0U + i;
+  if (d[f] + d[f - 32U] > 640U) goto ropd_fault; /* Width */
+  f = 0xEB0U + i;
+  if (d[f] + d[f - 32U] > 400U) goto ropd_fault; /* Height */
+ }
+
+ for (f = 0xEC0U; f < 0xED0U; f++){         /* Reserved areas */
   if (d[f] != 0) goto ropd_fault;
  }
 
@@ -321,33 +314,18 @@ ropd_fault:
 
 
 
-
-/* For compatibility check functions: Checks if app name, author, and the
-** major version matches. Returns 1 if they do. */
-static auint rrpge_m_checkcomp(rrpge_header_t const* h0, rrpge_header_t const* h1)
+/* Check state - app. comp. - Implementation of RRPGE library function */
+rrpge_uint32 rrpge_isstatecomp(rrpge_uint16 const* sta,
+                               rrpge_uint16 const* app)
 {
  auint i;
 
- for (i = 0U; i < 16U; i++){
-  if ((h0->auth[i]) != (h1->auth[i])) return 0;
+ /* Simple: the headers must match */
+ if (sta[0] != app[0]) return 0;
+ if (sta[1] != app[1]) return 0;
+ if (sta[2] != (auint)('S')) return 0;
+ for (i = 3U; i < 0xC00U; i++){
+  if (sta[i] != app[i]) return 0;
  }
- for (i = 0U; i < 36U; i++){
-  if ((h0->name[i]) != (h1->name[i])) return 0;
- }
- if ((h0->vmaj) != (h1->vmaj)) return 0;
-
- return 1;
-}
-
-
-
-/* Check state - app. comp. - Implementation of RRPGE library function */
-rrpge_uint32 rrpge_isstatecomp(rrpge_header_t const* sta,
-                               rrpge_header_t const* app)
-{
- if (!rrpge_m_checkcomp(sta, app)) return 0;
- if ((sta->tp) != (auint)('S'))    return 0;
- if ((sta->vmin) != (app->vmin))   return 0;
- if ((sta->vpat) != (app->vpat))   return 0;
  return 1;
 }

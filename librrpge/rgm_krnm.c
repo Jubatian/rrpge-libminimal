@@ -197,7 +197,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
    r = 800;
-   break;
+   goto ret_callback;
 
 
   case 0x0110U:   /* Kernel task: Start loading page from file */
@@ -208,7 +208,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
    r = 800;
-   break;
+   goto ret_callback;
 
 
   case 0x0111U:   /* Kernel task: Start saving page into file */
@@ -219,7 +219,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
    r = 800;
-   break;
+   goto ret_callback;
 
 
   case 0x0112U:   /* Kernel task: Find next file */
@@ -230,7 +230,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
    r = 800;
-   break;
+   goto ret_callback;
 
 
   case 0x0113U:   /* Kernel task: Move a file */
@@ -241,7 +241,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
    r = 800;
-   break;
+   goto ret_callback;
 
 
   case 0x0210U:   /* Set audio event handler */
@@ -267,7 +267,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    rrpge_m_edat->cb_sub[RRPGE_CB_SETPAL](rrpge_m_edat, &cbp_setpal);
 
    r = rrpge_m_kvstall(100);
-   break;
+   goto ret_callback;
 
 
   case 0x0310U:   /* Set video event handler */
@@ -310,8 +310,16 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    rrpge_m_edat->stat.ropd[0xD57U] = cbp_mode.mod;
    rrpge_m_edat->cb_sub[RRPGE_CB_MODE](rrpge_m_edat, &cbp_mode);
 
+   /* Note: rrpge_m_info.vbm is purposefully not updated here. The emulator
+   ** will return to the host (by the RRPGE_HLT_CALLBACK cause), so no new
+   ** operations will start with the old video mode. Accelerator operations
+   ** however might not yet be finished at this point: those need to be
+   ** carried out with the old video mode (as they stall this kernel call):
+   ** this way (rrpge_m_info.vbm containing the old mode) this property
+   ** remains proper. */
+
    r = rrpge_m_kvstall(100000);
-   break;
+   goto ret_callback;
 
 
   case 0x0400U:   /* Get input device availability */
@@ -323,7 +331,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETDEV](rrpge_m_edat, RRPGE_M_NULL);
 
    r = 800;
-   break;
+   goto ret_callback;
 
 
   case 0x0410U:   /* Get device properties */
@@ -336,7 +344,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETPROPS](rrpge_m_edat, &cbp_getprops);
 
    r = 800;
-   break;
+   goto ret_callback;
 
 
   case 0x0411U:   /* Get digital input description symbols */
@@ -351,7 +359,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    rrpge_m_info.xr[2] = rrpge_m_info.xr[0] >> 16;
 
    r = 800;
-   break;
+   goto ret_callback;
 
 
   case 0x0420U:   /* Get digital inputs */
@@ -365,7 +373,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETDI](rrpge_m_edat, &cbp_getdi);
 
    r = 800;
-   break;
+   goto ret_callback;
 
 
   case 0x0421U:   /* Get analog inputs */
@@ -379,7 +387,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETAI](rrpge_m_edat, &cbp_getai);
 
    r = 800;
-   break;
+   goto ret_callback;
 
 
   case 0x0423U:   /* Pop text FIFO */
@@ -393,7 +401,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    rrpge_m_info.xr[2] = rrpge_m_info.xr[0] >> 16;
 
    r = 800;
-   break;
+   goto ret_callback;
 
 
   case 0x0430:    /* Define touch sensitive area */
@@ -436,7 +444,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    rrpge_m_edat->cb_sub[RRPGE_CB_SETTOUCH](rrpge_m_edat, &cbp_settouch);
 
    r = 800;
-   break;
+   goto ret_callback;
 
 
   case 0x0500U:   /* Delay some cycles */
@@ -474,7 +482,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    rrpge_m_edat->cb_sub[RRPGE_CB_GETLOCAL](rrpge_m_edat, &cbp_getlocal);
 
    r = 2400;
-   break;
+   goto ret_callback;
 
 
   case 0x0601U:   /* Kernel task: Get UTF-8 representation of User ID */
@@ -485,7 +493,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
    r = 1200;
-   break;
+   goto ret_callback;
 
 
   case 0x0610U:   /* Get user preferred language */
@@ -499,7 +507,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    rrpge_m_info.xr[2] = rrpge_m_info.xr[0] >> 16;
 
    r = 2400;
-   break;
+   goto ret_callback;
 
 
   case 0x0611U:   /* Get user preferred colors */
@@ -512,7 +520,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    rrpge_m_info.xr[2] = rrpge_m_info.xr[0] >> 16;
 
    r = 2400;
-   break;
+   goto ret_callback;
 
 
   case 0x0700U:   /* Kernel task: Send data to user */
@@ -523,7 +531,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
    r = 2400;
-   break;
+   goto ret_callback;
 
 
   case 0x0701U:   /* Poll for packets */
@@ -585,7 +593,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
    r = 2400;
-   break;
+   goto ret_callback;
 
 
   case 0x0720U:   /* Set network availability */
@@ -641,7 +649,12 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
  return r;
 
-fault_inv:
+ret_callback:     /* Return after servicing a callback */
+
+ rrpge_m_info.hlt |= RRPGE_HLT_CALLBACK;
+ return r;
+
+fault_inv:        /* Return with invalid kernel call */
 
  rrpge_m_info.hlt |= RRPGE_HLT_INVKCALL;
  return 0;

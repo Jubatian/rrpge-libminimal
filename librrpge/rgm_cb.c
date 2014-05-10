@@ -47,7 +47,7 @@ static void rrpge_m_cb_next(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* p
 {
  auint i;
  rrpge_cbp_next_t const* p = (rrpge_cbp_next_t const*)(par);
- for (i = 0U; i < 128U; i++){ p.nam[i] = 0U; } /* No files can be found */
+ for (i = 0U; i < 128U; i++){ p->nam[i] = 0U; } /* No files can be found */
  rrpge_taskend(hnd, tsh, 0x8000U);    /* Normal termination */
 }
 
@@ -196,7 +196,7 @@ void rrpge_m_cb_process(rrpge_object_t* obj, rrpge_cbpack_t const* cbp)
  obj->cb_tsk[RRPGE_CB_GETUTF]    = &rrpge_m_cb_getutf;
  obj->cb_tsk[RRPGE_CB_SEND]      = &rrpge_m_cb_send;
  obj->cb_tsk[RRPGE_CB_LISTUSERS] = &rrpge_m_cb_listusers;
- obj->cb_sub[RRPGE_CB_SETPAL]    = &rrpge_m_cb_setcolor;
+ obj->cb_sub[RRPGE_CB_SETPAL]    = &rrpge_m_cb_setpal;
  obj->cb_sub[RRPGE_CB_MODE]      = &rrpge_m_cb_mode;
  obj->cb_sub[RRPGE_CB_SETTOUCH]  = &rrpge_m_cb_settouch;
  obj->cb_sub[RRPGE_CB_GETLOCAL]  = &rrpge_m_cb_getlocal;

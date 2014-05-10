@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.05.10
 **
 **
 ** Graphics rendering: produces the graphics output from the lines provided by
@@ -111,8 +111,19 @@ static auint render_palconv(auint scol)
 */
 void render_pal(rrpge_object_t* hnd, const void* par)
 {
- rrpge_cbp_setcolor_t const* col = (rrpge_cbp_setcolor_t const*)(par);
+ rrpge_cbp_setpal_t const* col = (rrpge_cbp_setpal_t const*)(par);
  render_col[(col->id) & 0xFFU] = render_palconv(col->col);
+}
+
+
+
+/*
+** Mode change callback service routine.
+*/
+void render_mode(rrpge_object_t* hnd, const void* par)
+{
+ rrpge_cbp_mode_t const* mod = (rrpge_cbp_mode_t const*)(par);
+ render_dm = (mod->mod) & 1U;
 }
 
 
@@ -126,7 +137,7 @@ void render_reset(uint16 const* ropd)
 {
  auint i;
 
- render_dm = ropd[0xBC0] & 1U;
+ render_dm = ropd[0xD57U] & 1U;
 
  for (i = 0U; i < 256U; i++){
   render_col[i] = render_palconv(ropd[0xC00U + i]);

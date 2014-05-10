@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.08
+**  \date      2014.05.10
 */
 
 
@@ -79,20 +79,15 @@ rrpge_uint32 rrpge_importstate(rrpge_object_t* hnd, rrpge_uint8 const* st)
  uint16 tropd[4096U];
  auint  f;
  auint  i;
- rrpge_header_t apph;
- rrpge_header_t stah;
 
  rrpge_convpg_b2w(&(st[0U << 13]), &(tropd[0]));
  f = rrpge_checkropd(&(tropd[0]));
  if (f != RRPGE_ERR_OK) return f;
 
- f = rrpge_checkcommhead(&(tropd[0]), &stah);
+ f = rrpge_checkapphead(&(hnd->stat.ropd[0]));
  if (f != RRPGE_ERR_OK) return RRPGE_ERR_UNK; /* Should not happen */
 
- f = rrpge_checkcommhead(&(hnd->stat.ropd[0]), &apph);
- if (f != RRPGE_ERR_OK) return RRPGE_ERR_UNK; /* Should not happen */
-
- if (!rrpge_isstatecomp(&stah, &apph)) return RRPGE_ERR_VER;
+ if (!rrpge_isstatecomp(&(tropd[0]), &(hnd->stat.ropd[0]))) return RRPGE_ERR_VER;
 
  /* OK, state is fine, and is compatible, so can be loaded */
 
