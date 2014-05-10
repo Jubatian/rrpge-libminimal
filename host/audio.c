@@ -17,6 +17,9 @@
 /* Note: Weak...! Changing this also requires changes in the code */
 #define AUDIO_BUF_MAX 8192U
 
+/* Samples per one audio refill. It is fixed at 512 by the RRPGE specification. */
+#define AUDIO_RFS     512U
+
 
 /* Left & Right audio buffers */
 static uint8 audio_buf_l[AUDIO_BUF_MAX];
@@ -26,8 +29,6 @@ static volatile auint audio_bpt_r;
 static volatile auint audio_bpt_w;
 /* Total buffer size mask */
 static auint audio_bsm;
-/* Sample count to serve in each audio_getbufptrs() call */
-static auint audio_eva;
 
 
 
@@ -51,7 +52,7 @@ static void audio_cb(void* udata, Uint8 *stream, int len)
  /* Push an audio event if there is a buffer worth of space after the write
  ** pointer */
 
- if ( ((audio_bpt_r - audio_bpt_w) & audio_bsm) > audio_eva ){
+ if ( ((audio_bpt_r - audio_bpt_w) & audio_bsm) > AUDIO_RFS ){
   auev.type      = SDL_USEREVENT;
   auev.user.code = AUDIO_EVENT;
   SDL_PushEvent(&auev); /* Send event to the main thread */
@@ -61,25 +62,19 @@ static void audio_cb(void* udata, Uint8 *stream, int len)
 
 
 
-/* Set up audio. 'f' requests the frequency, bit0 selects it: 0: 24KHz, 1:
-** 48KHz. 's' selects the count of samples per buffer fill: 0: 512, 1: 1024.
-** The 'b' parameter defines the total buffer size, must be a power of two.
-** This buffer size may be set larger to avoid audio skipping. The sample
-** format is unsigned 8 bits. Returns 0 on success, 1 on fault. */
-auint   audio_set(auint f, auint s, auint b)
+/* Set up audio. The 'b' parameter defines the total buffer size, must be a
+** power of two. This buffer size may be set larger to avoid audio skipping.
+** The sample format is unsigned 8 bits. Returns 0 on success, 1 on fault. */
+auint   audio_set(auint b)
 {
  SDL_AudioSpec des;
 
- if ((f & 1U) != 0) des.freq = 48000U;
- else               des.freq = 24000U;
+ des.freq     = 48000U;
  des.samples  = 1024U;
  des.format   = AUDIO_U8;
  des.channels = 2U;
  des.callback = &audio_cb;
  des.userdata = NULL;
-
- if ((s & 1U) != 0) audio_eva = 1024U;
- else               audio_eva =  512U;
 
  /* (Note: keep AUDIO_BUF_MAX and this in sync !!!) */
  if      (b < 1024U) audio_bsm = 1024U - 1U;
@@ -119,7 +114,7 @@ void    audio_getbufptrs(uint8** lpt, uint8** rpt)
 {
  *lpt = &(audio_buf_l[audio_bpt_w]);
  *rpt = &(audio_buf_r[audio_bpt_w]);
- audio_bpt_w = (audio_bpt_w + audio_eva) & audio_bsm;
+ audio_bpt_w = (audio_bpt_w + AUDIO_RFS) & audio_bsm;
 }
 
 
@@ -129,6 +124,6 @@ void    audio_getbufptrs(uint8** lpt, uint8** rpt)
 ** require multiple servicing. */
 auint   audio_needservice(void)
 {
- if ( ((audio_bpt_r - audio_bpt_w) & audio_bsm) > audio_eva ){ return 1U; }
+ if ( ((audio_bpt_r - audio_bpt_w) & audio_bsm) > AUDIO_RFS ){ return 1U; }
  return 0U;
 }

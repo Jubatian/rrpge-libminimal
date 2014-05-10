@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.05.10
 */
 
 
@@ -24,12 +24,10 @@
 #define AUDIO_EVENT 255U
 
 
-/* Set up audio. 'f' requests the frequency, bit0 selects it: 0: 24KHz, 1:
-** 48KHz. 's' selects the count of samples per buffer fill: 0: 512, 1: 1024.
-** The 'b' parameter defines the total buffer size, must be a power of two.
-** This buffer size may be set larger to avoid audio skipping. The sample
-** format is unsigned 8 bits. Returns 0 on success, 1 on fault. */
-auint   audio_set(auint f, auint s, auint b);
+/* Set up audio. The 'b' parameter defines the total buffer size, must be a
+** power of two. This buffer size may be set larger to avoid audio skipping.
+** The sample format is unsigned 8 bits. Returns 0 on success, 1 on fault. */
+auint   audio_set(auint b);
 
 /* Cleans up the previously set up audio. */
 void    audio_free();

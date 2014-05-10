@@ -37,12 +37,13 @@ static FILE*  main_app;
 static auint  main_appbs;
 
 /* Subroutines */
-static const rrpge_cbd_sub_t main_cbsub[1] = {
- { RRPGE_CB_SETPAL, &render_pal }
+static const rrpge_cbd_sub_t main_cbsub[2] = {
+ { RRPGE_CB_SETPAL,    &render_pal     },
+ { RRPGE_CB_MODE,      &render_mode    }
 };
 /* Tasks */
 static const rrpge_cbd_tsk_t main_cbtsk[1] = {
- { RRPGE_CB_LOADBIN, &main_loadbin }
+ { RRPGE_CB_LOADBIN,   &main_loadbin   }
 };
 
 /* Callback structure for the emulator. Only line rendering for now. */
@@ -50,7 +51,7 @@ static const rrpge_cbpack_t main_cbpack={
  &render_line,
  1,                           /* Task callbacks */
  &main_cbtsk[0],
- 1,                           /* Subroutine callbacks */
+ 2,                           /* Subroutine callbacks */
  &main_cbsub[0],
  0,                           /* No function callbacks */
  NULL                         /* (No need to supply function callback data) */
@@ -153,7 +154,6 @@ int main(int argc, char** argv)
  auint  auc = 0U;
  uint8* lpt;
  uint8* rpt;
- auint  aucfg;
  SDL_Event event;      /* The event got from the queue */
  rrpge_object_t*      emu = NULL;
  rrpge_state_t const* sta = NULL;
@@ -223,9 +223,6 @@ int main(int argc, char** argv)
  sta = rrpge_exportstate(emu);
  render_reset(&(sta->ropd[0]));
 
- /* Save audio configuration to use during emulation */
- aucfg = sta->ropd[0xBC2U];
-
 
  /* Initialize SDL */
  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)!=0) return -1;
@@ -234,9 +231,7 @@ int main(int argc, char** argv)
  if (screen_set()!=0) return -1;
 
  /* Set up audio */
- if (audio_set((aucfg >> 12) & 1U, /* Frequency */
-               (aucfg >> 13) & 1U, /* Samples */
-               2048) != 0U) return -1;
+ if (audio_set(2048U) != 0U) return -1;
 
  /* OK, let's go! */
 
