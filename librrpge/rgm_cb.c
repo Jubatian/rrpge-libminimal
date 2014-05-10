@@ -58,80 +58,83 @@ static void rrpge_m_cb_move(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* p
 }
 
 /* Subroutine: Set palette entry */
-static void rrpge_m_cb_setcolor(rrpge_object_t* hnd, const void* par)
+static void rrpge_m_cb_setpal(rrpge_object_t* hnd, const void* par)
+{
+ /* This callback is normally mandatory, but the host may decide to not show
+ ** graphics at all (audio playback only for music applications), so no fault
+ ** if not implemented. */
+}
+
+/* Subroutine: Change video mode */
+static void rrpge_m_cb_mode(rrpge_object_t* hnd, const void* par)
+{
+ /* This callback is normally mandatory, but the host may decide to not show
+ ** graphics at all (audio playback only for music applications), so no fault
+ ** if not implemented. */
+}
+
+/* Function: Get input device availability */
+static rrpge_uint32 rrpge_m_cb_getdev(rrpge_object_t* hnd, const void* par)
+{
+ return 0;
+}
+
+/* Function: Get device properties */
+static rrpge_uint32 rrpge_m_cb_getprops(rrpge_object_t* hnd, const void* par)
+{
+ return 0;
+}
+
+/* Function: Get digital input description symbols */
+static rrpge_uint32 rrpge_m_cb_getdidesc(rrpge_object_t* hnd, const void* par)
+{
+ return 0;
+}
+
+/* Function: Get digital inputs */
+static rrpge_uint32 rrpge_m_cb_getdi(rrpge_object_t* hnd, const void* par)
+{
+ return 0;
+}
+
+/* Function: Get analog inputs */
+static rrpge_uint32 rrpge_m_cb_getai(rrpge_object_t* hnd, const void* par)
+{
+ return 0;
+}
+
+/* Function: Pop text FIFO */
+static rrpge_uint32 rrpge_m_cb_popchar(rrpge_object_t* hnd, const void* par)
+{
+ return 0;
+}
+
+/* Subroutine: Set touch sensitive area */
+static void rrpge_m_cb_settouch(rrpge_object_t* hnd, const void* par)
 {
 }
 
-/* Function: Digital joystick: Read device availability */
-static rrpge_uint32 rrpge_m_cb_idig_ava(rrpge_object_t* hnd, const void* par)
+/* Subroutine: Get local users */
+static void rrpge_m_cb_getlocal(rrpge_object_t* hnd, const void* par)
 {
- return 0;                            /* None available */
-}
-
-/* Function: Digital joystick: Read controls */
-static rrpge_uint32 rrpge_m_cb_idig_ctr(rrpge_object_t* hnd, const void* par)
-{
- return 0;                            /* Nothing pressed */
-}
-
-/* Function: Analog joystick: Read device availability */
-static rrpge_uint32 rrpge_m_cb_iana_ava(rrpge_object_t* hnd, const void* par)
-{
- return 0;                            /* None available */
-}
-
-/* Function: Analog joystick: Read controls */
-static rrpge_uint32 rrpge_m_cb_iana_ctr(rrpge_object_t* hnd, const void* par)
-{
- return 0;                            /* Nothing pressed */
-}
-
-/* Function: Analog joystick: Read position */
-static rrpge_uint32 rrpge_m_cb_iana_pos(rrpge_object_t* hnd, const void* par)
-{
- return 0;                            /* Centered */
-}
-
-/* Function: Mice: Read device availability */
-static rrpge_uint32 rrpge_m_cb_imou_ava(rrpge_object_t* hnd, const void* par)
-{
- return 0;                            /* None available */
-}
-
-/* Function: Mice: Read controls */
-static rrpge_uint32 rrpge_m_cb_imou_ctr(rrpge_object_t* hnd, const void* par)
-{
- return 0;                            /* Nothing pressed */
-}
-
-/* Function: Mice: Read position */
-static rrpge_uint32 rrpge_m_cb_imou_pos(rrpge_object_t* hnd, const void* par)
-{
- return 0;                            /* In the upper left corner */
-}
-
-/* Function: Mice: Read cursor requirement */
-static rrpge_uint32 rrpge_m_cb_imou_cur(rrpge_object_t* hnd, const void* par)
-{
- return 0;                            /* Not required (nonexistent mouse) */
-}
-
-/* Function: Text: Read device availability */
-static rrpge_uint32 rrpge_m_cb_itxt_ava(rrpge_object_t* hnd, const void* par)
-{
- return 0;                            /* None available */
-}
-
-/* Function: Text: Read FIFO */
-static rrpge_uint32 rrpge_m_cb_itxt_rfi(rrpge_object_t* hnd, const void* par)
-{
- return 0;                            /* No input */
 }
 
 /* Task: Read UTF-8 representation of User ID. */
 static void rrpge_m_cb_getutf(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
 {
  rrpge_taskend(hnd, tsh, 0x8000U);    /* Does nothing (empty strings) and returns. */
+}
+
+/* Function: Get user preferred language */
+static rrpge_uint32 rrpge_m_cb_getlang(rrpge_object_t* hnd, const void* par)
+{
+ return 0;
+}
+
+/* Function: Get user preferred colors */
+static rrpge_uint32 rrpge_m_cb_getcolors(rrpge_object_t* hnd, const void* par)
+{
+ return 0;
 }
 
 /* Task: Send out network packet. */
@@ -159,18 +162,18 @@ static auint rrpge_m_cbid_isvalid(auint id)
  if (id == RRPGE_CB_GETUTF)   { return 1; }
  if (id == RRPGE_CB_SEND)     { return 1; }
  if (id == RRPGE_CB_LISTUSERS){ return 1; }
- if (id == RRPGE_CB_SETCOLOR){ return 1; }
- if (id == RRPGE_CB_IDIG_AVA){ return 1; }
- if (id == RRPGE_CB_IDIG_CTR){ return 1; }
- if (id == RRPGE_CB_IANA_AVA){ return 1; }
- if (id == RRPGE_CB_IANA_CTR){ return 1; }
- if (id == RRPGE_CB_IANA_POS){ return 1; }
- if (id == RRPGE_CB_IMOU_AVA){ return 1; }
- if (id == RRPGE_CB_IMOU_CTR){ return 1; }
- if (id == RRPGE_CB_IMOU_POS){ return 1; }
- if (id == RRPGE_CB_IMOU_CUR){ return 1; }
- if (id == RRPGE_CB_ITXT_AVA){ return 1; }
- if (id == RRPGE_CB_ITXT_RFI){ return 1; }
+ if (id == RRPGE_CB_SETPAL)   { return 1; }
+ if (id == RRPGE_CB_MODE)     { return 1; }
+ if (id == RRPGE_CB_SETTOUCH) { return 1; }
+ if (id == RRPGE_CB_GETLOCAL) { return 1; }
+ if (id == RRPGE_CB_GETDEV)   { return 1; }
+ if (id == RRPGE_CB_GETPROPS) { return 1; }
+ if (id == RRPGE_CB_GETDIDESC){ return 1; }
+ if (id == RRPGE_CB_GETDI)    { return 1; }
+ if (id == RRPGE_CB_GETAI)    { return 1; }
+ if (id == RRPGE_CB_POPCHAR)  { return 1; }
+ if (id == RRPGE_CB_GETLANG)  { return 1; }
+ if (id == RRPGE_CB_GETCOLORS){ return 1; }
  return 0;
 }
 
@@ -193,18 +196,18 @@ void rrpge_m_cb_process(rrpge_object_t* obj, rrpge_cbpack_t const* cbp)
  obj->cb_tsk[RRPGE_CB_GETUTF]    = &rrpge_m_cb_getutf;
  obj->cb_tsk[RRPGE_CB_SEND]      = &rrpge_m_cb_send;
  obj->cb_tsk[RRPGE_CB_LISTUSERS] = &rrpge_m_cb_listusers;
- obj->cb_sub[RRPGE_CB_SETCOLOR] = &rrpge_m_cb_setcolor;
- obj->cb_fun[RRPGE_CB_IDIG_AVA] = &rrpge_m_cb_idig_ava;
- obj->cb_fun[RRPGE_CB_IDIG_CTR] = &rrpge_m_cb_idig_ctr;
- obj->cb_fun[RRPGE_CB_IANA_AVA] = &rrpge_m_cb_iana_ava;
- obj->cb_fun[RRPGE_CB_IANA_CTR] = &rrpge_m_cb_iana_ctr;
- obj->cb_fun[RRPGE_CB_IANA_POS] = &rrpge_m_cb_iana_pos;
- obj->cb_fun[RRPGE_CB_IMOU_AVA] = &rrpge_m_cb_imou_ava;
- obj->cb_fun[RRPGE_CB_IMOU_CTR] = &rrpge_m_cb_imou_ctr;
- obj->cb_fun[RRPGE_CB_IMOU_POS] = &rrpge_m_cb_imou_pos;
- obj->cb_fun[RRPGE_CB_IMOU_CUR] = &rrpge_m_cb_imou_cur;
- obj->cb_fun[RRPGE_CB_ITXT_AVA] = &rrpge_m_cb_itxt_ava;
- obj->cb_fun[RRPGE_CB_ITXT_RFI] = &rrpge_m_cb_itxt_rfi;
+ obj->cb_sub[RRPGE_CB_SETPAL]    = &rrpge_m_cb_setcolor;
+ obj->cb_sub[RRPGE_CB_MODE]      = &rrpge_m_cb_mode;
+ obj->cb_sub[RRPGE_CB_SETTOUCH]  = &rrpge_m_cb_settouch;
+ obj->cb_sub[RRPGE_CB_GETLOCAL]  = &rrpge_m_cb_getlocal;
+ obj->cb_fun[RRPGE_CB_GETDEV]    = &rrpge_m_cb_getdev;
+ obj->cb_fun[RRPGE_CB_GETPROPS]  = &rrpge_m_cb_getprops;
+ obj->cb_fun[RRPGE_CB_GETDIDESC] = &rrpge_m_cb_getdidesc;
+ obj->cb_fun[RRPGE_CB_GETDI]     = &rrpge_m_cb_getdi;
+ obj->cb_fun[RRPGE_CB_GETAI]     = &rrpge_m_cb_getai;
+ obj->cb_fun[RRPGE_CB_POPCHAR]   = &rrpge_m_cb_popchar;
+ obj->cb_fun[RRPGE_CB_GETLANG]   = &rrpge_m_cb_getlang;
+ obj->cb_fun[RRPGE_CB_GETCOLORS] = &rrpge_m_cb_getcolors;
 
  /* Use the input to fill in any defined function (if any) */
  if (cbp != RRPGE_M_NULL){

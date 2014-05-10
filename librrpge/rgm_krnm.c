@@ -102,8 +102,16 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
  auint  i;
  auint  o;
  auint  r;        /* Return: Cycles consumed */
- rrpge_cbp_setcolor_t cbp_setcolor;
- rrpge_cbp_inputcom_t cbp_inputcom;
+ rrpge_cbp_setpal_t    cbp_setpal;
+ rrpge_cbp_mode_t      cbp_mode;
+ rrpge_cbp_getprops_t  cbp_getprops;
+ rrpge_cbp_getdidesc_t cbp_getdidesc;
+ rrpge_cbp_getdi_t     cbp_getdi;
+ rrpge_cbp_getai_t     cbp_getai;
+ rrpge_cbp_popchar_t   cbp_popchar;
+ rrpge_cbp_settouch_t  cbp_settouch;
+ rrpge_cbp_getlocal_t  cbp_getlocal;
+ rrpge_cbp_getlang_t   cbp_getlang;
 
 
  if (n==0){       /* No parameters for the kernel call */
@@ -236,9 +244,9 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    break;
 
 
-  case 0x0210U:   /* Set audio interrupt */
+  case 0x0210U:   /* Set audio event handler */
 
-   if (n!=2){     /* Needs 1+1 parameters */
+   if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
    }
 
@@ -249,25 +257,22 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
   case 0x0300U:   /* Set palette entry */
 
-   if (n!=3){     /* Needs 1+2 parameters */
+   if (n != 3U){  /* Needs 1+2 parameters */
     goto fault_inv;
    }
 
-   if ((par[1] & 0xFFU) <= rrpge_m_info.vbm){
-    cbp_setcolor.id  = par[1] & 0xFFU;
-    cbp_setcolor.col = par[2] & 0xFFFU;
-    rrpge_m_edat->cb_sub[RRPGE_CB_SETCOLOR](rrpge_m_edat, &cbp_setcolor);
-   }
-
-   rrpge_m_edat->stat.ropd[0xC00U + (par[1] & 0xFFU)] = par[2] & 0xFFFU;
+   cbp_setpal.id  = par[1] & 0xFFU;
+   cbp_setpal.col = par[2] & 0xFFFU;
+   rrpge_m_edat->stat.ropd[0xC00U + (par[1] & 0xFFU)] = cbp_setpal.col;
+   rrpge_m_edat->cb_sub[RRPGE_CB_SETPAL](rrpge_m_edat, &cbp_setpal);
 
    r = rrpge_m_kvstall(100);
    break;
 
 
-  case 0x0310U:   /* Set raster interrupt */
+  case 0x0310U:   /* Set video event handler */
 
-   if (n!=3){     /* Needs 1+2 parameters */
+   if (n != 3U){  /* Needs 1+2 parameters */
     goto fault_inv;
    }
 
@@ -280,7 +285,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
   case 0x0320U:   /* Query current display line */
 
-   if (n!=1){     /* Needs 1+0 parameters */
+   if (n != 1U){  /* Needs 1+0 parameters */
     goto fault_inv;
    }
 
@@ -294,150 +299,141 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    break;
 
 
-  case 0x0400U:   /* Digital joy: Read device availability */
+  case 0x0330U:   /* Change video mode */
 
-   if (n!=1){     /* Needs 1+0 parameters */
+   if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
    }
 
-   rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_IDIG_AVA](rrpge_m_edat, RRPGE_M_NULL);
+   if (par[1] == 1U){ cbp_mode.mod = 1U; }
+   else{              cbp_mode.mod = 0U; }
+   rrpge_m_edat->stat.ropd[0xD57U] = cbp_mode.mod;
+   rrpge_m_edat->cb_sub[RRPGE_CB_MODE](rrpge_m_edat, &cbp_mode);
+
+   r = rrpge_m_kvstall(100000);
+   break;
+
+
+  case 0x0400U:   /* Get input device availability */
+
+   if (n != 1U){  /* Needs 1+0 parameters */
+    goto fault_inv;
+   }
+
+   rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETDEV](rrpge_m_edat, RRPGE_M_NULL);
 
    r = 800;
    break;
 
 
-  case 0x0401U:   /* Digital joy: Read controls */
+  case 0x0410U:   /* Get device properties */
 
-   if (n!=2){     /* Needs 1+1 parameters */
+   if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
    }
 
-   cbp_inputcom.sel = par[1];
-   r = rrpge_m_edat->cb_fun[RRPGE_CB_IDIG_CTR](rrpge_m_edat, &cbp_inputcom);
-   rrpge_m_info.xr[0] = r;       /* Controls in A */
+   cbp_getprops.dev = par[1] & 0xFU; /* Device to query */
+   rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETPROPS](rrpge_m_edat, &cbp_getprops);
 
    r = 800;
    break;
 
 
-  case 0x0410U:   /* Analog joy: Read device availability */
+  case 0x0411U:   /* Get digital input description symbols */
 
-   if (n!=1){     /* Needs 1+0 parameters */
+   if (n != 4U){  /* Needs 1+3 parameters */
     goto fault_inv;
    }
 
-   rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_IANA_AVA](rrpge_m_edat, RRPGE_M_NULL);
+   cbp_getdidesc.dev = par[1] & 0xFU; /* Device to query */
+   cbp_getdidesc.inp = (par[2] << 4) + (par[3] & 0xFU); /* Input to query */
+   rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETDIDESC](rrpge_m_edat, &cbp_getdidesc);
+   rrpge_m_info.xr[2] = rrpge_m_info.xr[0] >> 16;
 
    r = 800;
    break;
 
 
-  case 0x0411U:   /* Analog joy: Read controls */
+  case 0x0420U:   /* Get digital inputs */
 
-   if (n!=2){     /* Needs 1+1 parameters */
+   if (n != 3U){  /* Needs 1+2 parameters */
     goto fault_inv;
    }
 
-   cbp_inputcom.sel = par[1];
-   r = rrpge_m_edat->cb_fun[RRPGE_CB_IANA_CTR](rrpge_m_edat, &cbp_inputcom);
-   rrpge_m_info.xr[0] = r;       /* Controls in A */
+   cbp_getdi.dev = par[1] & 0xFU; /* Device to query */
+   cbp_getdi.ing = par[2];        /* Input group to query */
+   rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETDI](rrpge_m_edat, &cbp_getdi);
 
    r = 800;
    break;
 
 
-  case 0x0412U:   /* Analog joy: Read analog directions */
+  case 0x0421U:   /* Get analog inputs */
 
-   if (n!=2){     /* Needs 1+1 parameters */
+   if (n != 3U){  /* Needs 1+2 parameters */
     goto fault_inv;
    }
 
-   cbp_inputcom.sel = par[1];
-   r = rrpge_m_edat->cb_fun[RRPGE_CB_IANA_POS](rrpge_m_edat, &cbp_inputcom);
-   rrpge_m_info.xr[0] = r;       /* X direction in A */
-   rrpge_m_info.xr[2] = r >> 16; /* Y direction in C */
+   cbp_getai.dev = par[1] & 0xFU; /* Device to query */
+   cbp_getai.inp = par[2];        /* Input to query */
+   rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETAI](rrpge_m_edat, &cbp_getai);
 
    r = 800;
    break;
 
 
-  case 0x0420U:   /* Mice: Read device availability */
+  case 0x0423U:   /* Pop text FIFO */
 
-   if (n!=1){     /* Needs 1+0 parameters */
+   if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
    }
 
-   rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_IMOU_AVA](rrpge_m_edat, RRPGE_M_NULL);
+   cbp_popchar.dev = par[1] & 0xFU; /* Device to query */
+   rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_POPCHAR](rrpge_m_edat, &cbp_popchar);
+   rrpge_m_info.xr[2] = rrpge_m_info.xr[0] >> 16;
 
    r = 800;
    break;
 
 
-  case 0x0421U:   /* Mice: Read controls */
+  case 0x0430:    /* Define touch sensitive area */
 
-   if (n!=2){     /* Needs 1+1 parameters */
+   if (n != 6U){  /* Needs 1+5 parameters */
     goto fault_inv;
    }
 
-   cbp_inputcom.sel = par[1];
-   r = rrpge_m_edat->cb_fun[RRPGE_CB_IMOU_CTR](rrpge_m_edat, &cbp_inputcom);
-   rrpge_m_info.xr[0] = r;       /* Controls in A */
+   cbp_settouch.aid = par[1] & 0xFU; /* Device to query */
+   cbp_settouch.x   = par[2];
+   cbp_settouch.y   = par[3];
+   cbp_settouch.w   = par[4];
+   cbp_settouch.h   = par[5];
 
-   r = 800;
-   break;
-
-
-  case 0x0422U:   /* Mice: Read position */
-
-   if (n!=2){     /* Needs 1+1 parameters */
-    goto fault_inv;
+   if ((cbp_settouch.x & 0x8000U) != 0U){ /* Negative X */
+    cbp_settouch.w = (cbp_settouch.w + cbp_settouch.x) & 0xFFFFU;
+    cbp_settouch.x = 0U;
    }
-
-   cbp_inputcom.sel = par[1];
-   r = rrpge_m_edat->cb_fun[RRPGE_CB_IMOU_POS](rrpge_m_edat, &cbp_inputcom);
-   rrpge_m_info.xr[0] = r;       /* X position in A */
-   rrpge_m_info.xr[2] = r >> 16; /* Y position in C */
-
-   r = 800;
-   break;
-
-
-  case 0x0423U:   /* Mice: Read cursor requirement */
-
-   if (n!=2){     /* Needs 1+1 parameters */
-    goto fault_inv;
+   if ((cbp_settouch.y & 0x8000U) != 0U){ /* Negative Y */
+    cbp_settouch.h = (cbp_settouch.h + cbp_settouch.y) & 0xFFFFU;
+    cbp_settouch.y = 0U;
    }
-
-   cbp_inputcom.sel = par[1];
-   r = rrpge_m_edat->cb_fun[RRPGE_CB_IMOU_CUR](rrpge_m_edat, &cbp_inputcom);
-   rrpge_m_info.xr[0] = r;       /* Cursor req. in A */
-
-   r = 800;
-   break;
-
-
-  case 0x0430U:   /* Text: Read device availability */
-
-   if (n!=1){     /* Needs 1+0 parameters */
-    goto fault_inv;
+   if ((cbp_settouch.x >= 640U) || (cbp_settouch.x >= 400U)){
+    cbp_settouch.x = 0U;                  /* Off - screen */
+    cbp_settouch.y = 0U;
+    cbp_settouch.w = 0U;
+    cbp_settouch.h = 0U;
    }
-
-   rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_ITXT_AVA](rrpge_m_edat, RRPGE_M_NULL);
-
-   r = 800;
-   break;
-
-
-  case 0x0434U:   /* Text: Get UTF32 character from input fifo */
-
-   if (n!=2){     /* Needs 1+1 parameters */
-    goto fault_inv;
+   if ((cbp_settouch.x + cbp_settouch.w) >= 640U){
+    cbp_settouch.w = 640U - cbp_settouch.x;
    }
+   if ((cbp_settouch.y + cbp_settouch.h) >= 400U){
+    cbp_settouch.h = 400U - cbp_settouch.y;
+   }
+   rrpge_m_edat->stat.ropd[0xE80U + cbp_settouch.aid] = cbp_settouch.x;
+   rrpge_m_edat->stat.ropd[0xE90U + cbp_settouch.aid] = cbp_settouch.y;
+   rrpge_m_edat->stat.ropd[0xEA0U + cbp_settouch.aid] = cbp_settouch.w;
+   rrpge_m_edat->stat.ropd[0xEB0U + cbp_settouch.aid] = cbp_settouch.h;
 
-   cbp_inputcom.sel = par[1];
-   r = rrpge_m_edat->cb_fun[RRPGE_CB_ITXT_RFI](rrpge_m_edat, &cbp_inputcom);
-   rrpge_m_info.xr[0] = r;       /* Low word in A */
-   rrpge_m_info.xr[2] = r >> 16; /* High word in C */
+   rrpge_m_edat->cb_sub[RRPGE_CB_SETTOUCH](rrpge_m_edat, &cbp_settouch);
 
    r = 800;
    break;
@@ -445,7 +441,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
   case 0x0500U:   /* Delay some cycles */
 
-   if (n!=2){     /* Needs 1+1 parameters */
+   if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
    }
 
@@ -463,9 +459,9 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    break;
 
 
-  case 0x0600U:   /* Read local users */
+  case 0x0600U:   /* Get local users */
 
-   if (n!=3){     /* Needs 1+2 parameters */
+   if (n != 3U){  /* Needs 1+2 parameters */
     goto fault_inv;
    }
 
@@ -473,16 +469,15 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   o = (((auint)(par[1] - 0x4000U)) << 12) + (auint)(par[2] & 0x0FE0U);
-   for (i=0; i<32; i++){ /* Copy user ID data into target */
-    rrpge_m_edat->stat.dram[o + i] = rrpge_m_edat->stat.ropd[0xE80U + i];
-   }
+   o = (((auint)(par[1] & 0xFFU)) << 12) + (auint)(par[2] & 0x0FE0U);
+   cbp_getlocal.buf = &rrpge_m_edat->stat.dram[o];
+   rrpge_m_edat->cb_sub[RRPGE_CB_GETLOCAL](rrpge_m_edat, &cbp_getlocal);
 
    r = 2400;
    break;
 
 
-  case 0x0601U:   /* Kernel task: Read UTF-8 representation of User ID */
+  case 0x0601U:   /* Kernel task: Get UTF-8 representation of User ID */
 
    if (n != 11U){ /* Needs 1+10 parameters */
     goto fault_inv;
@@ -493,32 +488,28 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    break;
 
 
-  case 0x0610U:   /* Read user preferred language */
+  case 0x0610U:   /* Get user preferred language */
 
-   if (n!=2){     /* Needs 1+1 parameters */
+   if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
    }
 
-   if (par[1] > 4){
-    rrpge_m_info.xr[0] = 0;
-    rrpge_m_info.xr[2] = 0;
-   }else{
-    rrpge_m_info.xr[0] = rrpge_m_edat->stat.ropd[0xEA1U + (par[1] << 1)];
-    rrpge_m_info.xr[2] = rrpge_m_edat->stat.ropd[0xEA0U + (par[1] << 1)];
-   }
+   cbp_getlang.lno = par[1];
+   rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETLANG](rrpge_m_edat, &cbp_getlang);
+   rrpge_m_info.xr[2] = rrpge_m_info.xr[0] >> 16;
 
    r = 2400;
    break;
 
 
-  case 0x0611U:   /* Read user preferred colors */
+  case 0x0611U:   /* Get user preferred colors */
 
    if (n!=2){     /* Needs 1+1 parameters */
     goto fault_inv;
    }
 
-   rrpge_m_info.xr[0] = rrpge_m_edat->stat.ropd[0xEA9U];
-   rrpge_m_info.xr[2] = rrpge_m_edat->stat.ropd[0xEA8U];
+   rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETCOLORS](rrpge_m_edat, RRPGE_M_NULL);
+   rrpge_m_info.xr[2] = rrpge_m_info.xr[0] >> 16;
 
    r = 2400;
    break;
@@ -537,7 +528,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
   case 0x0701U:   /* Poll for packets */
 
-   if (n!=4){     /* Needs 1+3 parameters */
+   if (n != 4U){  /* Needs 1+3 parameters */
     goto fault_inv;
    }
 
@@ -599,12 +590,12 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
   case 0x0720U:   /* Set network availability */
 
-   if (n!=2){     /* Needs 1+1 parameters */
+   if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
    }
 
-   if (par[1] != 0){ rrpge_m_edat->stat.ropd[0xD3FU] = 1U; }
-   else            { rrpge_m_edat->stat.ropd[0xD3FU] = 0U; }
+   if (par[1] != 0U){ rrpge_m_edat->stat.ropd[0xD3FU] = 1U; }
+   else             { rrpge_m_edat->stat.ropd[0xD3FU] = 0U; }
 
    r = 400;
    break;

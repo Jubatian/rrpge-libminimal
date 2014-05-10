@@ -419,7 +419,7 @@ typedef struct{
 
 
 /**
-**  \brief     Function: Define touch sensitive area.
+**  \brief     Subroutine: Define touch sensitive area.
 **
 **  Requests defining or redefining a touch sensitive area. The parameters are
 **  sanitized by the library (constrained between 0 and 639 for X, 0 and 399
@@ -457,7 +457,7 @@ typedef struct{
 */
 typedef struct{
  rrpge_uint16*       buf; /**< Target area to load User ID's into (32 words) */
-}
+}rrpge_cb_getlocal_t;
 
 
 
@@ -500,7 +500,7 @@ typedef struct{
 
 
 /**
-**  \brief     Subroutine: Get user preferred colors.
+**  \brief     Function: Get user preferred colors.
 **
 **  Ask for user's preferred colors. High word of the return is the foreground
 **  in 4-4-4 RGB (high 4 bits zero), low word is the background color. Set the
