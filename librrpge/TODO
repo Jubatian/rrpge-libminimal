@@ -1,18 +1,6 @@
 
-Specs:
-
-(!!! Reworking the inputs. Now I put it away for a bit later, first test,
-but needs to be done before releasing !!!)
-
-(!!! ROPD change: User data is no longer included, so for one, it has no
-place in the ROPD interface of the RRPGE library, for other, it has to be
-serviced by the host !!!)
-
-
 
 Missing parts:
-
-Arbitrary file load & file save.
 
 Application header - license & RRPGE specification check.
 
@@ -21,15 +9,5 @@ rrpge_pr.h (Library properties)
 
 
 
-Library interface:
-
-
-Kernel functions should have a proper external resolver. That is a possibility
-to request all parameters, and another to inject back a return value,
-preferably something nicer than telling to stuff it in C:A. This interface
-could work for the arbitrary file load & save as well.
-
-
-
-Audio stuff needs randomization later (to prevent relying on undefined
+Audio stuff needs randomization later (to prevent users relying on undefined
 behavior).

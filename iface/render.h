@@ -40,11 +40,11 @@ void render_pal(rrpge_object_t* hnd, const void* par);
 void render_mode(rrpge_object_t* hnd, const void* par);
 
 /*
-** Initializes or resets rendering subsystem by the given ROPD (extracted from
-** an emulator state). This sets the display mode (640x400x16 or 320x400x256)
-** and the initial palette.
+** Initializes or resets rendering subsystem by the given emulator object.
+** This sets the display mode (640x400x16 or 320x400x256) and the initial
+** palette.
 */
-void render_reset(uint16 const* ropd);
+void render_reset(rrpge_object_t* hnd);
 
 
 #endif

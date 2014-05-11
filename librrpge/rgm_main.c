@@ -178,14 +178,6 @@ void rrpge_taskend(rrpge_object_t* hnd, rrpge_uint32 tsh, rrpge_uint32 res)
 
 
 
-/* Get network availability - implementation of RRPGE library function */
-rrpge_uint32 rrpge_getnetavail(rrpge_object_t* hnd)
-{
- return (hnd->stat.ropd[0xD3F] & 1U);
-}
-
-
-
 /* Submit received packet - implementation of RRPGE library function */
 void rrpge_pushpacket(rrpge_object_t* hnd, rrpge_uint16 const* id,
                       rrpge_uint16 const* buf, rrpge_uint32 len)

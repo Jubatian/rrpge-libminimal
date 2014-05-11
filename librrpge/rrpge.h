@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.08
+**  \date      2014.05.11
 */
 
 
@@ -14,6 +14,7 @@
 
 
 #include "rrpge_tp.h"
+#include "rrpge_aq.h"
 #include "rrpge_cb.h"
 #include "rrpge_ch.h"
 #include "rrpge_sr.h"
@@ -131,20 +132,6 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod);
 **  \param[in]   res   Result of task (low 15 bits used, bit 15 always set).
 */
 void rrpge_taskend(rrpge_object_t* hnd, rrpge_uint32 tsh, rrpge_uint32 res);
-
-
-
-/**
-**  \brief     Get network availability status.
-**
-**  Extracts the network availability bit from the Read Only Process
-**  Descriptor. Returns zero if the user should not be available for new
-**  connections, nonzero (one) otherwise.
-**
-**  \param[in]   hnd   Emulation instance populated by rrpge_init().
-**  \return            Nonzero if user is available for new connections.
-*/
-rrpge_uint32 rrpge_getnetavail(rrpge_object_t* hnd);
 
 
 

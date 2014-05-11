@@ -221,8 +221,17 @@ rrpge_uint32 rrpge_checkropd(rrpge_uint16 const* d)
  f = rrpge_checkapphead(d);
  if (f != RRPGE_ERR_OK) return f;
 
+ /* Colors: must have their high 4 bits clear */
+
+ for (f = 0xC00U; f < 0xD00U; f++){
+  if ((d[f] & 0xF000U) != 0U){
+   goto ropd_fault;
+  }
+ }
+
  /* Read & Write pages: they must be in range and if a VRAM page is banked in
  ** for write, it needs to be banked in for read as well the same place. */
+
  for (f = 0xD00U; f < 0xD20U; f++){
   i = d[f];
   if ( ((i < 0x4000U) || (i >= 0x40E1U)) && /* Data RAM and ROPD */
@@ -240,6 +249,8 @@ rrpge_uint32 rrpge_checkropd(rrpge_uint16 const* d)
    goto ropd_fault;
   }
  }
+
+ /* The rest of the state */
 
  f = 0xD20U;
  if (d[f] > 400U) goto ropd_fault;          /* Video line IT, raster line */
@@ -301,8 +312,8 @@ rrpge_uint32 rrpge_checkropd(rrpge_uint16 const* d)
   if (d[f] + d[f - 32U] > 400U) goto ropd_fault; /* Height */
  }
 
- for (f = 0xEC0U; f < 0xED0U; f++){         /* Reserved areas */
-  if (d[f] != 0) goto ropd_fault;
+ for (f = 0xEC0U; f < 0xED0U; f++){         /* Last device types area */
+  if ((d[f] & 0x07E0U) != 0) goto ropd_fault;
  }
 
  return RRPGE_ERR_OK;

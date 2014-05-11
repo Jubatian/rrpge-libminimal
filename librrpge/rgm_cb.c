@@ -73,16 +73,15 @@ static void rrpge_m_cb_mode(rrpge_object_t* hnd, const void* par)
  ** if not implemented. */
 }
 
-/* Function: Get input device availability */
-static rrpge_uint32 rrpge_m_cb_getdev(rrpge_object_t* hnd, const void* par)
-{
- return 0;
-}
-
 /* Function: Get device properties */
 static rrpge_uint32 rrpge_m_cb_getprops(rrpge_object_t* hnd, const void* par)
 {
  return 0;
+}
+
+/* Subroutine: Drop device */
+static void rrpge_m_cb_dropdev(rrpge_object_t* hnd, const void* par)
+{
 }
 
 /* Function: Get digital input description symbols */
@@ -164,9 +163,9 @@ static auint rrpge_m_cbid_isvalid(auint id)
  if (id == RRPGE_CB_LISTUSERS){ return 1; }
  if (id == RRPGE_CB_SETPAL)   { return 1; }
  if (id == RRPGE_CB_MODE)     { return 1; }
+ if (id == RRPGE_CB_DROPDEV)  { return 1; }
  if (id == RRPGE_CB_SETTOUCH) { return 1; }
  if (id == RRPGE_CB_GETLOCAL) { return 1; }
- if (id == RRPGE_CB_GETDEV)   { return 1; }
  if (id == RRPGE_CB_GETPROPS) { return 1; }
  if (id == RRPGE_CB_GETDIDESC){ return 1; }
  if (id == RRPGE_CB_GETDI)    { return 1; }
@@ -198,9 +197,9 @@ void rrpge_m_cb_process(rrpge_object_t* obj, rrpge_cbpack_t const* cbp)
  obj->cb_tsk[RRPGE_CB_LISTUSERS] = &rrpge_m_cb_listusers;
  obj->cb_sub[RRPGE_CB_SETPAL]    = &rrpge_m_cb_setpal;
  obj->cb_sub[RRPGE_CB_MODE]      = &rrpge_m_cb_mode;
+ obj->cb_sub[RRPGE_CB_DROPDEV]   = &rrpge_m_cb_dropdev;
  obj->cb_sub[RRPGE_CB_SETTOUCH]  = &rrpge_m_cb_settouch;
  obj->cb_sub[RRPGE_CB_GETLOCAL]  = &rrpge_m_cb_getlocal;
- obj->cb_fun[RRPGE_CB_GETDEV]    = &rrpge_m_cb_getdev;
  obj->cb_fun[RRPGE_CB_GETPROPS]  = &rrpge_m_cb_getprops;
  obj->cb_fun[RRPGE_CB_GETDIDESC] = &rrpge_m_cb_getdidesc;
  obj->cb_fun[RRPGE_CB_GETDI]     = &rrpge_m_cb_getdi;

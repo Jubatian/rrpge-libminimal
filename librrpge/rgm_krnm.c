@@ -105,6 +105,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
  rrpge_cbp_setpal_t    cbp_setpal;
  rrpge_cbp_mode_t      cbp_mode;
  rrpge_cbp_getprops_t  cbp_getprops;
+ rrpge_cbp_dropdev_t   cbp_dropdev;
  rrpge_cbp_getdidesc_t cbp_getdidesc;
  rrpge_cbp_getdi_t     cbp_getdi;
  rrpge_cbp_getai_t     cbp_getai;
@@ -322,18 +323,6 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0400U:   /* Get input device availability */
-
-   if (n != 1U){  /* Needs 1+0 parameters */
-    goto fault_inv;
-   }
-
-   rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETDEV](rrpge_m_edat, RRPGE_M_NULL);
-
-   r = 800;
-   goto ret_callback;
-
-
   case 0x0410U:   /* Get device properties */
 
    if (n != 2U){  /* Needs 1+1 parameters */
@@ -342,62 +331,93 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    cbp_getprops.dev = par[1] & 0xFU; /* Device to query */
    rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETPROPS](rrpge_m_edat, &cbp_getprops);
+   rrpge_m_edat->stat.ropd[0xEC0U + (par[1] & 0xFU)] = rrpge_m_info.xr[0];
 
    r = 800;
    goto ret_callback;
 
 
-  case 0x0411U:   /* Get digital input description symbols */
+  case 0x0411U:   /* Drop device */
+
+   if (n != 2U){  /* Needs 1+1 parameters */
+    goto fault_inv;
+   }
+
+   cbp_dropdev.dev = par[1] & 0xFU; /* Device to drop */
+   rrpge_m_edat->cb_sub[RRPGE_CB_DROPDEV](rrpge_m_edat, &cbp_dropdev);
+   rrpge_m_edat->stat.ropd[0xEC0U + (par[1] & 0xFU)] = 0U;
+
+   r = 800;
+   goto ret_callback;
+
+
+  case 0x0412U:   /* Get digital input description symbols */
 
    if (n != 4U){  /* Needs 1+3 parameters */
     goto fault_inv;
    }
 
    cbp_getdidesc.dev = par[1] & 0xFU; /* Device to query */
-   cbp_getdidesc.inp = (par[2] << 4) + (par[3] & 0xFU); /* Input to query */
-   rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETDIDESC](rrpge_m_edat, &cbp_getdidesc);
+   if (rrpge_m_edat->stat.ropd[0xEC0U + cbp_getdidesc.dev] != 0U){
+    cbp_getdidesc.inp = (par[2] << 4) + (par[3] & 0xFU); /* Input to query */
+    rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETDIDESC](rrpge_m_edat, &cbp_getdidesc);
+   }else{
+    rrpge_m_info.xr[0] = 0U;
+   }
    rrpge_m_info.xr[2] = rrpge_m_info.xr[0] >> 16;
 
    r = 800;
    goto ret_callback;
 
 
-  case 0x0420U:   /* Get digital inputs */
+  case 0x0422U:   /* Get digital inputs */
 
    if (n != 3U){  /* Needs 1+2 parameters */
     goto fault_inv;
    }
 
    cbp_getdi.dev = par[1] & 0xFU; /* Device to query */
-   cbp_getdi.ing = par[2];        /* Input group to query */
-   rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETDI](rrpge_m_edat, &cbp_getdi);
+   if (rrpge_m_edat->stat.ropd[0xEC0U + cbp_getdi.dev] != 0U){
+    cbp_getdi.ing = par[2];       /* Input group to query */
+    rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETDI](rrpge_m_edat, &cbp_getdi);
+   }else{
+    rrpge_m_info.xr[0] = 0U;
+   }
 
    r = 800;
    goto ret_callback;
 
 
-  case 0x0421U:   /* Get analog inputs */
+  case 0x0423U:   /* Get analog inputs */
 
    if (n != 3U){  /* Needs 1+2 parameters */
     goto fault_inv;
    }
 
    cbp_getai.dev = par[1] & 0xFU; /* Device to query */
-   cbp_getai.inp = par[2];        /* Input to query */
-   rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETAI](rrpge_m_edat, &cbp_getai);
+   if (rrpge_m_edat->stat.ropd[0xEC0U + cbp_getai.dev] != 0U){
+    cbp_getai.inp = par[2];       /* Input to query */
+    rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETAI](rrpge_m_edat, &cbp_getai);
+   }else{
+    rrpge_m_info.xr[0] = 0U;
+   }
 
    r = 800;
    goto ret_callback;
 
 
-  case 0x0423U:   /* Pop text FIFO */
+  case 0x0424U:   /* Pop text FIFO */
 
    if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
    }
 
    cbp_popchar.dev = par[1] & 0xFU; /* Device to query */
-   rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_POPCHAR](rrpge_m_edat, &cbp_popchar);
+   if (rrpge_m_edat->stat.ropd[0xEC0U + cbp_popchar.dev] != 0U){
+    rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_POPCHAR](rrpge_m_edat, &cbp_popchar);
+   }else{
+    rrpge_m_info.xr[0] = 0U;
+   }
    rrpge_m_info.xr[2] = rrpge_m_info.xr[0] >> 16;
 
    r = 800;

@@ -324,16 +324,6 @@ typedef struct{
 
 
 /**
-**  \brief     Function: Get input device availability.
-**
-**  Returns which input devices are available from the possible 16 devices.
-**  Bit 0 of the return value corresponds to device 0, set if available.
-*/
-#define RRPGE_CB_GETDEV        7U
-
-
-
-/**
 **  \brief     Function: Get device properties.
 **
 **  Returns the properties of the given input device. The return value has to
@@ -351,13 +341,28 @@ typedef struct{
 
 
 /**
+**  \brief     Subroutine: Drop device.
+**
+**  Drops a device indicating the application no longer uses it.
+*/
+#define RRPGE_CB_DROPDEV      9U
+/**
+**  \brief     Extra parameters for Drop device.
+*/
+typedef struct{
+ rrpge_uint32        dev; /**< The device to drop. */
+}rrpge_cbp_dropdev_t;
+
+
+
+/**
 **  \brief     Function: Get digital input description symbols.
 **
 **  Returns a descriptive symbol for the given digital input as an UTF32
 **  character code or a special code according to the specification. May
 **  return 0 indicating the input does not exist.
 */
-#define RRPGE_CB_GETDIDESC     9U
+#define RRPGE_CB_GETDIDESC     10U
 /**
 **  \brief     Extra parameters for Get digital input description symbols.
 */

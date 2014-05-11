@@ -219,10 +219,8 @@ int main(int argc, char** argv)
   goto loadfault;
  }
 
- /* Initialize renderer from the app. header */
- sta = rrpge_exportstate(emu);
- render_reset(&(sta->ropd[0]));
-
+ /* Initialize renderer */
+ render_reset(emu);
 
  /* Initialize SDL */
  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)!=0) return -1;

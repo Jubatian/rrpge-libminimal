@@ -5,11 +5,15 @@
 #           LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
 #
 
-OBJECTS+= $(OBD)rgm_cb.o   $(OBD)rgm_chk.o  $(OBD)rgm_cpua.o
+OBJECTS+= $(OBD)rgm_aq.o   $(OBD)rgm_cb.o   $(OBD)rgm_chk.o  $(OBD)rgm_cpua.o
 OBJECTS+= $(OBD)rgm_cpuo.o $(OBD)rgm_grcy.o $(OBD)rgm_grln.o $(OBD)rgm_grop.o
 OBJECTS+= $(OBD)rgm_info.o $(OBD)rgm_ires.o $(OBD)rgm_krnm.o $(OBD)rgm_main.o
 OBJECTS+= $(OBD)rgm_mix.o  $(OBD)rgm_prng.o $(OBD)rgm_run.o  $(OBD)rgm_ser.o
 OBJECTS+= $(OBD)rgm_task.o
+
+$(OBD)rgm_aq.o: librrpge/rgm_aq.c librrpge/rgm_aq.h
+	$(CC) -c librrpge/rgm_aq.c -o $(OBD)rgm_aq.o $(CFSPD)
+	$(CC) -S librrpge/rgm_aq.c -o $(OBD)rgm_aq.asm $(CFSPD)
 
 $(OBD)rgm_cb.o: librrpge/rgm_cb.c librrpge/rgm_cb.h
 	$(CC) -c librrpge/rgm_cb.c -o $(OBD)rgm_cb.o $(CFSPD)
