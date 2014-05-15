@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.11
+**  \date      2014.05.15
 */
 
 
@@ -49,12 +49,26 @@ rrpge_uint32 rrpge_getlastdev(rrpge_object_t* hnd, rrpge_uint32 dev);
 
 
 /**
+**  \brief     Get allowed device types.
+**
+**  Returns the device types allowed by the application as found in the
+**  application header. Returns 16 bits, the bit's index representing the
+**  device type, if the bit set, the device being allowed.
+**
+**  \param[in]   hnd   Emulation instance populated by rrpge_init().
+**  \return            The device types allowed by the application.
+*/
+rrpge_uint32 rrpge_getalloweddevs(rrpge_object_t* hnd);
+
+
+
+/**
 **  \brief     Get touch sensitive area definition.
 **
 **  Extracts a touch sensitive area's bounding box from the Read Only Process
 **  Descriptor. Returns zero if the area is not defined (width or height is
-**  zero). Otherwise returns nonzero and fills the provided array with the
-**  coordinates.
+**  zero), and fills the return array with zero. Otherwise returns nonzero and
+**  fills the provided array with the coordinates.
 **
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
 **  \param[in]   ari   Area ID to query.

@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.10
+**  \date      2014.05.11
 */
 
 
@@ -188,12 +188,29 @@ typedef struct{
 **
 **  \{ */
 /** Normal free running mode, no debugging */
-#define RRPGE_RUN_FREE        0
+#define RRPGE_RUN_FREE        0U
 /** Halt before breakpoints are enabled */
-#define RRPGE_RUN_BREAK       1
+#define RRPGE_RUN_BREAK       1U
 /** Single stepping mode (processes at most one operation per rrpge_run()
 **  call) */
-#define RRPGE_RUN_SINGLE      2
+#define RRPGE_RUN_SINGLE      2U
+/** \} */
+
+
+
+/**
+**  \anchor    rrpge_dev_types
+**  \name      Input device types
+**
+**  These are the input device types, as defined by the RRPGE specification.
+**
+**  \{ */
+#define RRPGE_INPT_MOUSE      0U
+#define RRPGE_INPT_TOUCH      1U
+#define RRPGE_INPT_GAMEPAD    2U
+#define RRPGE_INPT_JOYSTICK   3U
+#define RRPGE_INPT_TEXT       4U
+#define RRPGE_INPT_KEYBOARD   5U
 /** \} */
 
 

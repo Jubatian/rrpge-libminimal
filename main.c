@@ -15,6 +15,7 @@
 #include "host/audio.h"
 #include "host/filels.h"
 #include "iface/render.h"
+#include "iface/input.h"
 
 #include "librrpge/rrpge.h"
 
@@ -37,13 +38,23 @@ static FILE*  main_app;
 static auint  main_appbs;
 
 /* Subroutines */
-static const rrpge_cbd_sub_t main_cbsub[2] = {
- { RRPGE_CB_SETPAL,    &render_pal     },
- { RRPGE_CB_MODE,      &render_mode    }
+static const rrpge_cbd_sub_t main_cbsub[4] = {
+ { RRPGE_CB_SETPAL,    &render_pal         },
+ { RRPGE_CB_MODE,      &render_mode        },
+ { RRPGE_CB_DROPDEV,   &inputcom_dropdev   },
+ { RRPGE_CB_SETTOUCH,  &inputcom_settouch  }
 };
 /* Tasks */
 static const rrpge_cbd_tsk_t main_cbtsk[1] = {
- { RRPGE_CB_LOADBIN,   &main_loadbin   }
+ { RRPGE_CB_LOADBIN,   &main_loadbin       }
+};
+/* Functions */
+static const rrpge_cbd_fun_t main_cbfun[5] = {
+ { RRPGE_CB_GETPROPS,  &inputcom_getprops  },
+ { RRPGE_CB_GETDIDESC, &inputcom_getdidesc },
+ { RRPGE_CB_GETDI,     &inputcom_getdi     },
+ { RRPGE_CB_GETAI,     &inputcom_getai     },
+ { RRPGE_CB_POPCHAR,   &inputcom_popchar   }
 };
 
 /* Callback structure for the emulator. Only line rendering for now. */
@@ -51,10 +62,10 @@ static const rrpge_cbpack_t main_cbpack={
  &render_line,
  1,                           /* Task callbacks */
  &main_cbtsk[0],
- 2,                           /* Subroutine callbacks */
+ 4,                           /* Subroutine callbacks */
  &main_cbsub[0],
- 0,                           /* No function callbacks */
- NULL                         /* (No need to supply function callback data) */
+ 5,                           /* Function callbacks */
+ &main_cbfun[0]
 };
 
 
@@ -231,6 +242,10 @@ int main(int argc, char** argv)
  /* Set up audio */
  if (audio_set(2048U) != 0U) return -1;
 
+ /* Set up input */
+ input_init();
+ input_reset(emu);
+
  /* OK, let's go! */
 
  printf("Entering emulation\n");
@@ -253,8 +268,8 @@ int main(int argc, char** argv)
      do{
       j = rrpge_run(emu, RRPGE_RUN_FREE);
       t = rrpge_gethaltcause(emu);
-      cdi++;
-      if (cdi >= 100){
+      if (t & RRPGE_HLT_AUDIO){ cdi++; }
+      if (cdi >= 10){
        cdi = 0U;
        printf("Audio events: %08d\n", auc);
        printf("Cycles: %08d\n", j);
@@ -294,7 +309,7 @@ int main(int argc, char** argv)
       break;
      }
 
-    }                            /* End of audio wait loop */
+    }                                  /* End of audio wait loop */
 
     if ((t & RRPGE_HLT_EXIT) != 0U){ break; } /* Exit program */
     if ((t & (RRPGE_HLT_STACK |
@@ -302,7 +317,7 @@ int main(int argc, char** argv)
               RRPGE_HLT_INVOP |
               RRPGE_HLT_FAULT)) != 0U){
      main_errexit(t, sta);
-     break;                                   /* Also exit, with error */
+     break;                            /* Also exit, with error */
     }
 
    }
@@ -312,7 +327,30 @@ int main(int argc, char** argv)
 
   }else if (event.type==SDL_KEYUP){
 
-  }else if (event.type==SDL_QUIT) break; /* Exit as well */
+  }else if (event.type==SDL_QUIT){     /* Exit program */
+   break;
+
+  }else if (event.type==SDL_MOUSEBUTTONDOWN){
+
+   if      (event.button.button == SDL_BUTTON_LEFT){   imouse_setbuttons(0x0010U, 0x0000U); }
+   else if (event.button.button == SDL_BUTTON_RIGHT){  imouse_setbuttons(0x0020U, 0x0000U); }
+   else if (event.button.button == SDL_BUTTON_MIDDLE){ imouse_setbuttons(0x0040U, 0x0000U); }
+   else {}
+   imouse_setcoords(event.button.x, event.button.y);
+
+  }else if (event.type==SDL_MOUSEBUTTONUP){
+
+   if      (event.button.button == SDL_BUTTON_LEFT){   imouse_setbuttons(0x0000U, 0x0010U); }
+   else if (event.button.button == SDL_BUTTON_RIGHT){  imouse_setbuttons(0x0000U, 0x0020U); }
+   else if (event.button.button == SDL_BUTTON_MIDDLE){ imouse_setbuttons(0x0000U, 0x0040U); }
+   else {}
+   imouse_setcoords(event.button.x, event.button.y);
+
+  }else if (event.type==SDL_MOUSEMOTION){
+
+   imouse_setcoords(event.motion.x, event.motion.y);
+
+  }
 
  }
 

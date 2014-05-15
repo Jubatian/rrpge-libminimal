@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.10
+**  \date      2014.05.15
 **
 **
 ** Graphics rendering: produces the graphics output from the lines provided by
@@ -17,7 +17,6 @@
 
 #include "render.h"
 #include "../host/screen.h"
-#include "../librrpge/rrpge_cb.h"
 
 
 /* Display mode: 0: 640x480x16; 1: 320x400x256. */
