@@ -7,7 +7,3 @@ Application header - license & RRPGE specification check.
 rrpge_db.h (Debug functions)
 rrpge_pr.h (Library properties)
 
-
-
-Audio stuff needs randomization later (to prevent users relying on undefined
-behavior).

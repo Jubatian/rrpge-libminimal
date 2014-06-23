@@ -173,12 +173,12 @@ rrpge_uint32 rrpge_gethaltcause(rrpge_object_t* hnd);
 /**
 **  \brief     Get audio events and streams.
 **
-**  Queries number of audio events pending, fills in audio data, and clears
-**  the RRPGE_HLT_AUDIO halt cause. Normally this should be called in response
-**  to such a stall to process audio (and by it to ensure proper timing of the
-**  emulation tied to the audio hardware). The return this case is normally 1,
-**  but with certain emulation implementations and badly programmed
-**  applications (which fail to service audio interrupts themselves) it might
+**  Queries number of 512 sample audio streaks pending, fills in audio data,
+**  and clears the RRPGE_HLT_AUDIO halt cause. Normally this should be called
+**  in response to such a stall to process audio (and by it to ensure proper
+**  timing of the emulation tied to the audio hardware). The return this case
+**  is normally 1, but with certain emulation implementations and badly
+**  programmed applications (which stall the hardware by some means) it might
 **  be more. This indicates skipping.
 **
 **  The provided left and right buffers are filled with the data fetched in

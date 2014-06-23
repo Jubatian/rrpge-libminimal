@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.06.23
 */
 
 
@@ -22,6 +22,10 @@
 
 /* Address of the carry register within rrpge_m_info.xr */
 #define REG_C 2U
+
+/* Stack bottom. Always zero; if interrupt handlers were be available, it
+** would need other values (see versions before 2014.06.23). */
+#define STK_B 0U
 
 
 /* 0000 000r rraa aaaa: MOV adr, rx */
@@ -852,29 +856,11 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_jfr_88(void)
   cy += 2U + 7U;
   rrpge_m_kcall(&kp[0], mx);              /* Process supervisor (kernel) call */
 
- }else{ /* RFN: Return from function or exit from IT handler / program */
+ }else{ /* RFN: Return from function or exit from program */
 
-  if (rrpge_m_info.sbt >= rrpge_m_info.bp){ /* Return from interrupt handler / program */
+  if (STK_B >= rrpge_m_info.bp){          /* Return from program */
 
-   if       ((rrpge_m_edat->stat.ropd[0xD6FU] & 0x0002U) != 0U){ /* In audio interrupt */
-    rrpge_m_edat->stat.ropd[0xD6FU] &= ~(uint16)(0x0002U);       /* Exit from it */
-   }else if ((rrpge_m_edat->stat.ropd[0xD6EU] & 0x0002U) != 0U){ /* In video interrupt */
-    rrpge_m_edat->stat.ropd[0xD6EU] &= ~(uint16)(0x0002U);       /* Exit from it */
-   }else{                                                        /* No IT, exit whole app. */
-    rrpge_m_info.hlt = RRPGE_HLT_EXIT;                           /* Exit program */
-   }
-   /* Restore stack bottom */
-   rrpge_m_info.sbt                = (auint)(rrpge_m_edat->stat.ropd[0xD7FU]);
-   rrpge_m_edat->stat.ropd[0xD7FU] = 0U;
-   /* Restore CPU state */
-   for (i = 0U; i <  8U; i++){ rrpge_m_info.xr[i] = (auint)(rrpge_m_edat->stat.ropd[0xD60U + i]); }
-   rrpge_m_info.xmh[0] = (auint)(rrpge_m_edat->stat.ropd[0xD68U]);
-   rrpge_m_info.xmh[1] = (auint)(rrpge_m_edat->stat.ropd[0xD69U]);
-   rrpge_m_info.pc = (auint)(rrpge_m_edat->stat.ropd[0xD6AU]);
-   rrpge_m_info.sp = (auint)(rrpge_m_edat->stat.ropd[0xD6BU]);
-   rrpge_m_info.bp = (auint)(rrpge_m_edat->stat.ropd[0xD6CU]);
-   for (i = 0U; i < 13U; i++){ rrpge_m_edat->stat.ropd[0xD60U + i] = (auint)(rrpge_m_edat->stat.ropd[0xD70U + i]); }
-   cy = 6 + 400;
+   rrpge_m_info.hlt = RRPGE_HLT_EXIT;     /* Exit program */
 
   }else{ /* Ordinary return */
 

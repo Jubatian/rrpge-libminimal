@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.10
+**  \date      2014.06.23
 */
 
 
@@ -53,7 +53,6 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
                     ((auint)(rrpge_m_edat->stat.ropd[0xD53U]));
  rrpge_m_info.vac = ((auint)(rrpge_m_edat->stat.ropd[0xD54U]) << 16) +
                     ((auint)(rrpge_m_edat->stat.ropd[0xD55U]));
- rrpge_m_info.sbt = rrpge_m_edat->stat.ropd[0xD7EU];
  rrpge_m_info.adv = ((RRPGE_M_OSC / 1000U) *  512U + 24U) / 48U; /* 512 samples; 48KHz */
  rrpge_m_info.grr = 1U;   /* Reload recolor banks */
  if ((rrpge_m_edat->stat.ropd[0xD57U] & 0xFFFFU) != 1U){ /* 4bit mode */
@@ -86,129 +85,84 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
    rrpge_m_edat->stat.ropd[0xD6FU] &= ~0x1U;
   }
 
-  /* Either process an interrupt entry or a run of CPU instructions if no
-  ** interrupts are pending. Note when adding cycles: the video accelerator's
-  ** remaining cycles have to be updated on the run! Ugly, will fix someday,
-  ** but for now it works. */
 
-  if ( ( ((rrpge_m_edat->stat.ropd[0xD6EU] & 0x3U) == 0x1U) &&   /* Need to enter video interrupt */
-         ((rrpge_m_edat->stat.ropd[0xD6FU] & 0x2U) != 0x2U) ) || /* Can only enter if not already in an audio IT */
-       ((rrpge_m_edat->stat.ropd[0xD6FU] & 0x3U) == 0x1U) ){     /* Need to enter audio interrupt */
+  /* Try to process some CPU cycles, at most as many
+  ** as fits in the current video stall mode (so operating by a 80cy HBlank /
+  ** 320cy Display split within a video line). First calculate the stall mode
+  ** for it. */
 
-   /* Will enter one of the interrupts. Push state */
-   /* Push stack bottom */
-   rrpge_m_edat->stat.ropd[0xD7FU] = rrpge_m_info.sbt;
-   rrpge_m_info.sbt                = (rrpge_m_info.sp + rrpge_m_info.bp) & 0xFFFFU;
-   /* Push CPU state */
-   for (i=0; i<13; i++) rrpge_m_edat->stat.ropd[0xD70U + i] = rrpge_m_edat->stat.ropd[0xD60U + i];
-   for (i=0; i< 8; i++) rrpge_m_edat->stat.ropd[0xD60U + i] = rrpge_m_info.xr[i];
-   rrpge_m_edat->stat.ropd[0xD68U] = rrpge_m_info.xmh[0];
-   rrpge_m_edat->stat.ropd[0xD69U] = rrpge_m_info.xmh[1];
-   rrpge_m_edat->stat.ropd[0xD6AU] = rrpge_m_info.pc;
-   rrpge_m_edat->stat.ropd[0xD6BU] = rrpge_m_info.sp;
-   rrpge_m_edat->stat.ropd[0xD6CU] = rrpge_m_info.bp;
-   /* Init CPU state for interrupt handler (pc inits depending on handler) */
-   for (i=0; i< 8; i++) rrpge_m_info.xr[i] = 0;
-   rrpge_m_info.xmh[0] = 0;
-   rrpge_m_info.xmh[1] = 0;
-   rrpge_m_info.sp = 0;
-   rrpge_m_info.bp = rrpge_m_info.sbt;
+  cy = 0;                      /* Will count consumed cycles */
 
-   /* Enter the interrupt */
-   if ((rrpge_m_edat->stat.ropd[0xD6FU] & 0x3U) == 0x1U){ /* Audio interrupt request */
-    rrpge_m_info.pc = rrpge_m_edat->stat.ropd[0xD31U];
-    rrpge_m_edat->stat.ropd[0xD6FU] = 0x2U;    /* Remove flag, within audio interrupt */
-   }else{                                      /* Video interrupt request */
-    rrpge_m_info.pc = rrpge_m_edat->stat.ropd[0xD30U];
-    rrpge_m_edat->stat.ropd[0xD6EU] = 0x2U;    /* Remove flag, within video interrupt */
-   }
+  /* Determine video stall mode, also set maximal number of cycles to
+  ** emulate (at least). */
 
-   cy = 400U;                  /* Interrupt entry cycle requirements */
-   if (rrpge_m_info.vac < cy){ rrpge_m_info.vac  = 0U; }
-   else{                       rrpge_m_info.vac -= cy; }
-   fo = 0;                     /* First operation passed */
+  if (rrpge_m_info.vln >= 400U){ /* In VBlank: No video display stalls */
+   rrpge_m_info.vsm = 0U;
+   cm = 400U - rrpge_m_info.vlc;
+  }else if (rrpge_m_info.vlc < 80U){ /* In HBlank: Display list stalls only */
+   rrpge_m_info.vsm = 1U;
+   cm = 80U  - rrpge_m_info.vlc;
+  }else{                       /* In display area: depends on layers enabled */
+   rrpge_m_info.vsm = rrpge_m_grlsm(rrpge_m_info.vln);
+   cm = 400U - rrpge_m_info.vlc;
+  }
 
-  }else{
+  /* Roll and add kernel internal task cycles if necessary. */
 
-   /* Did not enter interrupt, try to process some CPU cycles, at most as many
-   ** as fits in the current video stall mode (so operating by a 80cy HBlank /
-   ** 320cy Display split within a video line). First calculate the stall mode
-   ** for it. */
-
-   cy = 0;                     /* Will count consumed cycles */
-
-   /* Determine video stall mode, also set maximal number of cycles to
-   ** emulate (at least). */
-
-   if (rrpge_m_info.vln >= 400U){ /* In VBlank: No video display stalls */
-    rrpge_m_info.vsm = 0U;
-    cm = 400U - rrpge_m_info.vlc;
-   }else if (rrpge_m_info.vlc < 80U){ /* In HBlank: Display list stalls only */
-    rrpge_m_info.vsm = 1U;
-    cm = 80U  - rrpge_m_info.vlc;
-   }else{                      /* In display area: depends on layers enabled */
-    rrpge_m_info.vsm = rrpge_m_grlsm(rrpge_m_info.vln);
-    cm = 400U - rrpge_m_info.vlc;
-   }
-
-   /* Roll and add kernel internal task cycles if necessary. */
-
-   if ((rrpge_m_edat->kfc & 0x80000000U) != 0U){ /* Free cycles exhausted */
-    i   = (rrpge_m_prng() & 0x7FU) * 100U;
-    i  += 400U * 32U;          /* 32 - 64 lines of free time */
-    rrpge_m_edat->kfc += i + (i >> 2);
-    i >>= 2;
-    cy += i;                   /*  8 - 16 lines of kernel time */
+  if ((rrpge_m_edat->kfc & 0x80000000U) != 0U){ /* Free cycles exhausted */
+   i   = (rrpge_m_prng() & 0x7FU) * 100U;
+   i  += 400U * 32U;           /* 32 - 64 lines of free time */
+   rrpge_m_edat->kfc += i + (i >> 2);
+   i >>= 2;
+   cy += i;                    /*  8 - 16 lines of kernel time */
                                /* (Above i >> 2 is also added to the free time
                                ** since it will be subtracted later below) */
-    if (rrpge_m_info.vac <  i){ rrpge_m_info.vac  = 0U; }
-    else{                       rrpge_m_info.vac -= i;  }
-   }
+   if (rrpge_m_info.vac <  i){ rrpge_m_info.vac  = 0U; }
+   else{                       rrpge_m_info.vac -= i;  }
+  }
 
-   /* Now go on with running the CPU until either passing the cycle limit or
-   ** hitting a halt cause. */
+  /* Now go on with running the CPU until either passing the cycle limit or
+  ** hitting a halt cause. */
 
-   if       (rmod == RRPGE_RUN_SINGLE){ /* Single step: Process only one operation */
+  if       (rmod == RRPGE_RUN_SINGLE){ /* Single step: Process only one operation */
 
+   rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc];
+   i = rrpge_m_optable[rrpge_m_info.opc >> 9](); /* Run opcode */
+   if (rrpge_m_info.vac <  i){ rrpge_m_info.vac  = 0U; }
+   else{                       rrpge_m_info.vac -= i;  }
+   cy += i;
+
+  }else if (rmod == RRPGE_RUN_BREAK){  /* Breakpoint mode: after 1st op, halt on any breakpoints */
+
+   do{
+    if (fo != 0){              /* First operation passed: check for breakpoints. */
+     if ( (rrpge_m_edat->brkp[rrpge_m_info.pc >> 5]) &
+          (0x80000000U >> (rrpge_m_info.pc & 0x1FU)) ){ /* Breakpoint hit */
+      rrpge_m_info.hlt |= RRPGE_HLT_BREAK;
+      break;
+     }
+    }
     rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc];
     i = rrpge_m_optable[rrpge_m_info.opc >> 9](); /* Run opcode */
     if (rrpge_m_info.vac <  i){ rrpge_m_info.vac  = 0U; }
     else{                       rrpge_m_info.vac -= i;  }
     cy += i;
+    fo = 0;
+    if ( ( (rrpge_m_info.hlt) |              /* Some halt event happened */
+           (rrpge_m_info.arq) ) != 0) break; /* Graphics accelerator request */
+   }while (cy <= cm);
 
-   }else if (rmod == RRPGE_RUN_BREAK){  /* Breakpoint mode: after 1st op, halt on any breakpoints */
+  }else{                               /* Normal mode: just run until halt */
 
-    do{
-     if (fo != 0){             /* First operation passed: check for breakpoints. */
-      if ( (rrpge_m_edat->brkp[rrpge_m_info.pc >> 5]) &
-           (0x80000000U >> (rrpge_m_info.pc & 0x1FU)) ){ /* Breakpoint hit */
-       rrpge_m_info.hlt |= RRPGE_HLT_BREAK;
-       break;
-      }
-     }
-     rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc];
-     i = rrpge_m_optable[rrpge_m_info.opc >> 9](); /* Run opcode */
-     if (rrpge_m_info.vac <  i){ rrpge_m_info.vac  = 0U; }
-     else{                       rrpge_m_info.vac -= i;  }
-     cy += i;
-     fo = 0;
-     if ( ( (rrpge_m_info.hlt) |              /* Some halt event happened */
-            (rrpge_m_info.arq) ) != 0) break; /* Graphics accelerator request */
-    }while (cy <= cm);
-
-   }else{                               /* Normal mode: just run until halt */
-
-    do{
-     rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc];
-     i = rrpge_m_optable[rrpge_m_info.opc >> 9](); /* Run opcode */
-     if (rrpge_m_info.vac <  i){ rrpge_m_info.vac  = 0U; }
-     else{                       rrpge_m_info.vac -= i;  }
-     cy += i;
-     if ( ( (rrpge_m_info.hlt) |              /* Some halt event happened */
-            (rrpge_m_info.arq) ) != 0) break; /* Graphics accelerator request */
-    }while (cy <= cm);
-
-   }
+   do{
+    rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc];
+    i = rrpge_m_optable[rrpge_m_info.opc >> 9](); /* Run opcode */
+    if (rrpge_m_info.vac <  i){ rrpge_m_info.vac  = 0U; }
+    else{                       rrpge_m_info.vac -= i;  }
+    cy += i;
+    if ( ( (rrpge_m_info.hlt) |              /* Some halt event happened */
+           (rrpge_m_info.arq) ) != 0) break; /* Graphics accelerator request */
+   }while (cy <= cm);
 
   }
 
@@ -228,7 +182,6 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
 
   if (rrpge_m_info.auc <= cy){ /* At least one audio event passed */
    rrpge_m_info.hlt |= RRPGE_HLT_AUDIO; /* Will need audio servicing */
-   rrpge_m_edat->stat.ropd[0xD6FU] |= 0x1U;
    i = cy - rrpge_m_info.auc;  /* Cycles left after audio event */
    while (1){
     rrpge_m_edat->aco ++;      /* One more audio event needing service */
@@ -377,7 +330,6 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
  rrpge_m_edat->stat.ropd[0xD53U] = (uint16)(rrpge_m_info.auc);
  rrpge_m_edat->stat.ropd[0xD54U] = (uint16)(rrpge_m_info.vac >> 16);
  rrpge_m_edat->stat.ropd[0xD55U] = (uint16)(rrpge_m_info.vac);
- rrpge_m_edat->stat.ropd[0xD7EU] = rrpge_m_info.sbt;
  for (i=0; i<8; i++){
   rrpge_m_edat->stat.ropd[0xD40U + i] = rrpge_m_info.xr[i];
  }
