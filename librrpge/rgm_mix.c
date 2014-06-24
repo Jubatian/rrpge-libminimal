@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.06.24
 */
 
 
@@ -18,20 +18,20 @@
 auint rrpge_m_mixerop(void)
 {
  uint16* dram = &(rrpge_m_edat->stat.dram[0]); /* Address of RW data RAM */
- auint ssoh = rrpge_m_edat->stat.ropd[0xED0U]; /* Sample source, whole */
- auint ssol = rrpge_m_edat->stat.ropd[0xED1U]; /* Sample source, fraction */
- auint asoh = rrpge_m_edat->stat.ropd[0xED6U]; /* Amplitudo source, whole */
- auint asol = rrpge_m_edat->stat.ropd[0xED7U]; /* Amplitudo source, fraction */
- auint fsoh = rrpge_m_edat->stat.ropd[0xED4U]; /* Frequency source, whole */
- auint fsol = rrpge_m_edat->stat.ropd[0xED5U]; /* Frequency source, fraction */
- auint sdoh = rrpge_m_edat->stat.ropd[0xED8U]; /* Sample destination, whole */
- auint sdol = 0U;                              /* Sample destination, fraction */
- auint sfri = rrpge_m_edat->stat.ropd[0xED2U] & 0xFFU; /* Sample frequency index */
- auint ampl = rrpge_m_edat->stat.ropd[0xED3U]; /* Amplitudo multiplier */
- auint afri = rrpge_m_edat->stat.ropd[0xED9U] & 0xFFU; /* Amplitudo read (AM) frequency index */
- auint ffri = rrpge_m_edat->stat.ropd[0xED9U] >> 8;    /* Frequency read (FM) frequency index */
- auint fthi = (auint)(rrpge_m_edat->stat.ropd[0xEDAU] & 0x7FFU) << 8; /* Frequency table, whole */
- auint ftli = (auint)(rrpge_m_edat->stat.ropd[0xEDBU] & 0x7FFU) << 8; /* Frequency table, fraction */
+ auint ssoh = rrpge_m_edat->stat.ropd[0xEDBU]; /* Sample source, whole */
+ auint ssol = ((auint)(rrpge_m_edat->stat.ropd[0xEDCU]) << 16) + (auint)(rrpge_m_edat->stat.ropd[0xEDDU]); /* Sample source, fraction */
+ auint asoh = rrpge_m_edat->stat.ropd[0xED3U]; /* Amplitudo source, whole */
+ auint asol = ((auint)(rrpge_m_edat->stat.ropd[0xED4U]) << 16) + (auint)(rrpge_m_edat->stat.ropd[0xED5U]); /* Amplitudo source, fraction */
+ auint fsoh = rrpge_m_edat->stat.ropd[0xED0U]; /* Frequency source, whole */
+ auint fsol = ((auint)(rrpge_m_edat->stat.ropd[0xED1U]) << 16) + (auint)(rrpge_m_edat->stat.ropd[0xED2U]); /* Frequency source, fraction */
+ auint sdoh = rrpge_m_edat->stat.ropd[0xED8U]; /* Sample destination, high part */
+ auint sdol = 0U;                              /* Sample destination, low part */
+ auint sfri = rrpge_m_edat->stat.ropd[0xEDEU] & 0xFFU; /* Sample frequency index */
+ auint ampl = rrpge_m_edat->stat.ropd[0xEDAU]; /* Amplitudo multiplier */
+ auint afri = rrpge_m_edat->stat.ropd[0xED6U] & 0xFFU; /* Amplitudo read (AM) frequency index */
+ auint ffri = rrpge_m_edat->stat.ropd[0xED6U] >> 8;    /* Frequency read (FM) frequency index */
+ auint fthi = (auint)(rrpge_m_edat->stat.ropd[0xECEU] & 0xFFFU) << 8; /* Frequency table, whole */
+ auint ftli = (auint)(rrpge_m_edat->stat.ropd[0xECFU] & 0xFFFU) << 8; /* Frequency table, fraction */
  uint16* fthp = &(rrpge_m_edat->stat.dram[fthi]);      /* Pointer to freq. table high */
  uint16* ftlp = &(rrpge_m_edat->stat.dram[ftli]);      /* Pointer to freq. table low */
  auint wdno = ((rrpge_m_edat->stat.ropd[0xEDFU] - 1U) & 0x1FFU) + 1U; /* Number of words to process */
@@ -47,35 +47,25 @@ auint rrpge_m_mixerop(void)
 
  /* Copy high parts to low part high words, for partitioning */
  sdol |= sdoh << 16;
- ssol |= ssoh << 16;
- asol |= asoh << 16;
- fsol |= fsoh << 16;
 
  /* Apply partitioning */
- i = rrpge_m_edat->stat.ropd[0xEDCU];          /* Partitioning bits */
+ i = rrpge_m_edat->stat.ropd[0xED7U];          /* Partitioning bits */
  sdpr  = (2U <<  (i & 0x000FU)       ) - 1U;
  sdoh &= ~sdpr;
- sdpr  = (sdpr << 16) | 0xFFFFU;
  sdol &=  sdpr;
  sspr  = (2U << ((i & 0x00F0U) >>  4)) - 1U;
  ssoh &= ~sspr;
- sspr  = (sspr << 16) | 0xFFFFU;
- ssol &=  sspr;
  aspr  = (2U << ((i & 0x0F00U) >>  8)) - 1U;
  asoh &= ~aspr;
- aspr  = (aspr << 16) | 0xFFFFU;
- asol &=  aspr;
  fspr  = (2U << ((i & 0xF000U) >> 12)) - 1U;
  fsoh &= ~fspr;
- fspr  = (fspr << 16) | 0xFFFFU;
- fsol &=  fspr;
 
  /* Apply bank selection on whole parts */
- i = rrpge_m_edat->stat.ropd[0xEDDU];          /* Bank select bits */
- sdoh |= (i & 0x0007U) << 16;
- ssoh |= (i & 0x0070U) << 12;
- asoh |= (i & 0x0700U) <<  8;
- fsoh |= (i & 0x7000U) <<  4;
+ i = rrpge_m_edat->stat.ropd[0xED9U];          /* Bank select bits */
+ sdoh |= (i & 0x000FU) << 16;
+ ssoh |= (i & 0x00F0U) << 12;
+ asoh |= (i & 0x0F00U) <<  8;
+ fsoh |= (i & 0xF000U) <<  4;
 
  /* Fix amplitudo multiplier (for non-AM modes) */
  if ((ampl & 0x0100U) != 0U){ ampl = 0x100U; }
@@ -97,27 +87,24 @@ auint rrpge_m_mixerop(void)
   /* Perform FM if appropriate: first load the frequency value then increment
   ** the frequency source. */
   if ((flgs & 0x8000U)!=0){
-   sfri  = (dram[fsoh | (fsol >> 16)] >> (((fsol ^ 0x8000U) & 0x8000U) >> 12)) & 0xFFU;
+   sfri  = (dram[fsoh | ((fsol >> 16) & fspr)] >> (((fsol ^ 0x8000U) & 0x8000U) >> 12)) & 0xFFU;
    fsol += ((auint)(fthp[ffri]) << 16) + (auint)(ftlp[ffri]);
-   fsol &= fspr;
   }
 
   /* Perform AM if appropriate: first load the amplitudo value then increment
   ** the amplitudo source. */
   if ((flgs & 0x4000U)!=0){
-   ampl  = (dram[asoh | (asol >> 16)] >> (((asol ^ 0x8000U) & 0x8000U) >> 12)) & 0xFFU;
+   ampl  = (dram[asoh | ((asol >> 16) & aspr)] >> (((asol ^ 0x8000U) & 0x8000U) >> 12)) & 0xFFU;
    asol += ((auint)(fthp[afri]) << 16) + (auint)(ftlp[afri]);
-   asol &= aspr;
   }
 
   /* Load the two samples to process in this iteration. For the second sample
   ** use a temporary half add method. */
-  s     = ((dram[ssoh | (ssol >> 16)] >> (((ssol ^ 0x8000U) & 0x8000U) >> 12)) & 0xFFU) << 16;
+  s     = ((dram[ssoh | ((ssol >> 16) & sspr)] >> (((ssol ^ 0x8000U) & 0x8000U) >> 12)) & 0xFFU) << 16;
   i     = ((auint)(fthp[sfri]) << 16) + (auint)(ftlp[sfri]);
-  m     = (ssol + (i >> 1)) & sspr;
-  s    |= ((dram[ssoh | (   m >> 16)] >> (((   m ^ 0x8000U) & 0x8000U) >> 12)) & 0xFFU);
+  m     = (ssol + (i >> 1));
+  s    |= ((dram[ssoh | ((   m >> 16) & sspr)] >> (((   m ^ 0x8000U) & 0x8000U) >> 12)) & 0xFFU);
   ssol += i;
-  ssol &= sspr;
 
   /* Calculate amplitude multiplication:
   ** s =   ((s - 128) * ampl) / 256) + 128 with unsigned arithmetic:
@@ -131,7 +118,7 @@ auint rrpge_m_mixerop(void)
   s = ((((s * ampl) >> 7) + i) >> 1) & 0x00FF00FFU;
 
   /* Calculate destination address */
-  i = sdoh + (sdol >> 16);
+  i = sdoh + sdol;
 
   /* Do saturated addition with the destination if requested */
   if ((flgs & 0x2000U) == 0U){
@@ -157,7 +144,7 @@ auint rrpge_m_mixerop(void)
   /* Write out destination and increment it's pointer */
   s = (s & 0xFFU) + (s >> 8);
   dram[i] = s;
-  sdol += 0x10000U;
+  sdol ++;
   sdol &= sdpr;
 
   /* One less pair of samples to go */
@@ -165,22 +152,19 @@ auint rrpge_m_mixerop(void)
  }while (wdno != 0);
 
  /* Undo partitioning (apply whole bits to the whole parts) */
- sdoh |= sdol >> 16;
- ssoh |= ssol >> 16;
- asoh |= asol >> 16;
- fsoh |= fsol >> 16;
+ sdoh |= sdol;
 
  /* Write backs registers which have to be written back. All of them were
  ** updated right, so it is only necessary to send them back in the
  ** appropriate ROPD cells. */
- rrpge_m_edat->stat.ropd[0xED0U] = (uint16)(ssoh);
- rrpge_m_edat->stat.ropd[0xED1U] = (uint16)(ssol);
- rrpge_m_edat->stat.ropd[0xED2U] = (uint16)(sfri);
- rrpge_m_edat->stat.ropd[0xED3U] = (uint16)(ampl);
- rrpge_m_edat->stat.ropd[0xED4U] = (uint16)(fsoh);
- rrpge_m_edat->stat.ropd[0xED5U] = (uint16)(fsol);
- rrpge_m_edat->stat.ropd[0xED6U] = (uint16)(asoh);
- rrpge_m_edat->stat.ropd[0xED7U] = (uint16)(asol);
+ rrpge_m_edat->stat.ropd[0xEDCU] = (uint16)(ssol >> 16);
+ rrpge_m_edat->stat.ropd[0xEDDU] = (uint16)(ssol);
+ rrpge_m_edat->stat.ropd[0xEDEU] = (uint16)(sfri);
+ rrpge_m_edat->stat.ropd[0xEDAU] = (uint16)(ampl);
+ rrpge_m_edat->stat.ropd[0xED1U] = (uint16)(fsol >> 16);
+ rrpge_m_edat->stat.ropd[0xED2U] = (uint16)(fsol);
+ rrpge_m_edat->stat.ropd[0xED4U] = (uint16)(asol >> 16);
+ rrpge_m_edat->stat.ropd[0xED5U] = (uint16)(asol);
  rrpge_m_edat->stat.ropd[0xED8U] = (uint16)(sdoh);
 
  return ret;
