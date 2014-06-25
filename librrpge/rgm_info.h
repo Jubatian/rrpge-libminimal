@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.10
+**  \date      2014.06.25
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -84,6 +84,9 @@ struct rrpge_object_s{
  uint16 reci[512U];  /* Receive source ID buffer (64 sources, 8 words each) */
  auint  recl[64U];   /* Receive packet length buffer */
 
+ uint8  audl[1024U]; /* Audio left double buffer (2 x 512 samples) */
+ uint8  audr[1024U]; /* Audio right double buffer (2 x 512 samples) */
+
  auint  frep[4U  * 401U];
                      /* Layer pointers for a forward render buffer.
                      ** Here the data for ROPD: 0xD58 - 0xD5F is calculated;
@@ -119,6 +122,7 @@ struct rrpge_object_s{
 
  auint  hlt;         /* Finalized halt causes (from the info struct) */
 
+ auint  audp;        /* Audio double buffer next fill pointer */
  auint  aco;         /* Count of audio events needing service */
 
  auint  kfc;         /* Free cycle count remaining between kernel internal
@@ -140,9 +144,6 @@ typedef struct{
  auint  auc;         /* Cycles until next audio event (ROPD: 0xD52-0xD53) */
  auint  vac;         /* Cycles remaining from video acc. op. (ROPD: 0xD54-0xD55) */
  auint  sbt;         /* Current stack bottom (ROPD: 0xD7E) */
-
- auint  adv;         /* Audio divider, calculated from frequency & half buffer
-                     ** sizes in app. header (ROPD: 0xBC2) */
 
  auint  grr;         /* Recolor bank load necessary flag: set on entry, will
                      ** ask for populating grb[] when it is needed. */

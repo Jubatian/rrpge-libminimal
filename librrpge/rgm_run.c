@@ -5,11 +5,12 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.23
+**  \date      2014.06.25
 */
 
 
 #include "rgm_run.h"
+#include "rgm_aud.h"
 #include "rgm_cpua.h"
 #include "rgm_cpuo.h"
 #include "rgm_grln.h"
@@ -26,8 +27,8 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
  auint i;
  auint cy;                     /* Cycle counting work variable */
  auint cm;                     /* Cycle limit for inner loop */
- auint r = 0;                  /* Return number of cycles */
- auint fo = 1;                 /* Is this the first operation? (For breakpoints) */
+ auint r  = 0U;                /* Return number of cycles */
+ auint fo = 1U;                /* Is this the first operation? (For breakpoints) */
 
  rrpge_m_edat = hnd;
 
@@ -49,11 +50,9 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
  }
  rrpge_m_info.vln = rrpge_m_edat->stat.ropd[0xD50U];
  rrpge_m_info.vlc = rrpge_m_edat->stat.ropd[0xD51U];
- rrpge_m_info.auc = ((auint)(rrpge_m_edat->stat.ropd[0xD52U]) << 16) +
-                    ((auint)(rrpge_m_edat->stat.ropd[0xD53U]));
+ rrpge_m_info.auc = rrpge_m_edat->stat.ropd[0xD53U];
  rrpge_m_info.vac = ((auint)(rrpge_m_edat->stat.ropd[0xD54U]) << 16) +
                     ((auint)(rrpge_m_edat->stat.ropd[0xD55U]));
- rrpge_m_info.adv = ((RRPGE_M_OSC / 1000U) *  512U + 24U) / 48U; /* 512 samples; 48KHz */
  rrpge_m_info.grr = 1U;   /* Reload recolor banks */
  if ((rrpge_m_edat->stat.ropd[0xD57U] & 0xFFFFU) != 1U){ /* 4bit mode */
   rrpge_m_info.vbm = 0x0FU;
@@ -76,38 +75,48 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
 
  do{
 
-  /* Check for interrupt entry and do it if appropriate */
+  /* Emulate at most as many cycles as fits in what remains from the current
+  ** video line. Random kernel stall is only applied after this: it is
+  ** irrelevant if it extends into more video lines (just as DMA could span
+  ** multiple lines this way) */
 
-  if ((rrpge_m_edat->stat.ropd[0xD30U]) == 0x0000U){ /* No video IT function - no entry */
-   rrpge_m_edat->stat.ropd[0xD6EU] &= ~0x1U;
+  cy = 0U;                     /* Count of emulated cycles */
+
+  if       (rmod == RRPGE_RUN_SINGLE){ /* Single step: Process only one operation */
+
+   rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc];
+   cy += rrpge_m_optable[rrpge_m_info.opc >> 9]();  /* Run opcode */
+
+  }else if (rmod == RRPGE_RUN_BREAK){  /* Breakpoint mode: after 1st op, halt on any breakpoints */
+
+   do{
+    if (fo != 0U){             /* First operation passed: check for breakpoints. */
+     if ( (rrpge_m_edat->brkp[rrpge_m_info.pc >> 5]) &
+          (0x80000000U >> (rrpge_m_info.pc & 0x1FU)) ){ /* Breakpoint hit */
+      rrpge_m_info.hlt |= RRPGE_HLT_BREAK;
+      break;
+     }
+    }
+    rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc];
+    cy += rrpge_m_optable[rrpge_m_info.opc >> 9](); /* Run opcode */
+    fo = 0U;
+    if ( ( (rrpge_m_info.hlt) |                     /* Some halt event happened */
+           (rrpge_m_info.arq) ) != 0U){ break; }    /* Graphics accelerator request */
+   }while (cy <= rrpge_m_info.vlc);
+
+  }else{                               /* Normal mode: just run until halt */
+
+   do{
+    rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc];
+    cy += rrpge_m_optable[rrpge_m_info.opc >> 9](); /* Run opcode */
+    if ( ( (rrpge_m_info.hlt) |                     /* Some halt event happened */
+           (rrpge_m_info.arq) ) != 0) break;        /* Graphics accelerator request */
+   }while (cy <= rrpge_m_info.vlc);
+
   }
-  if ((rrpge_m_edat->stat.ropd[0xD31U]) == 0x0000U){ /* No audio IT function - no entry */
-   rrpge_m_edat->stat.ropd[0xD6FU] &= ~0x1U;
-  }
 
-
-  /* Try to process some CPU cycles, at most as many
-  ** as fits in the current video stall mode (so operating by a 80cy HBlank /
-  ** 320cy Display split within a video line). First calculate the stall mode
-  ** for it. */
-
-  cy = 0;                      /* Will count consumed cycles */
-
-  /* Determine video stall mode, also set maximal number of cycles to
-  ** emulate (at least). */
-
-  if (rrpge_m_info.vln >= 400U){ /* In VBlank: No video display stalls */
-   rrpge_m_info.vsm = 0U;
-   cm = 400U - rrpge_m_info.vlc;
-  }else if (rrpge_m_info.vlc < 80U){ /* In HBlank: Display list stalls only */
-   rrpge_m_info.vsm = 1U;
-   cm = 80U  - rrpge_m_info.vlc;
-  }else{                       /* In display area: depends on layers enabled */
-   rrpge_m_info.vsm = rrpge_m_grlsm(rrpge_m_info.vln);
-   cm = 400U - rrpge_m_info.vlc;
-  }
-
-  /* Roll and add kernel internal task cycles if necessary. */
+  /* Roll and add kernel internal task cycles if necessary. This is done here
+  ** since it needs to produce CPU cycles. */
 
   if ((rrpge_m_edat->kfc & 0x80000000U) != 0U){ /* Free cycles exhausted */
    i   = (rrpge_m_prng() & 0x7FU) * 100U;
@@ -117,81 +126,29 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
    cy += i;                    /*  8 - 16 lines of kernel time */
                                /* (Above i >> 2 is also added to the free time
                                ** since it will be subtracted later below) */
-   if (rrpge_m_info.vac <  i){ rrpge_m_info.vac  = 0U; }
-   else{                       rrpge_m_info.vac -= i;  }
   }
 
-  /* Now go on with running the CPU until either passing the cycle limit or
-  ** hitting a halt cause. */
-
-  if       (rmod == RRPGE_RUN_SINGLE){ /* Single step: Process only one operation */
-
-   rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc];
-   i = rrpge_m_optable[rrpge_m_info.opc >> 9](); /* Run opcode */
-   if (rrpge_m_info.vac <  i){ rrpge_m_info.vac  = 0U; }
-   else{                       rrpge_m_info.vac -= i;  }
-   cy += i;
-
-  }else if (rmod == RRPGE_RUN_BREAK){  /* Breakpoint mode: after 1st op, halt on any breakpoints */
-
-   do{
-    if (fo != 0){              /* First operation passed: check for breakpoints. */
-     if ( (rrpge_m_edat->brkp[rrpge_m_info.pc >> 5]) &
-          (0x80000000U >> (rrpge_m_info.pc & 0x1FU)) ){ /* Breakpoint hit */
-      rrpge_m_info.hlt |= RRPGE_HLT_BREAK;
-      break;
-     }
-    }
-    rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc];
-    i = rrpge_m_optable[rrpge_m_info.opc >> 9](); /* Run opcode */
-    if (rrpge_m_info.vac <  i){ rrpge_m_info.vac  = 0U; }
-    else{                       rrpge_m_info.vac -= i;  }
-    cy += i;
-    fo = 0;
-    if ( ( (rrpge_m_info.hlt) |              /* Some halt event happened */
-           (rrpge_m_info.arq) ) != 0) break; /* Graphics accelerator request */
-   }while (cy <= cm);
-
-  }else{                               /* Normal mode: just run until halt */
-
-   do{
-    rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc];
-    i = rrpge_m_optable[rrpge_m_info.opc >> 9](); /* Run opcode */
-    if (rrpge_m_info.vac <  i){ rrpge_m_info.vac  = 0U; }
-    else{                       rrpge_m_info.vac -= i;  }
-    cy += i;
-    if ( ( (rrpge_m_info.hlt) |              /* Some halt event happened */
-           (rrpge_m_info.arq) ) != 0) break; /* Graphics accelerator request */
-   }while (cy <= cm);
-
-  }
-
-
-  /* Some operations were completed. They might have set halt causes, started
-  ** kernel tasks, triggered a graphics accelerator function, and certainly
-  ** consumed some cycles. */
+  /* CPU oriented emulation streak complete, cycles emulated are in cy. Now
+  ** asynchronous tasks may start and catch up with the CPU. */
 
   r += cy;                     /* Sum emulated cycles for return value */
   rrpge_m_edat->kfc -= cy;     /* Free cycles remaining until next kernel takeover */
+
+  /* Process asynchronous tasks which should perform during the consumed
+  ** cycles. */
+
+  /* Audio processing. This may also raise an audio halt cause indicating an
+  ** 512 sample streak. */
+
+  rrpge_m_audproc(cy);
+
+
+
 
 
   /* Apply consumed cycles. During this audio and video interrupts might be
   ** flagged and video lines may be rendered if necessary. */
 
-  /* Check if audio interrupt will happen & calculate effect on audio */
-
-  if (rrpge_m_info.auc <= cy){ /* At least one audio event passed */
-   rrpge_m_info.hlt |= RRPGE_HLT_AUDIO; /* Will need audio servicing */
-   i = cy - rrpge_m_info.auc;  /* Cycles left after audio event */
-   while (1){
-    rrpge_m_edat->aco ++;      /* One more audio event needing service */
-    if (i < rrpge_m_info.adv) break;    /* No more audio events happen here */
-    i -= rrpge_m_info.adv;
-   }
-   rrpge_m_info.auc = rrpge_m_info.adv - i;
-  }else{
-   rrpge_m_info.auc -= cy;
-  }
 
   /* Render video lines as needed */
 
@@ -326,8 +283,7 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
  }
  rrpge_m_edat->stat.ropd[0xD50U] = rrpge_m_info.vln;
  rrpge_m_edat->stat.ropd[0xD51U] = rrpge_m_info.vlc;
- rrpge_m_edat->stat.ropd[0xD52U] = (uint16)(rrpge_m_info.auc >> 16);
- rrpge_m_edat->stat.ropd[0xD53U] = (uint16)(rrpge_m_info.auc);
+ rrpge_m_edat->stat.ropd[0xD53U] = rrpge_m_info.auc;
  rrpge_m_edat->stat.ropd[0xD54U] = (uint16)(rrpge_m_info.vac >> 16);
  rrpge_m_edat->stat.ropd[0xD55U] = (uint16)(rrpge_m_info.vac);
  for (i=0; i<8; i++){

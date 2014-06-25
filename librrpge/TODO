@@ -7,3 +7,29 @@ Application header - license & RRPGE specification check.
 rrpge_db.h (Debug functions)
 rrpge_pr.h (Library properties)
 
+
+
+
+Overall architecture for 00.006.000
+
+
+Simplify. All randomizing quirks will be removed, cleaning up especially the
+graphics.
+
+At the CPU side, always attempt to render to the end of the current graphics
+line, position of HBlank is irrelevant.
+
+The Graphics FIFO does not need to follow the CPU that strict like now since
+it is mostly intended to perform large bulk operations anyway (no need to
+terminate roughly cycle exact like now with the Accelerator alone).
+
+The method for both the Display and the Graphics FIFO & related is to follow
+the CPU, doing any necessary renders as needed to catch up.
+
+DMA peripherals work at the same level like the CPU, they can simply be fired
+like the Mixer now, from the address generator.
+
+
+From the graphics only the rrpge_m_grln() function will remain rendering the
+current line. This part may be left alone until finalizing 00.007.000, thus
+skipping 00.006.000 altogether for this part.
