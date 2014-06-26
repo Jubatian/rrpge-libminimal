@@ -175,10 +175,14 @@ typedef struct{
 /** Graphics fault. Either overflowing the Graphics FIFO, or attempting to
 **  access graphics during the execution of a FIFO operation. */
 #define RRPGE_HLT_GRAPHICS    0x0100U
+/** DMA fault. One of the DMA peripherals are attempted to be fired with
+**  improper address. This may also be fired alongside a GRAPHICS halt if the
+**  CPU <=> VRAM DMA is attempted to be fired during FIFO not empty. */
+#define RRPGE_HLT_DMA         0x0200U
 /** Application fault (other). The emulation can not continue. This normally
 **  should not happen, emulators may use this to signal internal errors where
 **  it is detected they can not continue running the emulation. */
-#define RRPGE_HLT_FAULT       0x0200U
+#define RRPGE_HLT_FAULT       0x0400U
 /** \} */
 
 

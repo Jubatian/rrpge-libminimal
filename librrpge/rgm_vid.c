@@ -46,12 +46,14 @@ void rrpge_m_vidproc(auint cy)
    rrpge_m_grln();
   }
 
-  /* Process 400 cycles worth of FIFO & Accelerator operations */
+  /* Process 400 cycles worth of FIFO & Accelerator operations. Note that
+  ** rrpge_m_info.vac will stay nonzero as long as there is anything still
+  ** processing. */
 
   fc = 400U;
   while (1){
 
-   if (fc > rrpge_m_info.vac){ /* Accelerator / FIFO op. can finish this line */
+   if (fc >= rrpge_m_info.vac){   /* Accelerator / FIFO op. can finish this line */
     fc -= rrpge_m_info.vac;
     rrpge_m_info.vac = 0U;
    }else{                      /* Can not finish, only some cycles drained */
