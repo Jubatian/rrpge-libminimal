@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.24
+**  \date      2014.06.26
 */
 
 
@@ -26,8 +26,9 @@ static uint8 const rrpge_m_graccy_tc[32] = {
 
 
 /* Calculates cycles taken by an accelerator function according to the current
-** display list contents. Stores the result in rrpge_m_info.vac. */
-void rrpge_m_graccy(void)
+** accelerator register contents. Call it before actually executing the
+** operation. */
+auint rrpge_m_graccy(void)
 {
  auint ac;           /* Accelerator cycles summed */
  auint nc;           /* Cell count extracted from parameters */
@@ -91,6 +92,5 @@ void rrpge_m_graccy(void)
  /* Produce return value (add to the cycle count, if any is already there,
  ** for example from the Graphics FIFO). */
 
- rrpge_m_info.vac += ac;
-
+ return ac;
 }

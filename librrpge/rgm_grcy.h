@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.24
+**  \date      2014.06.26
 */
 
 
@@ -16,8 +16,9 @@
 
 
 /* Calculates cycles taken by an accelerator function according to the current
-** display list contents. Stores the result in rrpge_m_info.vac. */
-void rrpge_m_graccy(void);
+** accelerator register contents. Call it before actually executing the
+** operation. */
+auint rrpge_m_graccy(void);
 
 
 #endif

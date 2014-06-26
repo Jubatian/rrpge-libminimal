@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.25
+**  \date      2014.06.26
 */
 
 
@@ -30,9 +30,11 @@ void rrpge_m_audproc(auint cy)
 
  rrpge_m_info.auc -= cy;
 
- /* Until the remaining cycles to next audio event is negative, process */
+ /* Until the remaining cycles to next audio event is negative or zero,
+ ** process */
 
- while ((rrpge_m_info.auc & 0x80000000U) != 0U){
+ while ( ((rrpge_m_info.auc & 0x80000000U) != 0U) ||
+         (rrpge_m_info.auc == 0U) ){
 
   /* One audio tick will be processed */
 

@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.25
+**  \date      2014.06.26
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -150,7 +150,7 @@ typedef struct{
  auint  vbm;         /* Video mode bitmask. 0xF for 4bit mode, 0xFF for 8bit
                      ** mode. (From ROPD: 0xBC0) */
 
- auint  arq;         /* Request accelerator operation if set */
+ auint  frq;         /* Request Graphics FIFO operation if set */
 
  auint  vsm;         /* Video Stall Mode. 0,1,2,3 or 4 according to the
                      ** currently effective stall mode (roughly number of

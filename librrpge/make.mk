@@ -9,7 +9,7 @@ OBJECTS+= $(OBD)rgm_aq.o   $(OBD)rgm_aud.o  $(OBD)rgm_cb.o   $(OBD)rgm_chk.o
 OBJECTS+= $(OBD)rgm_cpua.o $(OBD)rgm_cpuo.o $(OBD)rgm_grcy.o $(OBD)rgm_grln.o
 OBJECTS+= $(OBD)rgm_grop.o $(OBD)rgm_info.o $(OBD)rgm_ires.o $(OBD)rgm_krnm.o
 OBJECTS+= $(OBD)rgm_main.o $(OBD)rgm_mix.o  $(OBD)rgm_prng.o $(OBD)rgm_run.o
-OBJECTS+= $(OBD)rgm_ser.o  $(OBD)rgm_task.o
+OBJECTS+= $(OBD)rgm_ser.o  $(OBD)rgm_task.o $(OBD)rgm_vid.o
 
 $(OBD)rgm_aq.o: librrpge/rgm_aq.c librrpge/rgm_aq.h
 	$(CC) -c librrpge/rgm_aq.c -o $(OBD)rgm_aq.o $(CFSPD)
@@ -82,3 +82,7 @@ $(OBD)rgm_ser.o: librrpge/rgm_ser.c librrpge/rgm_ser.h
 $(OBD)rgm_task.o: librrpge/rgm_task.c librrpge/rgm_task.h
 	$(CC) -c librrpge/rgm_task.c -o $(OBD)rgm_task.o $(CFSPD)
 	$(CC) -S librrpge/rgm_task.c -o $(OBD)rgm_task.asm $(CFSPD)
+
+$(OBD)rgm_vid.o: librrpge/rgm_vid.c librrpge/rgm_vid.h
+	$(CC) -c librrpge/rgm_vid.c -o $(OBD)rgm_vid.o $(CFSPD)
+	$(CC) -S librrpge/rgm_vid.c -o $(OBD)rgm_vid.asm $(CFSPD)

@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.11
+**  \date      2014.06.26
 */
 
 
@@ -53,8 +53,9 @@ typedef struct rrpge_object_s rrpge_object_t;
 */
 typedef struct{
  rrpge_uint32 vram[128U * 2048U]; /**< Video memory (128 pages) */
- rrpge_uint16 dram[224U * 4096U]; /**< Data memory (224 pages) */
+ rrpge_uint16 dram[448U * 4096U]; /**< Data memory (448 pages) */
  rrpge_uint16 sram[8U   * 4096U]; /**< Stack memory (8 pages) */
+ rrpge_uint16 fram[8U   * 4096U]; /**< FIFO memory (8 pages) */
  rrpge_uint16 ropd[4096U];        /**< Read only process descriptor */
 }rrpge_state_t;
 
@@ -171,10 +172,13 @@ typedef struct{
 **  should not be continued. If so, the PC will point after the offending
 **  instruction. */
 #define RRPGE_HLT_STACK       0x0080U
+/** Graphics fault. Either overflowing the Graphics FIFO, or attempting to
+**  access graphics during the execution of a FIFO operation. */
+#define RRPGE_HLT_GRAPHICS    0x0100U
 /** Application fault (other). The emulation can not continue. This normally
 **  should not happen, emulators may use this to signal internal errors where
 **  it is detected they can not continue running the emulation. */
-#define RRPGE_HLT_FAULT       0x0100U
+#define RRPGE_HLT_FAULT       0x0200U
 /** \} */
 
 

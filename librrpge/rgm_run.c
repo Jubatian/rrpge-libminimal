@@ -5,17 +5,15 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.25
+**  \date      2014.06.26
 */
 
 
 #include "rgm_run.h"
 #include "rgm_aud.h"
+#include "rgm_vid.h"
 #include "rgm_cpua.h"
 #include "rgm_cpuo.h"
-#include "rgm_grln.h"
-#include "rgm_grcy.h"
-#include "rgm_grop.h"
 #include "rgm_prng.h"
 #include "rgm_task.h"
 
@@ -38,9 +36,9 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
       RRPGE_HLT_AUDIO |        /* Need servicing audio event first */
       RRPGE_HLT_EXIT |         /* Can not continue */
       RRPGE_HLT_FAULT) ){      /* Can not continue */
-  return 0;
+  return 0U;
  }
- rrpge_m_info.hlt = 0;         /* All other halt causes simply clear */
+ rrpge_m_info.hlt = 0U;        /* All other halt causes simply clear */
 
  /* Export ROPD data into info structure */
 
@@ -134,6 +132,7 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
   r += cy;                     /* Sum emulated cycles for return value */
   rrpge_m_edat->kfc -= cy;     /* Free cycles remaining until next kernel takeover */
 
+
   /* Process asynchronous tasks which should perform during the consumed
   ** cycles. */
 
@@ -142,124 +141,17 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
 
   rrpge_m_audproc(cy);
 
+  /* Video processing. Generates display output (including calling the line
+  ** callback), and processes Graphics FIFO as required. */
 
-
-
-
-  /* Apply consumed cycles. During this audio and video interrupts might be
-  ** flagged and video lines may be rendered if necessary. */
-
-
-  /* Render video lines as needed */
-
-  if ((rrpge_m_info.vlc + cy) >= 400U){ /* At least one video line passed */
-   i = cy - (400U - rrpge_m_info.vlc);
-
-   while (1){
-
-    rrpge_m_info.vln ++;
-    if (rrpge_m_info.vln >= RRPGE_M_VLN){ rrpge_m_info.vln = 0; }
-
-    /* Part of the randomizing hack. The line may render at either the
-    ** beginning or the end of the line's cycles, this case the end. */
-    if ((rrpge_m_edat->rena) & 0x2U){   /* Rendering is enabled */
-     if ((rrpge_m_edat->frld) != 0U){   /* Previous line was not rendered */
-      rrpge_m_grln();
-     }
-    }
-
-    /* If no forward rendering was performed earlier, render the line */
-    if (rrpge_m_info.vln != (rrpge_m_edat->frln)){
-     rrpge_m_grpr();                    /* Initialize for rendering */
-    }
-
-    /* Render current line. A randomizing hack is placed here which either
-    ** renders the line at the beginning or the end of the line's emulated
-    ** cycles likely causing noticable flicker in applications attempting to
-    ** rely on this unspecified behaviour (that is writing in the fetched
-    ** line). If the random passes, this is the render at begin case. */
-    if ((rrpge_m_edat->rena) & 0x2U){   /* Rendering is enabled */
-     if ((rrpge_m_edat->frld) != 0U){   /* There is a line to render? */
-      if (rrpge_m_prng() & 1U){         /* If the dice says so, render! */
-       rrpge_m_grln();
-      }
-     }
-    }
-
-    /* Process synchronous (to emulation) graphics logic */
-    if (rrpge_m_info.vln >= 400U){      /* In VBlank */
-     if (rrpge_m_info.vln == 400U){     /* Just entered */
-      if (rrpge_m_edat->stat.ropd[0xD20U] >= 400U){ /* VBlank interrupt */
-       rrpge_m_edat->stat.ropd[0xD6EU] |= 0x1U;
-      }
-     }
-    }else{                     /* In display area */
-     if (rrpge_m_edat->stat.ropd[0xD20U] == rrpge_m_info.vln){ /* Display line interrupt */
-      rrpge_m_edat->stat.ropd[0xD6EU] |= 0x1U;
-     }
-     /* Update the ROPD display list pointers */
-     rrpge_m_edat->stat.ropd[0xD58U] = (uint16)(rrpge_m_edat->frep[(rrpge_m_info.vln << 2) + 4U] >> 16);
-     rrpge_m_edat->stat.ropd[0xD59U] = (uint16)(rrpge_m_edat->frep[(rrpge_m_info.vln << 2) + 4U]);
-     rrpge_m_edat->stat.ropd[0xD5AU] = (uint16)(rrpge_m_edat->frep[(rrpge_m_info.vln << 2) + 5U] >> 16);
-     rrpge_m_edat->stat.ropd[0xD5BU] = (uint16)(rrpge_m_edat->frep[(rrpge_m_info.vln << 2) + 5U]);
-     rrpge_m_edat->stat.ropd[0xD5CU] = (uint16)(rrpge_m_edat->frep[(rrpge_m_info.vln << 2) + 6U] >> 16);
-     rrpge_m_edat->stat.ropd[0xD5DU] = (uint16)(rrpge_m_edat->frep[(rrpge_m_info.vln << 2) + 6U]);
-     rrpge_m_edat->stat.ropd[0xD5EU] = (uint16)(rrpge_m_edat->frep[(rrpge_m_info.vln << 2) + 7U] >> 16);
-     rrpge_m_edat->stat.ropd[0xD5FU] = (uint16)(rrpge_m_edat->frep[(rrpge_m_info.vln << 2) + 7U]);
-    }
-
-    if (i < 400U) break;       /* Consume lines & loop */
-    i -= 400U;
-   }
-
-   rrpge_m_info.vlc = i;
-  }else{
-   rrpge_m_info.vlc += cy;
-  }
-
-
-  /* If a graphic accelerator function was triggered, process it with the
-  ** random forward rendering beforehands (the exact completion of the
-  ** accelerator relative to the display output is unspecified, when designing
-  ** race with the beam style code it may be common to accidentally hit this
-  ** behaviour. This will uncover such glitches for the developer). */
-
-  if (rrpge_m_info.arq != 0U){
-
-   rrpge_m_graccy();           /* Calculates cycle requirements in rrpge_m_info.vac */
-
-   if (rrpge_m_prng() & 1U){   /* Randomly do a render forward */
-    /* Render "leftover" line if any */
-    if ((rrpge_m_edat->rena) & 0x2U){   /* Rendering is enabled */
-     if ((rrpge_m_edat->frld) != 0U){   /* Previous line was not rendered */
-      rrpge_m_grln();
-     }
-    }
-    /* Now pass over all lines the acc. operation spans and forward render
-    ** them. */
-    i = rrpge_m_info.vac;
-    if (i >= 400U - rrpge_m_info.vlc){  /* At least one line */
-     i -= 400U - rrpge_m_info.vlc;
-    }
-    while (i >= 400U){
-     rrpge_m_grpr();
-     if ((rrpge_m_edat->rena) & 0x2U){  /* rrpge_m_grpr() might turn it on / off */
-      rrpge_m_grln();
-     }
-     i -= 400U;
-    }
-   }
-
-   rrpge_m_grop_accel();       /* Run accelerator function */
-   rrpge_m_info.arq = 0U;
-  }
+  rrpge_m_vidproc(cy);
 
 
   /* If halt causes were set, break out of the main loop before scheduling
   ** kernel tasks. Note that single stepping mode does not break here since
   ** if it did so, kernel tasks would never be processed. */
 
-  if (rrpge_m_info.hlt != 0) break;
+  if (rrpge_m_info.hlt != 0){ break; }
 
 
   /* Schedule kernel tasks if necessary. */
@@ -270,7 +162,7 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
   /* When in single stepping mode, an operation is carried out to this point,
   ** so break out from the loop */
 
-  if (rmod == RRPGE_RUN_SINGLE) break;
+  if (rmod == RRPGE_RUN_SINGLE){ break; }
 
  }while (1);
 
@@ -302,4 +194,3 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
  return r;
 
 }
-
