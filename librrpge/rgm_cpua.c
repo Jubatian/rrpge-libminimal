@@ -5,12 +5,19 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.06.27
 */
 
 
 #include "rgm_cpua.h"
 #include "rgm_mix.h"
+#include "rgm_vid.h"
+#include "rgm_dma.h"
+
+
+/* Stack bottom. Always zero; if interrupt handlers were be available, it
+** would need other values (see versions before 2014.06.23). */
+#define STK_B 0U
 
 
 /* Pointer op. function type for the pointer op. table */
@@ -30,11 +37,6 @@ static auint  rrpge_m_arlt;  /* Data RAM read latch */
 static auint  rrpge_m_adtsh; /* Right shift amount for sub-word accesses */
 static auint  rrpge_m_adtms; /* Mask for sub-word accesses (read preserve) */
 
-/* Video related stall cycles depending on video stall mode (planes enabled),
-** up to until 3 are enabled for Read, all for Write */
-static const auint rrpge_m_vscyclesr[4] = {0, 1, 1, 3};
-static const auint rrpge_m_vscyclesw[8] = {0, 0, 0, 1, 2, 2, 2, 2};
-
 
 
 /* Data RAM read operation for assisting Read accesses. Uses the Read / Write
@@ -49,51 +51,46 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_rd_data(void)
  ** crash the library. Unused banks shouldn't occur as the kernel should have
  ** errored out on the first place when the user attempted to set those. */
 
- if ((rrpge_m_offpg & 0x8000000U) == 0U){ /* 0x4000 - 0x40DF: Data pages
-                                          ** 0x40E0: Read Only Process Descriptor
-                                          ** 0x7FFF: Audio peripheral area */
-  if (rrpge_m_offpg < 0x40E0000U){        /* Assume Data pages */
-   rrpge_m_arlt = (auint)(rrpge_m_edat->stat.dram[(rrpge_m_offpg & 0xFF000U) + rrpge_m_offlw]);
+ if ((rrpge_m_offpg & 0x8000000U) == 0U){ /* 0x4000 - 0x41BF: Data pages
+                                          ** 0x41C0: Read Only Process Descriptor
+                                          ** 0x7FFF: User peripheral area */
+
+  if (rrpge_m_offpg < 0x41C0000U){        /* Assume Data pages */
+   rrpge_m_arlt = (auint)(rrpge_m_edat->stat.dram[(rrpge_m_offpg & 0x1FF000U) + rrpge_m_offlw]);
   }else if ((rrpge_m_offpg & 0x2000000U) == 0U){ /* Assume Read Only Process Descriptor */
    if (rrpge_m_offlw < 0xD40U){
     rrpge_m_arlt = (auint)(rrpge_m_edat->stat.ropd[rrpge_m_offlw]);
    }else{
     rrpge_m_arlt = (auint)(rrpge_m_edat->ropc[rrpge_m_offlw - 0xD40U]);
    }
-  }else{                                  /* Assume Audio peripheral page */
+  }else{                                  /* Assume User peripheral page */
    if (rrpge_m_offlw < 0xE00U){           /* RAM pg. 0 shadow */
     rrpge_m_arlt = (auint)(rrpge_m_edat->stat.dram[rrpge_m_offlw]);
-   }else{                                 /* Repeating Mixer DMA peripheral */
-    rrpge_m_arlt = (auint)(rrpge_m_edat->stat.ropd[0xED0U + (rrpge_m_offlw & 0xFU)]);
+   }else{                                 /* Repeating 32 word peripheral range */
+    if ((rrpge_m_offlw & 0x1CU) == 0x04U){   /* Graphics FIFO */
+     if ((rrpge_m_offlw & 0x1FU) == 0x05U){
+      rrpge_m_arlt = rrpge_m_edat->stat.ropd[0xEC5U]; /* FIFO non-empty flag */
+     }else{
+      rrpge_m_arlt = 0U;                  /* Other registers of the FIFO return zero */
+     }
+    }else{                                /* Other registers than the FIFO */
+     rrpge_m_arlt = (auint)(rrpge_m_edat->stat.ropd[0xEC0U + (rrpge_m_offlw & 0x1FU)]);
+    }
    }
   }
 
- }else{                                   /* 0x8000 - 0x807F: Video pages
-                                          ** 0xBFFF: Video peripheral area */
-  /* Calculate stall from video */
-  if (rrpge_m_info.vac != 0U){            /* Accelerator op. */
-   rrpge_m_info.ocy += rrpge_m_info.vac;
-  }else if (rrpge_m_info.vsm  < 4U){      /* 0, 1, 2 or 3 planes */
-   rrpge_m_info.ocy += rrpge_m_vscyclesr[rrpge_m_info.vsm];
-  }else{                                  /* All planes */
-   rrpge_m_info.ocy += 400U - rrpge_m_info.vlc;
+ }else{                                   /* 0x8000 - 0x807F: Video pages */
+
+  /* Check FIFO non-empty, and set halt if so */
+  if ((rrpge_m_edat->stat.ropd[0xEC5U] & 1U) != 0U){
+   rrpge_m_info.hlt |= RRPGE_HLT_GRAPHICS;
   }
+  rrpge_m_info.ocy += 1U;                 /* +1 cycle for graphics access */
   /* Process read */
-  if (rrpge_m_offpg < 0x8080000U){        /* Assume Video pages */
-   rrpge_m_avlt = (auint)(rrpge_m_edat->stat.vram[((rrpge_m_offpg & 0x7F000U) + rrpge_m_offlw) >> 1]);
-   rrpge_m_arlt = (rrpge_m_avlt << ((rrpge_m_offlw & 1U) << 4)) >> 16;
-  }else{                                  /* Assume Video peripheral area */
-   if (rrpge_m_offlw < 0xE00U){           /* VRAM pg. 127 shadow */
-    rrpge_m_avlt = (auint)(rrpge_m_edat->stat.vram[(0x7F000U + rrpge_m_offlw) >> 1]);
-    rrpge_m_arlt = (rrpge_m_avlt << ((rrpge_m_offlw & 1U) << 4)) >> 16;
-   }else if ((rrpge_m_offlw & 0x100U) == 0U){ /* Repeating peripheral area */
-    rrpge_m_arlt = (auint)(rrpge_m_edat->stat.ropd[0xEE0U + (rrpge_m_offlw & 0x1FU)]);
-   }else{                                 /* Recolor area */
-    rrpge_m_arlt = (auint)(rrpge_m_edat->stat.ropd[rrpge_m_offlw]);
-   }
-  }
- }
+  rrpge_m_avlt = (auint)(rrpge_m_edat->stat.vram[((rrpge_m_offpg & 0x7F000U) + rrpge_m_offlw) >> 1]);
+  rrpge_m_arlt = (rrpge_m_avlt << ((rrpge_m_offlw & 1U) << 4)) >> 16;
 
+ }
 }
 
 
@@ -104,7 +101,6 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_wr_data(auint val)
 {
  auint  t0;
  auint  t1;
- auint  vd;
  rrpge_m_offpg = rrpge_m_info.wbk[rrpge_m_offhi]; /* Page of data ( << 12 ) */
 
  /* Note: only sanity maskings are used to ensure accessing unused areas won't
@@ -114,46 +110,36 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_wr_data(auint val)
  if ((rrpge_m_offpg & 0x8000000U) == 0U){ /* 0x4000 - 0x40DF: Data pages
                                           ** 0x40E0: Read Only Process Descriptor
                                           ** 0x7FFF: Audio peripheral area */
-  if (rrpge_m_offpg < 0x40E0000U){        /* Assume Data pages */
-   rrpge_m_edat->stat.dram[(rrpge_m_offpg & 0xFF000U) + rrpge_m_offlw] = (uint16)(val);
-  }else if ((rrpge_m_offpg & 0x2000000U) != 0U){ /* Audio peripheral also accepts writes */
+  if (rrpge_m_offpg < 0x41C0000U){        /* Assume Data pages */
+   rrpge_m_edat->stat.dram[(rrpge_m_offpg & 0x1FF000U) + rrpge_m_offlw] = (uint16)(val);
+  }else if ((rrpge_m_offpg & 0x2000000U) != 0U){ /* User peripheral also accepts writes */
    if (rrpge_m_offlw < 0xE00U){           /* RAM pg. 0 shadow */
     rrpge_m_edat->stat.dram[rrpge_m_offlw] = (uint16)(val);
-   }else{                                 /* Mixer peripheral area */
-    rrpge_m_edat->stat.ropd[0xED0U + (rrpge_m_offlw & 0xFU)] = (uint16)(val);
-    if ((rrpge_m_offlw & 0xFU) == 0xFU){  /* Mixer function trigger */
-     rrpge_m_info.ocy += rrpge_m_mixerop();   /* Can be processed in-place (CPU is blocked) */
+   }else{                                 /* User peripheral area */
+    if ((rrpge_m_offlw & 0x16U) != 0x04U){   /* Graphics FIFO 0xE04 and 0xE05 does not accept written data.
+                                             ** Neither Audio DMA clocks at 0xE0C and 0xE0D. */
+     rrpge_m_edat->stat.ropd[0xEC0U + (rrpge_m_offlw & 0x1FU)] = (uint16)(val);
+    }
+    switch (rrpge_m_offlw & 0x1FU){       /* Process triggers */
+     case 0x01U: rrpge_m_info.ocy += rrpge_m_dma_fill();  break;
+     case 0x02U: rrpge_m_info.ocy += rrpge_m_dma_copy();  break;
+     case 0x03U: rrpge_m_info.ocy += rrpge_m_dma_vram();  break;
+     case 0x05U: rrpge_m_info.frq  = 1U;                  break;
+     case 0x07U: rrpge_m_info.ocy += rrpge_m_vidfifoop(); break;
+     case 0x0BU: rrpge_m_edat->stat.ropd[0xECDU] = 0U;    break;
+     case 0x1FU: rrpge_m_info.ocy += rrpge_m_mixerop();   break;
+     default:    break;
     }
    }
   }                                       /* Other pages here (ROPD) can't accept writes */
 
- }else{                                   /* 0x8000 - 0x807F: Video pages
-                                          ** 0xBFFF: Video peripheral area */                                 /* Video pages / Video peripheral area */
-  rrpge_m_info.ocy += rrpge_m_vscyclesw[rrpge_m_info.vsm & 0x7U]; /* (& 0x7U is just a sanity mask) */
-  /* Pre-calculate value to be written in a VRAM cell. Needed for most, no
-  ** terrible overhead where not. */
+ }else{                                   /* 0x8000 - 0x807F: Video pages */                                 /* Video pages / Video peripheral area */
+  rrpge_m_info.ocy += 1U;                 /* +1 cycle for graphics access */
   t0 = (rrpge_m_offlw & 1U) ^ 1U;
-  t1 = 0xEE0U + t0;                       /* VRAM Write transform mask words */
+  t1 = rrpge_m_edat->stat.ropd[0xEE0U + t0];
   t0 = t0 << 4;
-  vd = (rrpge_m_avlt & (~((auint)(rrpge_m_edat->stat.ropd[t1]) << t0))) |
-       ((val & (auint)(rrpge_m_edat->stat.ropd[t1])) << t0);
-  /* Process write */
-  if (rrpge_m_offpg < 0x8080000U){        /* Assume Video pages */
-   rrpge_m_edat->stat.vram[((rrpge_m_offpg & 0x7F000U) + rrpge_m_offlw) >> 1] = (uint32)(vd);
-  }else{                                  /* Assume Video peripheral area */
-   if (rrpge_m_offlw < 0xE00U){           /* VRAM pg. 127 shadow */
-    rrpge_m_edat->stat.vram[(0x7F000U + rrpge_m_offlw) >> 1] = (uint32)(vd);
-   }else if ((rrpge_m_offlw & 0x100U) == 0U){ /* Repeating peripheral area */
-    rrpge_m_edat->stat.ropd[0xEE0U + (rrpge_m_offlw & 0x1FU)] = (uint16)(val);
-    if ((rrpge_m_offlw & 0x1FU) == 0x1FU){    /* Accelerator function trigger */
-     rrpge_m_info.arq |= 1U;              /* CPU needs to run in parallel, so just flag it */
-    }
-   }else{                                 /* Recolor banks: also update cache */
-    rrpge_m_edat->stat.ropd[rrpge_m_offlw] = (uint16)(val);
-    rrpge_m_info.grb[((rrpge_m_offlw & 0xFFU) << 1)     ] = (uint8)((val >> 8) & rrpge_m_info.vbm);
-    rrpge_m_info.grb[((rrpge_m_offlw & 0xFFU) << 1) + 1U] = (uint8)((val     ) & rrpge_m_info.vbm);
-   }
-  }
+  rrpge_m_edat->stat.vram[((rrpge_m_offpg & 0x7F000U) + rrpge_m_offlw) >> 1] =
+    (rrpge_m_avlt & (~(t1 << t0))) | ((val & t1) << t0);
  }
 
 }
@@ -458,8 +444,8 @@ RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_si4(void)
  rrpge_m_info.ocy = 1U;
  rrpge_m_info.oaw = 1U;
  rrpge_m_offlw = ((rrpge_m_info.opc & 0xFU) + rrpge_m_info.bp) & 0xFFFFU;
- if ( (rrpge_m_offlw < 0x8000U) &&           /* Stack top limit */
-      (rrpge_m_offlw >= rrpge_m_info.sbt) ){ /* Stack bottom limit */
+ if ( (rrpge_m_offlw < 0x8000U) && /* Stack top limit */
+      (rrpge_m_offlw >= STK_B) ){  /* Stack bottom limit (may pop a warning since STK_B is zero, and the comparison is unsigned) */
   return (auint)(rrpge_m_edat->stat.sram[rrpge_m_offlw]);
  }else{
   rrpge_m_info.hlt |= RRPGE_HLT_STACK;
@@ -499,8 +485,8 @@ RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_si16(void)
  rrpge_m_offlw = ( ((rrpge_m_info.opc & 0x3U) << 14) +
                    ((auint)(rrpge_m_edat->crom[(rrpge_m_info.pc + 1U) & 0xFFFFU]) & 0x3FFFU) +
                    rrpge_m_info.bp ) & 0xFFFFU;
- if ( (rrpge_m_offlw < 0x8000U) &&           /* Stack top limit */
-      (rrpge_m_offlw >= rrpge_m_info.sbt) ){ /* Stack bottom limit */
+ if ( (rrpge_m_offlw < 0x8000U) && /* Stack top limit */
+      (rrpge_m_offlw >= STK_B) ){  /* Stack bottom limit (may pop a warning since STK_B is zero, and the comparison is unsigned) */
   return (auint)(rrpge_m_edat->stat.sram[rrpge_m_offlw]);
  }else{
   rrpge_m_info.hlt |= RRPGE_HLT_STACK;
@@ -536,8 +522,8 @@ RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_sx16(void)
  rrpge_m_info.oaw = 1U;
  rrpge_m_xop_table[(rrpge_m_info.xmh[0] >> ((rrpge_m_info.opc & 0x3U) << 2)) & 0xFU]();
  rrpge_m_offlw = (rrpge_m_offlw + rrpge_m_info.bp) & 0xFFFFU;
- if ( (rrpge_m_offlw < 0x8000U) &&           /* Stack top limit */
-      (rrpge_m_offlw >= rrpge_m_info.sbt) ){ /* Stack bottom limit */
+ if ( (rrpge_m_offlw < 0x8000U) && /* Stack top limit */
+      (rrpge_m_offlw >= STK_B) ){  /* Stack bottom limit (may pop a warning since STK_B is zero, and the comparison is unsigned) */
   return ((auint)(rrpge_m_edat->stat.sram[rrpge_m_offlw]) >> rrpge_m_adtsh) & rrpge_m_adtms;
  }else{
   rrpge_m_info.hlt |= RRPGE_HLT_STACK;
@@ -583,7 +569,7 @@ RRPGE_M_FASTCALL auint rrpge_m_stk_pop(void)
  rrpge_m_info.sp--;
  t0 = (rrpge_m_info.sp + rrpge_m_info.bp) & 0xFFFFU;
  if ( (t0 < 0x8000U) &&
-      (t0 >= rrpge_m_info.sbt) ){
+      (t0 >= STK_B) ){  /* Stack bottom limit (may pop a warning since STK_B is zero, and the comparison is unsigned) */
   return (auint)(rrpge_m_edat->stat.sram[t0]);
  }else{
   rrpge_m_info.hlt |= RRPGE_HLT_STACK;
@@ -600,7 +586,7 @@ RRPGE_M_FASTCALL void  rrpge_m_stk_push(auint val)
  auint t0;
  t0 = (rrpge_m_info.sp + rrpge_m_info.bp) & 0xFFFFU;
  if ( (t0 < 0x8000U) &&
-      (t0 >= rrpge_m_info.sbt) ){
+      (t0 >= STK_B) ){  /* Stack bottom limit (may pop a warning since STK_B is zero, and the comparison is unsigned) */
   rrpge_m_edat->stat.sram[t0] = (uint16)(val);
  }else{
   rrpge_m_info.hlt |= RRPGE_HLT_STACK;

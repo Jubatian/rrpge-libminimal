@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.23
+**  \date      2014.06.27
 */
 
 
@@ -128,6 +128,7 @@ void rrpge_m_grop_accel(void)
  auint  lflp;
  auint  lpat;
  uint32 t32;
+ uint32 u32;
 
  /* If necessary inicialize the reindex bank cache */
 
@@ -139,7 +140,7 @@ void rrpge_m_grop_accel(void)
   dsincr = 10000U;
  }else{
   dsincr = (dsincr & 0xFF30U) << 10;
-  dsincr = (0U - (dsincr & 0x02000000U)) + (dsincr & 0x01FFFFFFU);
+  dsincr = (0U - (dsincr & 0x02000000U)) | dsincr;
  }
 
  /* Prepare whole parts */
@@ -200,7 +201,7 @@ void rrpge_m_grop_accel(void)
 
   /* Source read mask & barrel rotate calculation. In C a right and a left
   ** shift has to be combined for the effect (no rotate operation). Used in
-  ** all except line mode. */
+  ** BB and SC modes. */
   rotr  &= 0x3U;
   rotl   = 4U - rotr;
   mandr &= 0xFU;
@@ -225,12 +226,13 @@ void rrpge_m_grop_accel(void)
 
   /* Source read mask & barrel rotate calculation. In C a right and a left
   ** shift has to be combined for the effect (no rotate operation). Used in
-  ** all except line mode. */
+  ** BB snd SC modes. */
   rotr  &= 0x7U;
   rotl   = 8U - rotr;
   mandr &= 0xFFU;
   mandl  = (mandr << rotl) & 0xFFU;
   mandr  = (mandr >> rotr);
+  mskor &= 0xFFU;
 
   /* Init right shift to destination. Used in Scaled & Block Blitter, and in
   ** Filler to prepare the begin cell. */
@@ -273,7 +275,9 @@ void rrpge_m_grop_accel(void)
  codst = (count << 2) + dshfr;
 
  /* Prepare for the Block Blitter: apply the source fraction, and set up the
- ** omission of the first destination combine if necessary. */
+ ** omission of the first destination combine if necessary (truly fetch an
+ ** extra source first to populate the shift register proper). The shift
+ ** changes as combining the source & destination fractions. */
 
  if ((flags & 0x0C00U) == 0U){       /* Block Blitter */
   i = (dsfrac & 0xFFFFU) - (sxfrac & 0xFFFFU);
@@ -281,12 +285,6 @@ void rrpge_m_grop_accel(void)
   if ((flags & 0x10000U) == 0U){ i &= 0xE000U; } /* 4bit mode */
   else{                          i &= 0xC000U; } /* 8bit mode */
   dshfr = i >> 11;
-  i = (sxfrac + (count << 13));      /* Calculate new source fraction */
-  if ((flags & 0x10000U) == 0U){     /* 4bit mode */
-   sxfrac = (sxfrac & 0xFFFF1FFFU) | (i & 0xE000U);
-  }else{                             /* 8bit mode */
-   sxfrac = (sxfrac & 0xFFFF3FFFU) | (i & 0xC000U);
-  }
  }
 
  /* Calculate source to destination shift. Used in Scaled & Block Blitter */
@@ -378,7 +376,7 @@ void rrpge_m_grop_accel(void)
    count -= 8U;
    count &= ((~(auint)(0U)) + ((count & 0x80000000U) >> 31)); /* Zero saturate */
 
-  }else if ((flags & 0x0C00U) == 3U){   /* Line */
+  }else if ((flags & 0x0C00U) == 0x0C00U){ /* Line */
 
    /* Rotate source pattern & create begin / mid / end mask */
 
@@ -443,36 +441,33 @@ void rrpge_m_grop_accel(void)
 
   }else{                                /* Destination combine proceeds */
 
-   /* Destination combine stage begins, common for all modes. First prepare
-   ** the colorkey. */
+   /* Destination combine stage begins, common for all modes. Create and apply
+   ** the colorkey, perform reindexing as required, then blit it. The colorkey
+   ** is always calculated: it usually does not affect accelerator cycle
+   ** count, and in typical blits it is necessary anyway. */
 
-   if ((flags & 0x0200U) != 0U){        /* Has colorkey */
-    t32 = sdata ^ ckey;
-    if ((flags & 0x10000U) == 0U){      /* 4 bit mode */
-     t32 = (((t32 & 0x77777777U) + 0x77777777U) | t32) & 0x88888888U;
-     t32 = (t32 - (t32 >> 3)) + t32;    /* Colorkey mask (0: background) */
-    }else{                              /* 8 bit mode */
-     t32 = (((t32 & 0x7F7F7F7FU) + 0x7F7F7F7FU) | t32) & 0x80808080U;
-     t32 = (t32 - (t32 >> 7)) + t32;    /* Colorkey mask (0: background) */
+   i   = dswhol | ((dsfrac >> 16) & dspart); /* Destination offset */
+   u32 = rrpge_m_edat->stat.vram[i];    /* Load current destination */
+   t32 = sdata ^ ckey;                  /* Prepare for colorkey calculation */
+
+   if ((flags & 0x10000U) == 0U){       /* 4 bit mode */
+    t32 = (((t32 & 0x77777777U) + 0x77777777U) | t32) & 0x88888888U;
+    t32 = (t32 - (t32 >> 3)) + t32;     /* Colorkey mask (0: background) */
+    if ((flags & 0x1000U) != 0U){       /* Reindexing is required */
+     sdata = rrpge_m_grop_rec4(sdata, u32 & reinm);
     }
-    bmems &= t32;                       /* Add it to the write mask */
-   }
-
-   /* Load destination and perform reindexing if it was requested */
-
-   i   = dswhol | ((dsfrac >> 16) & dspart);
-   t32 = rrpge_m_edat->stat.vram[i];
-   if ((flags & 0x1000U) != 0U){        /* Reindexing is required */
-    if ((flags & 0x10000U) == 0U){      /* 4 bit mode */
-     sdata = rrpge_m_grop_rec4(sdata, t32 & reinm);
-    }else{                              /* 8 bit mode */
-     sdata = rrpge_m_grop_rec8(sdata, t32 & reinm);
+   }else{                               /* 8 bit mode */
+    t32 = (((t32 & 0x7F7F7F7FU) + 0x7F7F7F7FU) | t32) & 0x80808080U;
+    t32 = (t32 - (t32 >> 7)) + t32;     /* Colorkey mask (0: background) */
+    if ((flags & 0x1000U) != 0U){       /* Reindexing is required */
+     sdata = rrpge_m_grop_rec8(sdata, u32 & reinm);
     }
    }
+   bmems &= t32 | (0xFFFFFFFFU + ((flags >> 9) & 1U)); /* Add colorkey to write mask if enabled */
 
    /* Combine source over destination */
 
-   rrpge_m_edat->stat.vram[i] = (t32   & (~bmems)) |
+   rrpge_m_edat->stat.vram[i] = (u32   & (~bmems)) |
                                 (sdata &   bmems );
    dsfrac += dsincr;
 

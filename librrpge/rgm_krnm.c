@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.10
+**  \date      2014.06.27
 */
 
 
@@ -37,21 +37,6 @@ static auint rrpge_m_ktsalloc(uint16 const* par, auint n)
  }
  rrpge_m_info.xr[0] = 0x8000U;
  return 0;
-}
-
-
-
-/* Calculates video stall for video related kernel functions. Gets the base
-** cycle requirement for the kernel call, returns the cycle requirements
-** including the stall. */
-static auint rrpge_m_kvstall(auint r)
-{
- if (rrpge_m_info.vac != 0){
-  r += rrpge_m_info.vac;        /* Accelerator function running */
- }else if (rrpge_m_info.vsm == 4){
-  r += 400U - rrpge_m_info.vlc; /* Remaining cycles from a blocking line */
- }
- return r;
 }
 
 
@@ -245,21 +230,13 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0210U:   /* Set audio event handler */
-
-   if (n != 2U){  /* Needs 1+1 parameters */
-    goto fault_inv;
-   }
-
-   rrpge_m_edat->stat.ropd[0xD31U] = par[1];
-   r = 150;
-   break;
-
-
   case 0x0300U:   /* Set palette entry */
 
    if (n != 3U){  /* Needs 1+2 parameters */
     goto fault_inv;
+   }
+   if ((rrpge_m_edat->stat.ropd[0xEC5U] & 1U) != 0U){ /* Graphics FIFO non-empty */
+    goto fault_grf;
    }
 
    cbp_setpal.id  = par[1] & 0xFFU;
@@ -267,27 +244,17 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    rrpge_m_edat->stat.ropd[0xC00U + (par[1] & 0xFFU)] = cbp_setpal.col;
    rrpge_m_edat->cb_sub[RRPGE_CB_SETPAL](rrpge_m_edat, &cbp_setpal);
 
-   r = rrpge_m_kvstall(100);
+   r = 100U;
    goto ret_callback;
-
-
-  case 0x0310U:   /* Set video event handler */
-
-   if (n != 3U){  /* Needs 1+2 parameters */
-    goto fault_inv;
-   }
-
-   rrpge_m_edat->stat.ropd[0xD30U] = par[1];
-   rrpge_m_edat->stat.ropd[0xD20U] = par[2];
-
-   r = rrpge_m_kvstall(150);
-   break;
 
 
   case 0x0320U:   /* Query current display line */
 
    if (n != 1U){  /* Needs 1+0 parameters */
     goto fault_inv;
+   }
+   if ((rrpge_m_edat->stat.ropd[0xEC5U] & 1U) != 0U){ /* Graphics FIFO non-empty */
+    goto fault_grf;
    }
 
    if (rrpge_m_info.vln < 400U){ /* Normal display lines */
@@ -296,7 +263,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     rrpge_m_info.xr[0] = (0x10000U - RRPGE_M_VLN) + rrpge_m_info.vln;
    }
 
-   r = rrpge_m_kvstall(100);
+   r = 100U;
    break;
 
 
@@ -304,6 +271,9 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
+   }
+   if ((rrpge_m_edat->stat.ropd[0xEC5U] & 1U) != 0U){ /* Graphics FIFO non-empty */
+    goto fault_grf;
    }
 
    if (par[1] == 1U){ cbp_mode.mod = 1U; }
@@ -313,13 +283,9 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    /* Note: rrpge_m_info.vbm is purposefully not updated here. The emulator
    ** will return to the host (by the RRPGE_HLT_CALLBACK cause), so no new
-   ** operations will start with the old video mode. Accelerator operations
-   ** however might not yet be finished at this point: those need to be
-   ** carried out with the old video mode (as they stall this kernel call):
-   ** this way (rrpge_m_info.vbm containing the old mode) this property
-   ** remains proper. */
+   ** operations will start with the old video mode. */
 
-   r = rrpge_m_kvstall(100000);
+   r = 100000U;
    goto ret_callback;
 
 
@@ -473,17 +439,9 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   i = rrpge_m_edat->stat.ropd[0xD20U];             /* Raster line to fire IT at */
-   if (i > 400U) i = 400U;
-   if (rrpge_m_info.vln <= i) i -= rrpge_m_info.vln;
-   else                       i = i + RRPGE_M_VLN - rrpge_m_info.vln;
-   i = i * 400U;                                    /* Cycles (roughly) until next IT */
-
    r = (auint)(par[1]) - (rrpge_m_prng() & 0x3FFU); /* 1024 cycle jitter */
-   if (r > (auint)(par[1]))  r = 0;                 /* Underflow */
-   if (r > rrpge_m_info.auc) r = rrpge_m_info.auc;  /* Constrain to audio */
-   if (r > i)                r = i;                 /* Constrain to video */
-   if (r < 200U)             r = 200;               /* Minimal consumed cycles */
+   if (r > (auint)(par[1])){ r = 0U;   }            /* Underflow */
+   if (r < 200U){            r = 200U; }            /* Minimal consumed cycles */
    break;
 
 
@@ -677,6 +635,11 @@ ret_callback:     /* Return after servicing a callback */
 fault_inv:        /* Return with invalid kernel call */
 
  rrpge_m_info.hlt |= RRPGE_HLT_INVKCALL;
+ return 0;
+
+fault_grf:        /* Return with Graphics FIFO non-empty fault */
+
+ rrpge_m_info.hlt |= RRPGE_HLT_GRAPHICS;
  return 0;
 
 }

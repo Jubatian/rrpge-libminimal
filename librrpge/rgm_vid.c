@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.26
+**  \date      2014.06.27
 */
 
 
@@ -70,6 +70,7 @@ void rrpge_m_vidproc(auint cy)
     rrpge_m_info.frq = 0U;
    }
    if ((rrpge_m_edat->stat.ropd[0xD5FU] & 1U) == 0U){
+    rrpge_m_edat->stat.ropd[0xEC5U] = 0x0000U; /* FIFO is empty */
     break;                     /* Nothing to do since FIFO is not started */
    }
    cm = rrpge_m_edat->stat.fram[(rrpge_m_edat->stat.ropd[0xD5DU] & 0x7FFEU) + 0U];
@@ -144,8 +145,9 @@ void rrpge_m_vidproc(auint cy)
 
 
 /* Performs a Graphics FIFO store using the parameters in the ROPD. It may
-** flag a FIFO start if necessary (setting rrpge_m_info's "frq" member). */
-void rrpge_m_vidfifoop(void)
+** flag a FIFO start if necessary (setting rrpge_m_info's "frq" member).
+** Returns number of cycles the store takes. */
+auint rrpge_m_vidfifoop(void)
 {
  auint cm = rrpge_m_edat->stat.ropd[0xEC7U];
 
@@ -173,4 +175,12 @@ void rrpge_m_vidfifoop(void)
 
  cm = (cm & 0xFE00U) | ((cm + 1U) & 0x01FFU);
  rrpge_m_edat->stat.ropd[0xEC7U] = cm;
+
+ /* Non-empty flag becomes set */
+
+ rrpge_m_edat->stat.ropd[0xEC5U] = 0x0001U;
+
+ /* Takes 5 cycles according to allowing emulating later FIFO DMA accesses this way. */
+
+ return 5U;
 }

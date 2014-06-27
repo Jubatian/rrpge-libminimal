@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.26
+**  \date      2014.06.27
 **
 **
 **  Implementations of the CPU RAM DMA's and the Video RAM <=> CPU RAM DMA.
@@ -92,7 +92,7 @@ auint rrpge_m_dma_vram(void)
   rrpge_m_info.hlt |= RRPGE_HLT_DMA;
   return 0U;
  }
- if (rrpge_m_info.vac != 0U){ /* Not entirely accurate, but terminating behavior is also optional */
+ if ((rrpge_m_edat->stat.ropd[0xEC5U] & 1U) != 0U){
   rrpge_m_info.hlt |= RRPGE_HLT_DMA | RRPGE_HLT_GRAPHICS; /* Graphics FIFO not empty */
   return 0U;
  }
