@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.27
+**  \date      2014.06.29
 */
 
 
@@ -136,6 +136,9 @@ void rrpge_m_vidproc(auint cy)
   rrpge_m_info.vln = (rrpge_m_info.vln + 1U) & 0xFFFFU;
   if (rrpge_m_info.vln >= 400U){
    rrpge_m_info.vln = 0x10000U + 400U - RRPGE_M_VLN;
+   rrpge_m_edat->rena = (rrpge_m_edat->rena & (~0x2U)) | /* Transfer requested render state */
+                        ((rrpge_m_edat->rena & (0x1U)) << 1);
+   rrpge_m_info.hlt |= RRPGE_HLT_FRAME;
   }
 
  }

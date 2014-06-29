@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.10
+**  \date      2014.06.29
 */
 
 
@@ -228,39 +228,6 @@ void rrpge_pushpacket(rrpge_object_t* hnd, rrpge_uint16 const* id,
 rrpge_uint32 rrpge_gethaltcause(rrpge_object_t* hnd)
 {
  return hnd->hlt;
-}
-
-
-
-/* Get audio events and streams - implementation of RRPGE library function */
-rrpge_uint32 rrpge_getaudio(rrpge_object_t* hnd, rrpge_uint8* lbuf, rrpge_uint8* rbuf)
-{
- auint r;
- auint i;
- auint pl;
- auint pr;
-
- if ((hnd->aco) == 0) return 0; /* No audio event present */
-
- r = hnd->aco;
- hnd->aco =  0;
- hnd->hlt &= ~(auint)(RRPGE_HLT_AUDIO);
-
- /* Fill in the buffers according to the buffer selection */
-
- pl = ((auint)(hnd->stat.ropd[0xEDEU]) & 0x00FFU) << 8;
- pr = ((auint)(hnd->stat.ropd[0xEDEU]) & 0xFF00U);
-
- for (i = 0; i < 256U; i++){
-  lbuf[(i << 1)     ] = (uint8)(hnd->stat.dram[pl + i] >> 8);
-  lbuf[(i << 1) + 1U] = (uint8)(hnd->stat.dram[pl + i]     );
-  rbuf[(i << 1)     ] = (uint8)(hnd->stat.dram[pr + i] >> 8);
-  rbuf[(i << 1) + 1U] = (uint8)(hnd->stat.dram[pr + i]     );
- }
-
- /* OK, all done */
-
- return r;
 }
 
 
