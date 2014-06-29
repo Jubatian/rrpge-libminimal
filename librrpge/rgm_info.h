@@ -138,8 +138,6 @@ typedef struct{
  auint  vbm;         /* Video mode bitmask. 0xF for 4bit mode, 0xFF for 8bit
                      ** mode. (From ROPD: 0xBC0) */
 
- auint  frq;         /* Request Graphics FIFO operation if set */
-
  auint  hlt;         /* Collects halt cause if any. */
 
  auint  ocy;         /* Opcode address extra cycles. This is used by the

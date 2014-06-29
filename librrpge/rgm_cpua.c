@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.27
+**  \date      2014.06.29
 */
 
 
@@ -107,8 +107,8 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_wr_data(auint val)
  ** crash the library. Unused banks shouldn't occur as the kernel should have
  ** errored out on the first place when the user attempted to set those. */
 
- if ((rrpge_m_offpg & 0x8000000U) == 0U){ /* 0x4000 - 0x40DF: Data pages
-                                          ** 0x40E0: Read Only Process Descriptor
+ if ((rrpge_m_offpg & 0x8000000U) == 0U){ /* 0x4000 - 0x41BF: Data pages
+                                          ** 0x41C0: Read Only Process Descriptor
                                           ** 0x7FFF: Audio peripheral area */
   if (rrpge_m_offpg < 0x41C0000U){        /* Assume Data pages */
    rrpge_m_edat->stat.dram[(rrpge_m_offpg & 0x1FF000U) + rrpge_m_offlw] = (uint16)(val);
@@ -124,7 +124,7 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_wr_data(auint val)
      case 0x01U: rrpge_m_info.ocy += rrpge_m_dma_fill();  break;
      case 0x02U: rrpge_m_info.ocy += rrpge_m_dma_copy();  break;
      case 0x03U: rrpge_m_info.ocy += rrpge_m_dma_vram();  break;
-     case 0x05U: rrpge_m_info.frq  = 1U;                  break;
+     case 0x05U: rrpge_m_vidfifost();                     break;
      case 0x07U: rrpge_m_info.ocy += rrpge_m_vidfifoop(); break;
      case 0x0BU: rrpge_m_edat->stat.ropd[0xECDU] = 0U;    break;
      case 0x1FU: rrpge_m_info.ocy += rrpge_m_mixerop();   break;

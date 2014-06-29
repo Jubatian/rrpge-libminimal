@@ -234,16 +234,15 @@ rrpge_uint32 rrpge_checkropd(rrpge_uint16 const* d)
 
  for (f = 0xD00U; f < 0xD20U; f++){
   i = d[f];
-  if ( ((i < 0x4000U) || (i >= 0x40E1U)) && /* Data RAM and ROPD */
+  if ( ((i < 0x4000U) || (i >= 0x41C1U)) && /* Data RAM and ROPD */
        ((i < 0x8000U) || (i >= 0x8080U)) && /* Video RAM */
-       (i != 0x7FFFU) &&                    /* Audio peripheral */
-       (i != 0xBFFFU) ){                    /* Video peripheral */
+       (i != 0x7FFFU) ){                    /* User peripheral */
    goto ropd_fault;
   }
  }
  for (f = 0xD10U; f < 0xD20U; f++){         /* Write pages */
   i = d[f];
-  if ( (i == 0x40E0U) ||                    /* ROPD */
+  if ( (i == 0x41C0U) ||                    /* ROPD */
        ( ((i >= 0x8000U) && (i < 0x8080)) &&
          (i != d[f - 0x10U]) ) ){           /* VRAM page banked in, but not for read */
    goto ropd_fault;

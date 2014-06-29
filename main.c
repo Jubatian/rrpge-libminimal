@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.10
+**  \date      2014.06.29
 */
 
 
@@ -124,6 +124,8 @@ static void main_printhalt(auint h)
  if (h & RRPGE_HLT_INVKCALL){ printf(" INVKCALL"); }
  if (h & RRPGE_HLT_STACK)   { printf(" STACK"); }
  if (h & RRPGE_HLT_FAULT)   { printf(" FAULT"); }
+ if (h & RRPGE_HLT_GRAPHICS){ printf(" GRAPHICS"); }
+ if (h & RRPGE_HLT_DMA)     { printf(" DMA"); }
  if (h == 0)                { printf(" No halt"); }
 
  printf("\n");
@@ -212,7 +214,7 @@ int main(int argc, char** argv)
  /* Allocate emulator state. This is temporary as is since the RRPGE library's
  ** rrpge_getdescription() is not implemented yet which would give the size of
  ** the emulator state. */
- emu = malloc(4U * 1024U * 1024U); /* Fits well in 4 megabytes. */
+ emu = malloc(6U * 1024U * 1024U); /* Fits well in 6 megabytes. */
  if (emu == NULL){
   printf("Failed to allocate emulator state\n");
   goto loadfault;
@@ -316,6 +318,7 @@ int main(int argc, char** argv)
               RRPGE_HLT_INVKCALL |
               RRPGE_HLT_INVOP |
               RRPGE_HLT_FAULT)) != 0U){
+     sta = rrpge_exportstate(emu);
      main_errexit(t, sta);
      break;                            /* Also exit, with error */
     }

@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.10
+**  \date      2014.06.29
 */
 
 
@@ -29,7 +29,7 @@ auint rrpge_m_taskcheck(uint16 const* d, auint n)
  switch (p[0]){ /* Process by kernel function */
 
   case 0x0100U: /* Kernel task: Start loading binary data page */
-   if ((p[1] < 0x4000U) || (p[1] >= 0x40E0U)) return 1; /* Not an RW page */
+   if ((p[1] < 0x4000U) || (p[1] >= 0x41C0U)) return 1; /* Not an RW page */
    if ( (((auint)(p[2]) << 16) + (auint)(p[3])) >=
         ( ((((auint)(d[0xBC2U]) & 0xFFU)) << 16) +
           ((auint)(d[0xBC3U])) )
@@ -37,34 +37,34 @@ auint rrpge_m_taskcheck(uint16 const* d, auint n)
    return 0;
 
   case 0x0110U: /* Kernel task: Start loading page from file */
-   if ((p[1] < 0x4000U) || (p[1] >= 0x40E0U)) return 1; /* Target is not an RW page */
-   if ((p[5] < 0x4000U) || (p[5] >= 0x40E0U)) return 1; /* File name is not on an RW page */
+   if ((p[1] < 0x4000U) || (p[1] >= 0x41C0U)) return 1; /* Target is not an RW page */
+   if ((p[5] < 0x4000U) || (p[5] >= 0x41C0U)) return 1; /* File name is not on an RW page */
    return 0;
 
   case 0x0111U: /* Kernel task: Start saving page into file */
-   if ((p[1] < 0x4000U) || (p[1] >= 0x40E0U)) return 1; /* Target is not an RW page */
-   if ((p[5] < 0x4000U) || (p[5] >= 0x40E0U)) return 1; /* File name is not on an RW page */
+   if ((p[1] < 0x4000U) || (p[1] >= 0x41C0U)) return 1; /* Target is not an RW page */
+   if ((p[5] < 0x4000U) || (p[5] >= 0x41C0U)) return 1; /* File name is not on an RW page */
    return 0;
 
   case 0x0112U: /* Kernel task: Find next file */
-   if ((p[1] < 0x4000U) || (p[1] >= 0x40E0U)) return 1; /* File name is not on an RW page */
+   if ((p[1] < 0x4000U) || (p[1] >= 0x41C0U)) return 1; /* File name is not on an RW page */
    return 0;
 
   case 0x0113U: /* Kernel task: Move a file */
-   if ((p[1] < 0x4000U) || (p[1] >= 0x40E0U)) return 1; /* File name is not on an RW page */
-   if ((p[3] < 0x4000U) || (p[3] >= 0x40E0U)) return 1; /* File name is not on an RW page */
+   if ((p[1] < 0x4000U) || (p[1] >= 0x41C0U)) return 1; /* File name is not on an RW page */
+   if ((p[3] < 0x4000U) || (p[3] >= 0x41C0U)) return 1; /* File name is not on an RW page */
    return 0;
 
   case 0x0601U: /* Kernel task: Read UTF-8 representation of user */
-   if ((p[1] < 0x4000U) || (p[1] >= 0x40E0U)) return 1; /* Not an RW page */
+   if ((p[1] < 0x4000U) || (p[1] >= 0x41C0U)) return 1; /* Not an RW page */
    return 0;
 
   case 0x0700U: /* Kernel task: Send data to user */
-   if ((p[1] < 0x4000U) || (p[1] >= 0x40E0U)) return 1; /* Not an RW page */
+   if ((p[1] < 0x4000U) || (p[1] >= 0x41C0U)) return 1; /* Not an RW page */
    return 0;
 
   case 0x0710U: /* Kernel task: List accessible users */
-   if ((p[1] < 0x4000U) || (p[1] >= 0x40E0U)) return 1; /* Not an RW page */
+   if ((p[1] < 0x4000U) || (p[1] >= 0x41C0U)) return 1; /* Not an RW page */
    return 0;
 
   default:      /* Not a valid kernel function for tasks - invalid! */

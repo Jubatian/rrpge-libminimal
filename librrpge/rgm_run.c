@@ -24,7 +24,6 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
 {
  auint i;
  auint cy;                     /* Cycle counting work variable */
- auint cm;                     /* Cycle limit for inner loop */
  auint r  = 0U;                /* Return number of cycles */
  auint fo = 1U;                /* Is this the first operation? (For breakpoints) */
 
@@ -66,8 +65,6 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
  rrpge_m_info.sp = rrpge_m_edat->stat.ropd[0xD4BU];
  rrpge_m_info.bp = rrpge_m_edat->stat.ropd[0xD4CU];
 
- rrpge_m_info.frq = 0; /* No FIFO start is waiting */
-
 
  /* Enter main loop */
 
@@ -98,8 +95,7 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
     rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc];
     cy += rrpge_m_optable[rrpge_m_info.opc >> 9](); /* Run opcode */
     fo = 0U;
-    if ( ( (rrpge_m_info.hlt) |                     /* Some halt event happened */
-           (rrpge_m_info.arq) ) != 0U){ break; }    /* Graphics accelerator request */
+    if (rrpge_m_info.hlt != 0U){ break; }           /* Some halt event happened */
    }while (cy <= rrpge_m_info.vlc);
 
   }else{                               /* Normal mode: just run until halt */
@@ -107,8 +103,7 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
    do{
     rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc];
     cy += rrpge_m_optable[rrpge_m_info.opc >> 9](); /* Run opcode */
-    if ( ( (rrpge_m_info.hlt) |                     /* Some halt event happened */
-           (rrpge_m_info.arq) ) != 0) break;        /* Graphics accelerator request */
+    if (rrpge_m_info.hlt != 0U){ break; }           /* Some halt event happened */
    }while (cy <= rrpge_m_info.vlc);
 
   }

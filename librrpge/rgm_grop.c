@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.27
+**  \date      2014.06.29
 */
 
 
@@ -104,8 +104,8 @@ void rrpge_m_grop_accel(void)
 
  /* Partitioning & X/Y split */
  auint  ssplit = ((auint)(rrpge_m_edat->stat.ropd[0xEEBU]));
- auint  srpart;  /* Partition mask for source - controls the swhol - sfrac split */
- auint  dspart;  /* Partition mask for destination - controls the dwhol - dfrac split */
+ auint  srpart;  /* Partition mask for source - controls the sxwhol - sx/yfrac split */
+ auint  dspart;  /* Partition mask for destination - controls the dswhol - dsfrac split */
 
  uint32 wrmask = ((uint32)(rrpge_m_edat->stat.ropd[0xEE0U]) << 16) + (uint32)(rrpge_m_edat->stat.ropd[0xEE1U]);
 
@@ -214,7 +214,7 @@ void rrpge_m_grop_accel(void)
 
   /* Init right shift to destination. Used in Scaled & Block Blitter, and in
   ** Filler to prepare the begin cell. */
-  dshfr  = (dfrac & 0xE000U) >> 11;
+  dshfr  = (dsfrac & 0xE000U) >> 11;
 
  }else{                              /* 8bit mode specific calculations */
 
@@ -236,7 +236,7 @@ void rrpge_m_grop_accel(void)
 
   /* Init right shift to destination. Used in Scaled & Block Blitter, and in
   ** Filler to prepare the begin cell. */
-  dshfr  = (dfrac & 0xC000U) >> 11;
+  dshfr  = (dsfrac & 0xC000U) >> 11;
 
  }
 
@@ -293,7 +293,7 @@ void rrpge_m_grop_accel(void)
 
  /* Setups for Line mode */
 
- if ((flags & 0x0C00U) == 3U){       /* Line */
+ if ((flags & 0x0C00U) == 0x0C00U){  /* Line */
   lflp   = 0U;                       /* Odd / even flip for cycling the pattern */
   lpat   = sdata;                    /* Line pattern cycle */
   dswhol = sxwhol;
@@ -390,7 +390,7 @@ void rrpge_m_grop_accel(void)
 
    }else{                            /* 8bit mode */
 
-    lpat >>= (lflp << 3);
+    lpat >>= (lflp << 3);            /* Bogus gcc warning: lpat is initialized before the render loop for Line mode */
     sdata  = lpat & 0xFFU;
     i      = ((sxfrac & 0xC000U) >> 11);
     bmems  = 0xFFU << i;

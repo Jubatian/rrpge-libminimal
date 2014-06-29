@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.23
+**  \date      2014.06.29
 */
 
 
@@ -812,7 +812,6 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_jfr_88(void)
  auint  t1;
  auint  mx;
  auint  cy;
- auint  i;
  uint16 kp[16]; /* Supervisor call parameters */
 
  if ((op & 0x0080U) == 0U){               /* JFL or JFA: Function entry */
@@ -861,6 +860,7 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_jfr_88(void)
   if (STK_B >= rrpge_m_info.bp){          /* Return from program */
 
    rrpge_m_info.hlt = RRPGE_HLT_EXIT;     /* Exit program */
+   cy = 0U;
 
   }else{ /* Ordinary return */
 

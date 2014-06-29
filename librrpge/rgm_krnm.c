@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.27
+**  \date      2014.06.29
 */
 
 
@@ -45,11 +45,10 @@ static auint rrpge_m_ktsalloc(uint16 const* par, auint n)
 ** unsuitable for reading. */
 static auint rrpge_m_bankread(auint pg, auint tg)
 {
- if ( ((pg < 0x4000U) || (pg >= 0x40E0U)) && /* Not an RW page */
+ if ( ((pg < 0x4000U) || (pg >= 0x41C0U)) && /* Not an RW page */
       ((pg < 0x8000U) || (pg >= 0x8080U)) && /* Not a VRAM page */
-      (pg != 0x7FFFU) && /* Not the audio peripheral page */
-      (pg != 0xBFFFU) && /* Not the video peripheral page */
-      (pg != 0x40E0U) ){ /* Not the Read Only Process Descriptor */
+      (pg != 0x7FFFU) && /* Not the user peripheral page */
+      (pg != 0x41C0U) ){ /* Not the Read Only Process Descriptor */
   return 1U;
  }
  rrpge_m_info.rbk[tg & 0xFU] = pg << 12; /* All OK, switch pages */
@@ -63,10 +62,9 @@ static auint rrpge_m_bankread(auint pg, auint tg)
 ** unsuitable for writing. */
 static auint rrpge_m_bankwrite(auint pg, auint tg)
 {
- if ( ((pg < 0x4000U) || (pg >= 0x40E0U)) && /* Not an RW page */
+ if ( ((pg < 0x4000U) || (pg >= 0x41C0U)) && /* Not an RW page */
       ((pg < 0x8000U) || (pg >= 0x8080U)) && /* Not a VRAM page */
-      (pg != 0x7FFFU) && /* Not the audio peripheral page */
-      (pg != 0xBFFFU) ){ /* Not the video peripheral page */
+      (pg != 0x7FFFU) ){ /* Not the user peripheral page */
   return 1U;
  }
  rrpge_m_info.wbk[tg & 0xFU] = pg << 12; /* All OK, switch pages */
@@ -257,11 +255,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_grf;
    }
 
-   if (rrpge_m_info.vln < 400U){ /* Normal display lines */
-    rrpge_m_info.xr[0] = rrpge_m_info.vln; /* A: Current video line */
-   }else{                        /* VBlank lines */
-    rrpge_m_info.xr[0] = (0x10000U - RRPGE_M_VLN) + rrpge_m_info.vln;
-   }
+   rrpge_m_info.xr[0] = rrpge_m_info.vln; /* A: Current video line */
 
    r = 100U;
    break;
@@ -451,7 +445,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   if ( (par[1] < 0x4000U) || (par[1] >= 0x40E0U) ){ /* Not an RW page */
+   if ( (par[1] < 0x4000U) || (par[1] >= 0x41C0U) ){ /* Not an RW page */
     goto fault_inv;
    }
 
@@ -518,11 +512,11 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   if ( (par[1] < 0x4000U) || (par[1] >= 0x40E0U) ){ /* Not an RW page */
+   if ( (par[1] < 0x4000U) || (par[1] >= 0x41C0U) ){ /* Not an RW page */
     goto fault_inv;
    }
 
-   if ( (par[2] < 0x4000U) || (par[2] >= 0x40E0U) ){ /* Not an RW page */
+   if ( (par[2] < 0x4000U) || (par[2] >= 0x41C0U) ){ /* Not an RW page */
     goto fault_inv;
    }
 

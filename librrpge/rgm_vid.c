@@ -57,27 +57,24 @@ void rrpge_m_vidproc(auint cy)
     fc -= rrpge_m_info.vac;
     rrpge_m_info.vac = 0U;
    }else{                      /* Can not finish, only some cycles drained */
+    rrpge_m_edat->stat.ropd[0xEC5U] = 0x0001U; /* FIFO non-empty (just to be sure) */
     rrpge_m_info.vac -= fc;
     break;                     /* Will finish in a further line */
    }
 
    /* Check for next Graphics FIFO command if any, and load it. */
 
-   if ((rrpge_m_info.frq != 0U){  /* FIFO operation start request */
-    if (((rrpge_m_edat->stat.ropd[0xD5DU] ^ rrpge_m_edat->stat.ropd[0xD5CU]) & 0x7FFEU) != 0U){
-     rrpge_m_edat->stat.ropd[0xD5FU] |= 1U; /* If there is anything loaded in the FIFO, start it */
+   if ((rrpge_m_edat->stat.ropd[0xD5FU] & 1U) == 0U){ /* Not started */
+    if (((rrpge_m_edat->stat.ropd[0xD5DU] ^ rrpge_m_edat->stat.ropd[0xD5CU]) & 0x7FFEU) == 0U){
+     rrpge_m_edat->stat.ropd[0xEC5U] = 0x0000U; /* FIFO is empty */
     }
-    rrpge_m_info.frq = 0U;
-   }
-   if ((rrpge_m_edat->stat.ropd[0xD5FU] & 1U) == 0U){
-    rrpge_m_edat->stat.ropd[0xEC5U] = 0x0000U; /* FIFO is empty */
     break;                     /* Nothing to do since FIFO is not started */
    }
    cm = rrpge_m_edat->stat.fram[(rrpge_m_edat->stat.ropd[0xD5DU] & 0x7FFEU) + 0U];
    dt = rrpge_m_edat->stat.fram[(rrpge_m_edat->stat.ropd[0xD5DU] & 0x7FFEU) + 1U];
    rrpge_m_edat->stat.ropd[0xD5DU] += 2U; /* Command & Data read, increment pointer */
    if (((rrpge_m_edat->stat.ropd[0xD5DU] ^ rrpge_m_edat->stat.ropd[0xD5CU]) & 0x7FFEU) == 0U){
-    rrpge_m_edat->stat.ropd[0xD5FU] = 0U; /* FIFO drained */
+    rrpge_m_edat->stat.ropd[0xD5FU] = 0U; /* FIFO drained, so started flag goes off */
    }
    rrpge_m_info.vac += 4U;
 
@@ -95,7 +92,7 @@ void rrpge_m_vidproc(auint cy)
     if (cm <= dt){
      if ( (cm == dt) ||        /* Never met due to equality */
           (cm >  (512U + 399U)) || /* Never met since already reached is beyond last valid */
-          (dt <= (512U - (RRPGE_M_VLN - 400U)) ){ /* Never met since not yet reached is before 1st line */
+          (dt <= (512U - (RRPGE_M_VLN - 400U))) ){ /* Never met since not yet reached is before 1st line */
       rrpge_m_info.vac  = 0xFFFFFFFFU;
      }else if (vl <  cm){      /* Need to reach the line */
       rrpge_m_info.vac += (cm - vl) * 400U;
@@ -134,7 +131,7 @@ void rrpge_m_vidproc(auint cy)
   /* Increment counters */
 
   rrpge_m_info.vln = (rrpge_m_info.vln + 1U) & 0xFFFFU;
-  if (rrpge_m_info.vln >= 400U){
+  if ((rrpge_m_info.vln >= 400U) && ((rrpge_m_info.vln & 0x8000U) == 0U)){
    rrpge_m_info.vln = 0x10000U + 400U - RRPGE_M_VLN;
    rrpge_m_edat->rena = (rrpge_m_edat->rena & (~0x2U)) | /* Transfer requested render state */
                         ((rrpge_m_edat->rena & (0x1U)) << 1);
@@ -147,9 +144,18 @@ void rrpge_m_vidproc(auint cy)
 
 
 
+/* Triggers a Graphics FIFO start. */
+void  rrpge_m_vidfifost(void)
+{
+ if (((rrpge_m_edat->stat.ropd[0xD5DU] ^ rrpge_m_edat->stat.ropd[0xD5CU]) & 0x7FFEU) != 0U){
+  rrpge_m_edat->stat.ropd[0xD5FU] |= 1U; /* If there is anything loaded in the FIFO, start it */
+ }
+}
+
+
+
 /* Performs a Graphics FIFO store using the parameters in the ROPD. It may
-** flag a FIFO start if necessary (setting rrpge_m_info's "frq" member).
-** Returns number of cycles the store takes. */
+** flag a FIFO start if necessary. Returns number of cycles the store takes */
 auint rrpge_m_vidfifoop(void)
 {
  auint cm = rrpge_m_edat->stat.ropd[0xEC7U];
@@ -165,13 +171,13 @@ auint rrpge_m_vidfifoop(void)
 
  rrpge_m_edat->stat.ropd[0xD5CU] += 2U;
  if (((rrpge_m_edat->stat.ropd[0xD5DU] ^ rrpge_m_edat->stat.ropd[0xD5CU]) & 0x7FFEU) == 0U){
-  rrpge_m_info.hlt |= RRPGE_M_GRAPHICS; /* FIFO overflow */
+  rrpge_m_info.hlt |= RRPGE_HLT_GRAPHICS; /* FIFO overflow */
  }
 
  /* Check command word for accelerator trigger */
 
  if (((cm & 0x01FFU) & 0x011FU) == 0x000FU){
-  rrpge_m_info.frq = 1U;                /* Autostart FIFO */
+  rrpge_m_edat->stat.ropd[0xD5FU] |= 1U;  /* Autostart FIFO */
  }
 
  /* Increment command word */
