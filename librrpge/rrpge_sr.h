@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.08
+**  \date      2014.06.29
 */
 
 
@@ -51,7 +51,7 @@ void rrpge_convpg_w2b(rrpge_uint16 const* src, rrpge_uint8* dst);
 **  rrpge_importstate().
 **
 **  \param[in]   src   State data structure.
-**  \param[out]  dst   Raw binary state (must be at least 8192 * 361 bytes).
+**  \param[out]  dst   Raw binary state (must be at least 593 * 8192 bytes).
 */
 void rrpge_state2raw(rrpge_state_t const* src, rrpge_uint8* dst);
 

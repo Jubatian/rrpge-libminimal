@@ -99,15 +99,19 @@ rrpge_uint32 rrpge_importstate(rrpge_object_t* hnd, rrpge_uint8 const* st)
   rrpge_convpg_b2w(&(st[(i + 1U) << 13]), &(hnd->stat.sram[i << 12]));
  }
 
- for (i = 0; i < 224U; i++){
+ for (i = 0; i < 448U; i++){
   rrpge_convpg_b2w(&(st[(i + 9U) << 13]), &(hnd->stat.dram[i << 12]));
  }
 
  for (i = 0; i < (128U * 2048U); i++){
-  hnd->stat.vram[i] = ((uint32)(st[(233U << 13) + (i << 2) + 0U]) << 24) +
-                      ((uint32)(st[(233U << 13) + (i << 2) + 1U]) << 16) +
-                      ((uint32)(st[(233U << 13) + (i << 2) + 2U]) <<  8) +
-                      ((uint32)(st[(233U << 13) + (i << 2) + 3U])      );
+  hnd->stat.vram[i] = ((uint32)(st[(457U << 13) + (i << 2) + 0U]) << 24) +
+                      ((uint32)(st[(457U << 13) + (i << 2) + 1U]) << 16) +
+                      ((uint32)(st[(457U << 13) + (i << 2) + 2U]) <<  8) +
+                      ((uint32)(st[(457U << 13) + (i << 2) + 3U])      );
+ }
+
+ for (i = 0; i < 8U; i++){
+  rrpge_convpg_b2w(&(st[(i + 585U) << 13]), &(hnd->stat.fram[i << 12]));
  }
 
  /* Also reset library internal components */

@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.26
+**  \date      2014.06.29
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -87,13 +87,6 @@ struct rrpge_object_s{
  uint8  audl[1024U]; /* Audio left double buffer (2 x 512 samples) */
  uint8  audr[1024U]; /* Audio right double buffer (2 x 512 samples) */
 
- auint  frep[4U  * 401U];
-                     /* Layer pointers for a forward render buffer.
-                     ** Here the data for ROPD: 0xD58 - 0xD5F is calculated;
-                     ** they may be loaded from here when saving state. Note
-                     ** that line + 1 contains the pointers used to render the
-                     ** given line, the first four values are always zero. */
-
  rrpge_cb_line_t*     cb_lin; /* Line renderer callback */
  rrpge_cb_kcalltsk_t* cb_tsk[RRPGE_CB_IDRANGE]; /* Kernel task callbacks */
  rrpge_cb_kcallsub_t* cb_sub[RRPGE_CB_IDRANGE]; /* Kernel subroutine callbacks */
@@ -103,10 +96,6 @@ struct rrpge_object_s{
  auint  rebw;        /* Receive data buffer write pointer */
  auint  reir;        /* Receive ID & pk. length buffer read pointer */
  auint  reiw;        /* Receive ID & pk. length buffer write pointer */
-
- auint  frln;        /* Forward render line pointer */
- auint  frld;        /* Clear if previous line was rendered, used by the
-                     ** forward renderer. */
 
  auint  rena;        /* Render Enable flags.
                      ** bit0: Requested state
@@ -143,7 +132,6 @@ typedef struct{
  auint  vlc;         /* Video cycle within line (ROPD: 0xD51) */
  auint  auc;         /* Cycles until next audio event (ROPD: 0xD52-0xD53) */
  auint  vac;         /* Cycles remaining from video acc. op. (ROPD: 0xD54-0xD55) */
- auint  sbt;         /* Current stack bottom (ROPD: 0xD7E) */
 
  auint  grr;         /* Recolor bank load necessary flag: set on entry, will
                      ** ask for populating grb[] when it is needed. */
@@ -151,11 +139,6 @@ typedef struct{
                      ** mode. (From ROPD: 0xBC0) */
 
  auint  frq;         /* Request Graphics FIFO operation if set */
-
- auint  vsm;         /* Video Stall Mode. 0,1,2,3 or 4 according to the
-                     ** currently effective stall mode (roughly number of
-                     ** graphics planes enabled). It is updated in cycle 0 and
-                     ** 80 of a graphics line. */
 
  auint  hlt;         /* Collects halt cause if any. */
 

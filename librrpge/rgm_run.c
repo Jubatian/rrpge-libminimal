@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.26
+**  \date      2014.06.29
 */
 
 
@@ -66,7 +66,7 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
  rrpge_m_info.sp = rrpge_m_edat->stat.ropd[0xD4BU];
  rrpge_m_info.bp = rrpge_m_edat->stat.ropd[0xD4CU];
 
- rrpge_m_info.arq = 0; /* No accelerator function is waiting */
+ rrpge_m_info.frq = 0; /* No FIFO start is waiting */
 
 
  /* Enter main loop */

@@ -8,12 +8,3 @@ rrpge_db.h (Debug functions)
 rrpge_pr.h (Library properties)
 
 
-
-
-Overall architecture for 00.006.000
-
-
-From the graphics only the rrpge_m_grln() function will remain rendering the
-current line. This part may be left alone until finalizing 00.007.000, thus
-skipping 00.006.000 altogether for this part.
-

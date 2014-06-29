@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.08
+**  \date      2014.06.29
 */
 
 
@@ -50,7 +50,7 @@ void rrpge_state2raw(rrpge_state_t const* src, rrpge_uint8* dst)
  auint  i;
  uint32 t;
 
- /* Order is: ROPD; Stack; Data; Video */
+ /* Order is: ROPD; Stack; Data; Video; FIFO */
 
  rrpge_convpg_w2b(&(src->ropd[0]), dst);
 
@@ -58,16 +58,20 @@ void rrpge_state2raw(rrpge_state_t const* src, rrpge_uint8* dst)
   rrpge_convpg_w2b(&(src->sram[i * 4096U]), dst + ((i +   1U) * 4096U));
  }
 
- for (i = 0; i < 224U; i++){
+ for (i = 0; i < 448U; i++){
   rrpge_convpg_w2b(&(src->dram[i * 4096U]), dst + ((i +   9U) * 4096U));
  }
 
  for (i = 0; i< 128U * 4096U; i++){
   t = src->vram[i];
-  dst[233U * 4096U + (i << 2) + 0U] = (uint8)(t >> 24);
-  dst[233U * 4096U + (i << 2) + 1U] = (uint8)(t >> 16);
-  dst[233U * 4096U + (i << 2) + 2U] = (uint8)(t >>  8);
-  dst[233U * 4096U + (i << 2) + 3U] = (uint8)(t      );
+  dst[457U * 4096U + (i << 2) + 0U] = (uint8)(t >> 24);
+  dst[457U * 4096U + (i << 2) + 1U] = (uint8)(t >> 16);
+  dst[457U * 4096U + (i << 2) + 2U] = (uint8)(t >>  8);
+  dst[457U * 4096U + (i << 2) + 3U] = (uint8)(t      );
+ }
+
+ for (i = 0; i < 8U; i++){
+  rrpge_convpg_w2b(&(src->fram[i * 4096U]), dst + ((i + 585U) * 4096U));
  }
 
 }

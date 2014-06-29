@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.10
+**  \date      2014.06.29
 */
 
 
@@ -252,14 +252,7 @@ rrpge_uint32 rrpge_checkropd(rrpge_uint16 const* d)
 
  /* The rest of the state */
 
- f = 0xD20U;
- if (d[f] > 400U) goto ropd_fault;          /* Video line IT, raster line */
-
- for (f = 0xD21U; f < 0xD30U; f++){         /* Reserved areas */
-  if (d[f] != 0) goto ropd_fault;
- }
-
- for (f = 0xD32U; f < 0xD3FU; f++){         /* Reserved areas */
+ for (f = 0xD20U; f < 0xD3FU; f++){         /* Reserved areas */
   if (d[f] != 0) goto ropd_fault;
  }
 
@@ -271,10 +264,7 @@ rrpge_uint32 rrpge_checkropd(rrpge_uint16 const* d)
  }
 
  f = 0xD52;
- if ((d[f] & 0xFF80U) != 0) goto ropd_fault;   /* There shouldn't be this many cycles */
-
- f = 0xD54;
- if ((d[f] & 0xFF80U) != 0) goto ropd_fault;   /* There shouldn't be this many cycles */
+ if (d[f] != 0) goto ropd_fault;            /* Reserved area */
 
  f = 0xD56;
  if (d[f] != 0) goto ropd_fault;            /* Reserved area */
@@ -282,17 +272,27 @@ rrpge_uint32 rrpge_checkropd(rrpge_uint16 const* d)
  f = 0xD57;
  if (d[f] > 1U) goto ropd_fault;            /* Video mode */
 
- f = 0xD6D;
- if (d[f] != 0) goto ropd_fault;            /* Reserved area */
+ for (f = 0xD58U; f < 0xD5BU; f++){         /* Reserved areas */
+  if (d[f] != 0) goto ropd_fault;
+ }
 
- f = 0xD6E;
- if (d[f] > 3U) goto ropd_fault;            /* Interrupt control (video) */
+ for (f = 0xD5CU; f < 0xD5DU; f++){         /* Graphics FIFO's R/W pointers */
+  if ((d[f] & 0x0001U) != 0) goto ropd_fault;
+ }
 
- f = 0xD6F;
- if (d[f] > 3U) goto ropd_fault;            /* Interrupt control (audio) */
+ f = 0xD5E;
+ if (d[f] != 0U) goto ropd_fault;           /* Reserved area */
 
- f = 0xD7D;
- if (d[f] != 0) goto ropd_fault;            /* Reserved area */
+ f = 0xD5F;
+ if (d[f] > 1U) goto ropd_fault;            /* Graphics FIFO started flag */
+
+ for (f = 0xD60U; f < 0xD70U; f++){         /* Last device types area */
+  if ((d[f] & 0x07E0U) != 0) goto ropd_fault;
+ }
+
+ for (f = 0xD70U; f < 0xD80U; f++){         /* Reserved areas */
+  if (d[f] != 0) goto ropd_fault;
+ }
 
  for (i = 0; i < 16U; i++){                 /* Kernel tasks */
   if (rrpge_m_taskcheck(d, i)){
@@ -310,10 +310,6 @@ rrpge_uint32 rrpge_checkropd(rrpge_uint16 const* d)
   if (d[f] + d[f - 32U] > 640U) goto ropd_fault; /* Width */
   f = 0xEB0U + i;
   if (d[f] + d[f - 32U] > 400U) goto ropd_fault; /* Height */
- }
-
- for (f = 0xEC0U; f < 0xED0U; f++){         /* Last device types area */
-  if ((d[f] & 0x07E0U) != 0) goto ropd_fault;
  }
 
  return RRPGE_ERR_OK;

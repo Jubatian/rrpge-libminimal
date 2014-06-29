@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.10
+**  \date      2014.06.29
 */
 
 
@@ -133,10 +133,6 @@ void rrpge_m_ires_initl(rrpge_object_t* obj)
  obj->reir = 0;
  obj->reiw = 0;
 
- /* Forward renderer */
- obj->frln = obj->stat.ropd[0xD50U]; /* At current line */
- obj->frld = 0;
-
  /* Rendering enabled */
  obj->rena = 0x3U;                   /* Enabled, and requests enabling */
 
@@ -146,8 +142,9 @@ void rrpge_m_ires_initl(rrpge_object_t* obj)
  /* No halt causes */
  obj->hlt = 0;
 
- /* No audio events waiting for servicing */
+ /* No audio events waiting for servicing, double buffer empty */
  obj->aco = 0;
+ obj->audp = 0;
 
  /* Kernel internal task cycles: set up to start with a reasonable amount of
  ** free time first. */
@@ -171,7 +168,7 @@ void rrpge_m_ires_init(rrpge_object_t* obj)
  }
 
  /* Reset memories */
- for (i = 0U * 4096U; i < 224U * 4096U; i++){
+ for (i = 0U * 4096U; i < 448U * 4096U; i++){
   obj->stat.dram[i] = 0;
  }
  for (i = 0U * 4096U; i <   8U * 4096U; i++){
@@ -179,6 +176,9 @@ void rrpge_m_ires_init(rrpge_object_t* obj)
  }
  for (i = 0U * 2048U; i < 128U * 2048U; i++){
   obj->stat.vram[i] = 0;
+ }
+ for (i = 0U * 4096U; i <   8U * 4096U; i++){
+  obj->stat.fram[i] = 0;
  }
 
 
@@ -279,24 +279,10 @@ void rrpge_m_ires_init(rrpge_object_t* obj)
  }
 
 
- /* Populate Video RAM pages (initial display lists) */
+ /* Populate Video RAM pages (initial display list on page 127) */
 
- /* Background display list at 127:0x800 */
- for (i = 0U; i < 400U; i++){
-  obj->stat.vram[127U * 2048U + 0x400U + i] = 0x60100000U;
- }
-
- /* Layer display lists. Odd lines are zero, not initializing those (they are
- ** left zeroed). */
- obj->stat.vram[127U * 2048U + 0x200U] = 0x00000100U;
- obj->stat.vram[126U * 2048U + 0x400U] = 0x00000100U;
- obj->stat.vram[127U * 2048U + 0x000U] = 0x00000100U;
- obj->stat.vram[126U * 2048U + 0x600U] = 0x00000100U;
- for (i = 2; i < 400; i+=2){
-  obj->stat.vram[127U * 2048U + 0x200U + i] = 0x00500000U;
-  obj->stat.vram[126U * 2048U + 0x400U + i] = 0x00500000U;
-  obj->stat.vram[127U * 2048U + 0x000U + i] = 0x00500000U;
-  obj->stat.vram[126U * 2048U + 0x600U + i] = 0x00500000U;
+ for (i = 0U; i < 200U; i++){
+  obj->stat.vram[127U * 2048U + (i * 8U) + 1U] = 0x40008000U + (i * 0x50000U);
  }
 
 
@@ -304,21 +290,26 @@ void rrpge_m_ires_init(rrpge_object_t* obj)
 
  obj->stat.ropd[0xEE0U] = 0xFFFFU; /* Write mask high */
  obj->stat.ropd[0xEE1U] = 0xFFFFU; /* Write mask low */
- obj->stat.ropd[0xEE2U] = 0x7777U; /* Partition size */
- obj->stat.ropd[0xEE3U] = 0x01FEU; /* Bg. display list */
- obj->stat.ropd[0xEE4U] = 0x01FDU; /* Layer 0 disp. list */
- obj->stat.ropd[0xEE5U] = 0x01FAU; /* Layer 1 disp. list */
- obj->stat.ropd[0xEE6U] = 0x01FCU; /* Layer 2 disp. list */
- obj->stat.ropd[0xEE7U] = 0x01FBU; /* Layer 3 disp. list */
- obj->stat.ropd[0xD50U] = 0x0190U; /* Start display at 400 decimal (VBlank) */
+ obj->stat.ropd[0xEE2U] = 0xD000U; /* Double scan & shift mode region */
+ obj->stat.ropd[0xEE3U] = 0x01FCU; /* Display list definiton */
+ obj->stat.ropd[0xEE4U] = 0x0014U; /* Source 0 */
+ obj->stat.ropd[0xEE5U] = 0x4042U; /* Source 1 */
+ obj->stat.ropd[0xEE6U] = 0x8042U; /* Source 2 */
+ obj->stat.ropd[0xEE7U] = 0xC042U; /* Source 3 */
 
 
  /* Set up audio mixer */
 
- obj->stat.ropd[0xED3U] = 0x0100U; /* Amplitudo: max (multiplier off) */
- obj->stat.ropd[0xEDAU] = 0x000CU; /* Freq. table whole pointer */
- obj->stat.ropd[0xEDBU] = 0x000DU; /* Freq. table fraction pointer */
- obj->stat.ropd[0xEDCU] = 0x6667U; /* Partitioning */
+ obj->stat.ropd[0xECEU] = 0x000CU; /* Freq. table whole pointer */
+ obj->stat.ropd[0xECFU] = 0x000DU; /* Freq. table fraction pointer */
+ obj->stat.ropd[0xED7U] = 0x6667U; /* Partitioning */
+ obj->stat.ropd[0xEDAU] = 0x0100U; /* Amplitudo: max (multiplier off) */
+
+
+ /* Set up audio */
+
+ obj->stat.ropd[0xECAU] = 0xFF80U; /* DMA buffer size mask */
+ obj->stat.ropd[0xECBU] = 0x0001U; /* Divider: 48KHz */
 
 
  /* Populate ROPD areas (only the CPU R/W address space, rest are zero) */
@@ -326,6 +317,7 @@ void rrpge_m_ires_init(rrpge_object_t* obj)
  for (i = 0U; i < 32U;  i++){
   obj->stat.ropd[0xD00U + i] = rrpge_m_ires_cpurw[i];
  }
+
 
  /* Populate ROPD constant areas and color palette */
 

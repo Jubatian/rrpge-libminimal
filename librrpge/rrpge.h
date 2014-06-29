@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.23
+**  \date      2014.06.29
 */
 
 
@@ -73,7 +73,7 @@ void rrpge_reset(rrpge_object_t* hnd);
 **  are cleared by this method when it succeeds.
 **
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
-**  \param[in]   st    Raw state to load (361 * 8192 bytes).
+**  \param[in]   st    Raw state to load (593 * 8192 bytes).
 **  \return            0 on success, failure code otherwise.
 */
 rrpge_uint32 rrpge_importstate(rrpge_object_t* hnd, rrpge_uint8 const* st);
