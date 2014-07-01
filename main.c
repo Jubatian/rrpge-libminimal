@@ -299,7 +299,9 @@ int main(int argc, char** argv)
                    RRPGE_HLT_STACK |
                    RRPGE_HLT_INVKCALL |
                    RRPGE_HLT_INVOP |
-                   RRPGE_HLT_FAULT)) == 0U);
+                   RRPGE_HLT_FAULT |
+                   RRPGE_HLT_GRAPHICS |
+                   RRPGE_HLT_DMA)) == 0U);
 
      if ((t & RRPGE_HLT_AUDIO) != 0U){ /* Audio data produced by emulator */
 
@@ -307,7 +309,15 @@ int main(int argc, char** argv)
       rrpge_getaudio(emu, lpt, rpt);
       auc++;
 
-     }else{                            /* Any other halt cause is an error */
+     }
+
+     if ((t & (RRPGE_HLT_EXIT |
+               RRPGE_HLT_STACK |
+               RRPGE_HLT_INVKCALL |
+               RRPGE_HLT_INVOP |
+               RRPGE_HLT_FAULT |
+               RRPGE_HLT_GRAPHICS |
+               RRPGE_HLT_DMA)) != 0U){ /* Errors & Exit */
       break;
      }
 
@@ -317,7 +327,9 @@ int main(int argc, char** argv)
     if ((t & (RRPGE_HLT_STACK |
               RRPGE_HLT_INVKCALL |
               RRPGE_HLT_INVOP |
-              RRPGE_HLT_FAULT)) != 0U){
+              RRPGE_HLT_FAULT |
+              RRPGE_HLT_GRAPHICS |
+              RRPGE_HLT_DMA)) != 0U){
      sta = rrpge_exportstate(emu);
      main_errexit(t, sta);
      break;                            /* Also exit, with error */

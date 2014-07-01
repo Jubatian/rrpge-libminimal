@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.29
+**  \date      2014.07.01
 */
 
 
@@ -137,7 +137,7 @@ void rrpge_m_grop_accel(void)
  /* Calculate destination increment */
 
  if ((dsincr & 0x0020U) == 0U){
-  dsincr = 10000U;
+  dsincr = 0x10000U;
  }else{
   dsincr = (dsincr & 0xFF30U) << 10;
   dsincr = (0U - (dsincr & 0x02000000U)) | dsincr;

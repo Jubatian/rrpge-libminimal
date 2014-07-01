@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.29
+**  \date      2014.06.30
 */
 
 
@@ -142,7 +142,7 @@ void rrpge_m_grln(void)
      /* Will shift to the left, based on low 3 bits of command. Initial source
      ** is always fetched. */
 
-     dshl = cmd & (0x6U | ((cmd >> 16) & 1U)); /* Lowest bit only affects in 8 bit mode */
+     dshl = cmd & (0x6U | (((cmd >> 16) & 1U) ^ 1U)); /* Lowest bit only affects in 4 bit mode */
      dshl <<= 2;
      dshr = (32U - dshl) >> 1;    /* Could be 32, so split into two shifts */
 
@@ -209,7 +209,7 @@ void rrpge_m_grln(void)
      ** destination needs to be generated than sources, scy represents the
      ** count of source fetches required. */
 
-     dshr = cmd & (0x6U | ((cmd >> 16) & 1U)); /* Lowest bit only affects in 8 bit mode */
+     dshr = cmd & (0x6U | (((cmd >> 16) & 1U) ^ 1U)); /* Lowest bit only affects in 4 bit mode */
      dshr <<= 2;
      dshl = (32U - dshr) >> 1;    /* Could be 32, so split into two shifts */
 

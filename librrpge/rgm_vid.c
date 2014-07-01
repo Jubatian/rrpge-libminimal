@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.29
+**  \date      2014.07.01
 */
 
 
@@ -158,14 +158,14 @@ void  rrpge_m_vidfifost(void)
 ** flag a FIFO start if necessary. Returns number of cycles the store takes */
 auint rrpge_m_vidfifoop(void)
 {
- auint cm = rrpge_m_edat->stat.ropd[0xEC7U];
+ auint cm = rrpge_m_edat->stat.ropd[0xEC6U];
 
  /* Store current command & data words */
 
  rrpge_m_edat->stat.fram[(rrpge_m_edat->stat.ropd[0xD5CU] & 0x7FFEU) + 0U] =
-   rrpge_m_edat->stat.ropd[0xEC6U];
- rrpge_m_edat->stat.fram[(rrpge_m_edat->stat.ropd[0xD5CU] & 0x7FFEU) + 1U] =
    cm;
+ rrpge_m_edat->stat.fram[(rrpge_m_edat->stat.ropd[0xD5CU] & 0x7FFEU) + 1U] =
+   rrpge_m_edat->stat.ropd[0xEC7U];
 
  /* Increment write pointer */
 
@@ -183,7 +183,7 @@ auint rrpge_m_vidfifoop(void)
  /* Increment command word */
 
  cm = (cm & 0xFE00U) | ((cm + 1U) & 0x01FFU);
- rrpge_m_edat->stat.ropd[0xEC7U] = cm;
+ rrpge_m_edat->stat.ropd[0xEC6U] = cm;
 
  /* Non-empty flag becomes set */
 
