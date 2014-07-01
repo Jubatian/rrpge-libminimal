@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.15
+**  \date      2014.07.01
 */
 
 
@@ -25,7 +25,7 @@ rrpge_uint32 rrpge_getnetavail(rrpge_object_t* hnd)
 rrpge_uint32 rrpge_getlastdev(rrpge_object_t* hnd, rrpge_uint32 dev)
 {
  if (dev >= 16U){ return 0U; }
- return (hnd->stat.ropd[0xEC0U + dev]);
+ return (hnd->stat.ropd[0xD60U + dev]);
 }
 
 

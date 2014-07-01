@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.30
+**  \date      2014.07.01
 */
 
 
@@ -59,6 +59,11 @@ void rrpge_m_grln(void)
  uint32 u32;
  uint32 d32;
  uint32 m32;
+ auint  bs;
+ auint  bm;
+ auint  bc;
+ uint32 dcm;
+ uint32 dpm;
 
  /* Only draw line if within display area */
 
@@ -85,7 +90,22 @@ void rrpge_m_grln(void)
  if ( (dbl == 0U) ||
       (rrpge_m_info.vln & 1U) == 0U){ /* Odd lines in double scan have no render */
 
+  /* Convert display list size to cells */
+
   dsiz = (auint)(1U) << dsiz;
+
+  /* Prepare shift count & mask for expanding 4 / 8 bit masks and calculating
+  ** colorkey */
+
+  if ((rrpge_m_info.vbm & 0x80U) != 0U){ /* 8 bit mode */
+   bc = 0x7F7F7F7FU;              /* Colorkey calculation mask */
+   bm = 0x80808080U;              /* Mask to select the effective mask bit */
+   bs = 7U;                       /* Shift count in the expansion */
+  }else{                          /* 4 bit mode */
+   bc = 0x77777777U;              /* Colorkey calculation mask */
+   bm = 0x88888888U;              /* Mask to select the effective mask bit */
+   bs = 3U;                       /* Shift count in the expansion */
+  }
 
   /* Reset line buffer */
 
@@ -135,6 +155,16 @@ void rrpge_m_grln(void)
 
     msb = msk | ((uint32)(0U) - ((cmd >> 15) & 1U)); /* Mask base is either 0xFFFFFFFF or the mask */
 
+    /* Precalculate colorkey & priority selector mask drops (0xFFFFFFFFU if
+    ** the mask is to be dropped, 0x00000000U otherwise). */
+
+    dcm = ((uint32)(0U) - ((cmd >> 30) & 1U)); /* Drop colorkey unless enabled */
+    dpm = (0xFFFFFFFFU  + ((cmd >> 31) & 1U)); /* Drop priority selector unless enabled */
+
+    /* Drop lowest bit (position / shift) of command in 8 bit mode */
+
+    cmd &= ~((cmd >> 16) & 1U);
+
     /* Do the blit */
 
     if ((csr & 0x0020U) != 0U){   /* Shift source */
@@ -142,8 +172,7 @@ void rrpge_m_grln(void)
      /* Will shift to the left, based on low 3 bits of command. Initial source
      ** is always fetched. */
 
-     dshl = cmd & (0x6U | (((cmd >> 16) & 1U) ^ 1U)); /* Lowest bit only affects in 4 bit mode */
-     dshl <<= 2;
+     dshl = (cmd & 0x7U) << 2;
      dshr = (32U - dshl) >> 1;    /* Could be 32, so split into two shifts */
 
      /* Source position */
@@ -172,29 +201,21 @@ void rrpge_m_grln(void)
 
       m32  = msb;                    /* Combined mask */
 
-      t32  = psd ^ msk;              /* Prepare for colorkey */
-      if ((cmd & 0x10000U) == 0U){   /* 4 bit mode */
-       t32 = (((t32 & 0x77777777U) + 0x77777777U) | t32) & 0x88888888U;
-       t32 = (t32 - (t32 >> 3)) + t32;  /* Colorkey mask (0: background) */
-       u32  = d32 & 0x88888888U;     /* bit 3 is priority selector */
-       u32 |= u32 >> 1;
-       u32 |= u32 >> 2;
-      }else{                         /* 8 bit mode */
-       t32 = (((t32 & 0x7F7F7F7FU) + 0x7F7F7F7FU) | t32) & 0x80808080U;
-       t32 = (t32 - (t32 >> 7)) + t32;  /* Colorkey mask (0: background) */
-       u32  = d32 & 0x20202020U;     /* bit 5 is priority selector */
-       u32 |= u32 >> 1;
-       u32 |= u32 << 2;
-       u32 |= u32 >> 4;
-      }
-      u32 = ~u32;
-      m32 &= t32 | ((uint32)(0U) - ((cmd >> 30) & 1U)); /* Add colorkey to write mask if enabled */
-      m32 &= u32 | (0xFFFFFFFFU  + ((cmd >> 31) & 1U)); /* Add priority selector to write mask if enabled */
+      t32  = psd ^ msk;                    /* Prepare for colorkey */
+      t32  = (((t32 & bc) + bc) | t32);    /* Colorkey mask on the highest bit of pixel */
+      u32  = ~(d32 << ((cmd >> 15) & 2U)); /* Priority mask on the highest bit of pixel */
+      t32 |= dcm;                          /* Drop colorkey unless enabled */
+      u32 |= dpm;                          /* Drop priority selector unless enabled */
+      t32 &= u32;                          /* Combine the two masks */
+      t32 &= bm;                           /* Mask out lower pixel bits */
+      t32  = (t32 - (t32 >> bs)) + t32;    /* Expand to lower pixels */
+
+      m32 &= t32;                    /* Add to combined mask */
 
       /* Combine destination */
 
       rrpge_m_grln_buf[i] = (psd & m32) | (d32 & (~m32));
-      i    = (i + 1U) & 0x7F;
+      i    = (i + 1U) & 0x7FU;
 
       /* Done, finalize */
 
@@ -209,8 +230,7 @@ void rrpge_m_grln(void)
      ** destination needs to be generated than sources, scy represents the
      ** count of source fetches required. */
 
-     dshr = cmd & (0x6U | (((cmd >> 16) & 1U) ^ 1U)); /* Lowest bit only affects in 4 bit mode */
-     dshr <<= 2;
+     dshr = (cmd & 0x7U) << 2;
      dshl = (32U - dshr) >> 1;    /* Could be 32, so split into two shifts */
 
      /* Initial (begin) mask */
@@ -244,29 +264,21 @@ void rrpge_m_grln(void)
 
       /* Create masks */
 
-      t32  = psd ^ msk;              /* Prepare for colorkey */
-      if ((cmd & 0x10000U) == 0U){   /* 4 bit mode */
-       t32 = (((t32 & 0x77777777U) + 0x77777777U) | t32) & 0x88888888U;
-       t32 = (t32 - (t32 >> 3)) + t32;  /* Colorkey mask (0: background) */
-       u32  = d32 & 0x88888888U;     /* bit 3 is priority selector */
-       u32 |= u32 >> 1;
-       u32 |= u32 >> 2;
-      }else{                         /* 8 bit mode */
-       t32 = (((t32 & 0x7F7F7F7FU) + 0x7F7F7F7FU) | t32) & 0x80808080U;
-       t32 = (t32 - (t32 >> 7)) + t32;  /* Colorkey mask (0: background) */
-       u32  = d32 & 0x20202020U;     /* bit 5 is priority selector */
-       u32 |= u32 >> 1;
-       u32 |= u32 << 2;
-       u32 |= u32 >> 4;
-      }
-      u32 = ~u32;
-      m32 &= t32 | ((uint32)(0U) - ((cmd >> 30) & 1U)); /* Add colorkey to write mask if enabled */
-      m32 &= u32 | (0xFFFFFFFFU  + ((cmd >> 31) & 1U)); /* Add priority selector to write mask if enabled */
+      t32  = psd ^ msk;                    /* Prepare for colorkey */
+      t32  = (((t32 & bc) + bc) | t32);    /* Colorkey mask on the highest bit of pixel */
+      u32  = ~(d32 << ((cmd >> 15) & 2U)); /* Priority mask on the highest bit of pixel */
+      t32 |= dcm;                          /* Drop colorkey unless enabled */
+      u32 |= dpm;                          /* Drop priority selector unless enabled */
+      t32 &= u32;                          /* Combine the two masks */
+      t32 &= bm;                           /* Mask out lower pixel bits */
+      t32  = (t32 - (t32 >> bs)) + t32;    /* Expand to lower pixels */
+
+      m32 &= t32;                    /* Add to combined mask */
 
       /* Combine destination */
 
       rrpge_m_grln_buf[i] = (psd & m32) | (d32 & (~m32));
-      i    = (i + 1U) & 0x7F;
+      i    = (i + 1U) & 0x7FU;
 
       /* Done, finalize */
 

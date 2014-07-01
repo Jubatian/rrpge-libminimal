@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.24
+**  \date      2014.07.01
 */
 
 
@@ -46,7 +46,7 @@ auint rrpge_m_mixerop(void)
  auint ret;
 
  /* Copy high parts to low part high words, for partitioning */
- sdol |= sdoh << 16;
+ sdol |= sdoh;
 
  /* Apply partitioning */
  i = rrpge_m_edat->stat.ropd[0xED7U];          /* Partitioning bits */

@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.29
+**  \date      2014.07.01
 */
 
 
@@ -291,7 +291,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    cbp_getprops.dev = par[1] & 0xFU; /* Device to query */
    rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETPROPS](rrpge_m_edat, &cbp_getprops);
-   rrpge_m_edat->stat.ropd[0xEC0U + (par[1] & 0xFU)] = rrpge_m_info.xr[0];
+   rrpge_m_edat->stat.ropd[0xD60U + (par[1] & 0xFU)] = rrpge_m_info.xr[0];
 
    r = 800;
    goto ret_callback;
@@ -305,7 +305,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    cbp_dropdev.dev = par[1] & 0xFU; /* Device to drop */
    rrpge_m_edat->cb_sub[RRPGE_CB_DROPDEV](rrpge_m_edat, &cbp_dropdev);
-   rrpge_m_edat->stat.ropd[0xEC0U + (par[1] & 0xFU)] = 0U;
+   rrpge_m_edat->stat.ropd[0xD60U + (par[1] & 0xFU)] = 0U;
 
    r = 800;
    goto ret_callback;
@@ -318,7 +318,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    }
 
    cbp_getdidesc.dev = par[1] & 0xFU; /* Device to query */
-   if (rrpge_m_edat->stat.ropd[0xEC0U + cbp_getdidesc.dev] != 0U){
+   if (rrpge_m_edat->stat.ropd[0xD60U + cbp_getdidesc.dev] != 0U){
     cbp_getdidesc.inp = (par[2] << 4) + (par[3] & 0xFU); /* Input to query */
     rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETDIDESC](rrpge_m_edat, &cbp_getdidesc);
    }else{
@@ -337,7 +337,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    }
 
    cbp_getdi.dev = par[1] & 0xFU; /* Device to query */
-   if (rrpge_m_edat->stat.ropd[0xEC0U + cbp_getdi.dev] != 0U){
+   if (rrpge_m_edat->stat.ropd[0xD60U + cbp_getdi.dev] != 0U){
     cbp_getdi.ing = par[2];       /* Input group to query */
     rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETDI](rrpge_m_edat, &cbp_getdi);
    }else{
@@ -355,7 +355,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    }
 
    cbp_getai.dev = par[1] & 0xFU; /* Device to query */
-   if (rrpge_m_edat->stat.ropd[0xEC0U + cbp_getai.dev] != 0U){
+   if (rrpge_m_edat->stat.ropd[0xD60U + cbp_getai.dev] != 0U){
     cbp_getai.inp = par[2];       /* Input to query */
     rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_GETAI](rrpge_m_edat, &cbp_getai);
    }else{
@@ -373,7 +373,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    }
 
    cbp_popchar.dev = par[1] & 0xFU; /* Device to query */
-   if (rrpge_m_edat->stat.ropd[0xEC0U + cbp_popchar.dev] != 0U){
+   if (rrpge_m_edat->stat.ropd[0xD60U + cbp_popchar.dev] != 0U){
     rrpge_m_info.xr[0] = rrpge_m_edat->cb_fun[RRPGE_CB_POPCHAR](rrpge_m_edat, &cbp_popchar);
    }else{
     rrpge_m_info.xr[0] = 0U;
