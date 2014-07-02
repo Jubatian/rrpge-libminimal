@@ -174,16 +174,17 @@ auint rrpge_m_vidfifoop(void)
   rrpge_m_info.hlt |= RRPGE_HLT_GRAPHICS; /* FIFO overflow */
  }
 
- /* Check command word for accelerator trigger */
+ /* Check command word for accelerator trigger & increment command word if
+ ** needed. */
 
- if (((cm & 0x01FFU) & 0x011FU) == 0x000FU){
-  rrpge_m_edat->stat.ropd[0xD5FU] |= 1U;  /* Autostart FIFO */
+ if ((cm & 0x8000U) != 0U){               /* Graphics register write */
+  if ((cm & 0x011FU) == 0x000FU){         /* Accelerator start trigger */
+   rrpge_m_edat->stat.ropd[0xD5FU] |= 1U; /* Autostart FIFO */
+  }else{                                  /* Not start trigger - increment */
+   cm = (cm & 0xFE00U) | ((cm + 1U) & 0x01FFU);
+   rrpge_m_edat->stat.ropd[0xEC6U] = cm;
+  }
  }
-
- /* Increment command word */
-
- cm = (cm & 0xFE00U) | ((cm + 1U) & 0x01FFU);
- rrpge_m_edat->stat.ropd[0xEC6U] = cm;
 
  /* Non-empty flag becomes set */
 
