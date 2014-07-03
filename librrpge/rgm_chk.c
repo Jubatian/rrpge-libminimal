@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.29
+**  \date      2014.07.02
 */
 
 
@@ -287,10 +287,6 @@ rrpge_uint32 rrpge_checkropd(rrpge_uint16 const* d)
 
  for (f = 0xD60U; f < 0xD70U; f++){         /* Last device types area */
   if ((d[f] & 0x07E0U) != 0) goto ropd_fault;
- }
-
- for (f = 0xD70U; f < 0xD80U; f++){         /* Reserved areas */
-  if (d[f] != 0) goto ropd_fault;
  }
 
  for (i = 0; i < 16U; i++){                 /* Kernel tasks */

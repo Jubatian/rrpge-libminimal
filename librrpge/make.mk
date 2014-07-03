@@ -6,7 +6,7 @@
 #
 
 OBJECTS+= $(OBD)rgm_aq.o   $(OBD)rgm_aud.o  $(OBD)rgm_cb.o   $(OBD)rgm_chk.o
-OBJECTS+= $(OBD)rgm_cpua.o $(OBD)rgm_cpuo.o $(OBD)rgm_dma.o  $(OBD)rgm_grcy.o
+OBJECTS+= $(OBD)rgm_cpua.o $(OBD)rgm_cpuo.o $(OBD)rgm_dma.o
 OBJECTS+= $(OBD)rgm_grln.o $(OBD)rgm_grop.o $(OBD)rgm_info.o $(OBD)rgm_ires.o
 OBJECTS+= $(OBD)rgm_krnm.o $(OBD)rgm_main.o $(OBD)rgm_mix.o  $(OBD)rgm_prng.o
 OBJECTS+= $(OBD)rgm_run.o  $(OBD)rgm_ser.o  $(OBD)rgm_task.o $(OBD)rgm_vid.o
@@ -38,10 +38,6 @@ $(OBD)rgm_cpuo.o: librrpge/rgm_cpuo.c librrpge/rgm_cpuo.h
 $(OBD)rgm_dma.o: librrpge/rgm_dma.c librrpge/rgm_dma.h
 	$(CC) -c librrpge/rgm_dma.c -o $(OBD)rgm_dma.o $(CFSPD)
 	$(CC) -S librrpge/rgm_dma.c -o $(OBD)rgm_dma.asm $(CFSPD)
-
-$(OBD)rgm_grcy.o: librrpge/rgm_grcy.c librrpge/rgm_grcy.h
-	$(CC) -c librrpge/rgm_grcy.c -o $(OBD)rgm_grcy.o $(CFSPD)
-	$(CC) -S librrpge/rgm_grcy.c -o $(OBD)rgm_grcy.asm $(CFSPD)
 
 $(OBD)rgm_grln.o: librrpge/rgm_grln.c librrpge/rgm_grln.h
 	$(CC) -c librrpge/rgm_grln.c -o $(OBD)rgm_grln.o $(CFSPD)

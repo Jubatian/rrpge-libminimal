@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.07.01
+**  \date      2014.07.02
 */
 
 
@@ -23,11 +23,9 @@ static uint32 rrpge_m_grln_buf[128U];
 
 
 /* Mask / colorkey values */
-static const uint8 rrpge_m_grln_msk[32U] = {
- 0x00U, 0x01U, 0x02U, 0x03U, 0x04U, 0x05U, 0x06U, 0x07U,
- 0x08U, 0x09U, 0x0AU, 0x0BU, 0x0CU, 0x0DU, 0x0EU, 0x0FU,
- 0x00U, 0x10U, 0x20U, 0x30U, 0x40U, 0x1FU, 0x60U, 0x70U,
- 0x80U, 0x90U, 0x3FU, 0x7FU, 0xC0U, 0xFFU, 0xE0U, 0xF0U};
+static const uint8 rrpge_m_grln_msk[12U] = {
+ 0x00U, 0xFFU, 0x0FU, 0x3FU, 0x03U, 0x0CU, 0x30U, 0xC0U,
+ 0x01U, 0x02U, 0x04U, 0x08U};
 
 
 
@@ -72,12 +70,12 @@ void rrpge_m_grln(void)
  /* Read display list offset & entry size */
  /* Read output width & begin position */
 
- i = rrpge_m_edat->stat.ropd[0xEE3U] & ((VRAMS - 1U) >> 9); /* Display list definition */
+ i = rrpge_m_edat->stat.ropd[0xD75U] & ((VRAMS - 1U) >> 9); /* Display list definition */
  i = i & (~(((auint)(4U) << (i & 3U)) - 4U));
  dlin = &(rrpge_m_edat->stat.vram[(i & (~(auint)(3U))) << 9]);
  dsiz = (i & 3U) + 2U;
  dlin += rrpge_m_info.vln << dsiz; /* Position on the current line in display list */
- opb  = rrpge_m_edat->stat.ropd[0xEE2U]; /* Output width, begin & double scan */
+ opb  = rrpge_m_edat->stat.ropd[0xD74U]; /* Output width, begin & double scan */
  dbl  = opb >> 15;
  opw  = (opb >> 8) & 0x7FU;
  opb  = opb & 0x7FU;
@@ -122,7 +120,7 @@ void rrpge_m_grln(void)
 
    cmd  = dlin[doff];             /* Current command */
    doff ++;
-   csr  = rrpge_m_edat->stat.ropd[0xEE4U + ((cmd >> 28) & 3U)]; /* Current source to use */
+   csr  = rrpge_m_edat->stat.ropd[0xD78U + ((cmd >> 28) & 7U)]; /* Current source to use */
    sbnk = &(rrpge_m_edat->stat.vram[((csr & 0xC0U) << 10)]);
    soff = (csr & 0xFF00U) | ((((cmd >> 16) & 0xFFFU) << (csr & 7U)) & 0xFFFFU);
    if       ((cmd & 0xBC00U) == 0U){ /* Render command inactive */
@@ -141,11 +139,17 @@ void rrpge_m_grln(void)
     /* Source line select in cmd is no longer used. Substitute with the
     ** current graphics mode for accessing the latter faster later on */
 
-    cmd  = (cmd & 0xC000FFFFU) | ((rrpge_m_info.vbm & 0x80U) << 9); /* bit 16 set in 8bit mode */
+    cmd  = (cmd & 0x8000FFFFU) | ((rrpge_m_info.vbm & 0x80U) << 9); /* bit 16 set in 8bit mode */
 
     /* Calculate mask / colorkey */
 
-    msk  = rrpge_m_grln_msk[(cmd >> 10) & 0x1FU];
+    i    = (cmd >> 10) & 0xFU;    /* Colorkey / Mask selector */
+    if (i > 12U){                 /* Load user masks */
+     msk = rrpge_m_edat->stat.ropd[0xD76U + ((i >> 1) & 1U)] >> (((i & 1U) ^ 1U) << 3);
+     msk = msk & 0xFFU;
+    }else{                        /* Load one of the pre-defined masks */
+     msk = rrpge_m_grln_msk[i];
+    }
     if ((cmd & 0x10000) == 0U){   /* 4 bit mode */
      msk &= 0x0FU;
      msk |= msk << 4;
@@ -158,7 +162,7 @@ void rrpge_m_grln(void)
     /* Precalculate colorkey & priority selector mask drops (0xFFFFFFFFU if
     ** the mask is to be dropped, 0x00000000U otherwise). */
 
-    dcm = ((uint32)(0U) - ((cmd >> 30) & 1U)); /* Drop colorkey unless enabled */
+    dcm = ((uint32)(0U) - ((cmd >> 14) & 1U)); /* Drop colorkey unless enabled */
     dpm = (0xFFFFFFFFU  + ((cmd >> 31) & 1U)); /* Drop priority selector unless enabled */
 
     /* Drop lowest bit (position / shift) of command in 8 bit mode */

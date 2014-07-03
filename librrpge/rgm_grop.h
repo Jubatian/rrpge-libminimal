@@ -17,8 +17,9 @@
 
 /* Executes a Graphic accelerator operation. Rebuilds the recolor cache if
 ** necessary (clearing rrpge_m_info.grr). Updates accelerator's pointers in
-** the ROPD as defined in the specification. Does not calculate timing. */
-void rrpge_m_grop_accel(void);
+** the ROPD as defined in the specification. Returns the number of cycles the
+** accelerator operation takes. */
+auint rrpge_m_grop_accel(void);
 
 
 #endif

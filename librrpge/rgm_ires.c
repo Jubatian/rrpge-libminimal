@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.29
+**  \date      2014.07.02
 */
 
 
@@ -18,6 +18,13 @@ static const uint16 rrpge_m_ires_cpurw[32] = {
  0x8000U, 0x8001U, 0x8002U, 0x8003U, 0x8004U, 0x8005U, 0x8006U, 0x8007U,
  0x7FFFU, 0x7FFFU, 0x807FU, 0x4001U, 0x4002U, 0x4003U, 0x4004U, 0x4005U,
  0x8000U, 0x8001U, 0x8002U, 0x8003U, 0x8004U, 0x8005U, 0x8006U, 0x8007U
+};
+
+/* Graphics Display Generator's initial state */
+static const uint16 rrpge_m_ires_gdgst[12] = {
+ 0xD000U, 0x01FCU, 0x1020U, 0x4080U,
+ 0x0014U, 0x4042U, 0x8042U, 0xC042U,
+ 0x0083U, 0x8083U, 0x00C3U, 0x80C3U
 };
 
 /* 1st quarter for the wave sine table */
@@ -282,20 +289,17 @@ void rrpge_m_ires_init(rrpge_object_t* obj)
  /* Populate Video RAM pages (initial display list on page 127) */
 
  for (i = 0U; i < 200U; i++){
-  obj->stat.vram[127U * 2048U + (i * 8U) + 1U] = 0x40008000U + (i * 0x50000U);
+  obj->stat.vram[127U * 2048U + (i * 8U) + 1U] = 0x0000C000U + (i * 0x50000U);
  }
 
 
  /* Init video (where nonzero) */
 
- obj->stat.ropd[0xEE0U] = 0xFFFFU; /* Write mask high */
- obj->stat.ropd[0xEE1U] = 0xFFFFU; /* Write mask low */
- obj->stat.ropd[0xEE2U] = 0xD000U; /* Double scan & shift mode region */
- obj->stat.ropd[0xEE3U] = 0x01FCU; /* Display list definiton */
- obj->stat.ropd[0xEE4U] = 0x0014U; /* Source 0 */
- obj->stat.ropd[0xEE5U] = 0x4042U; /* Source 1 */
- obj->stat.ropd[0xEE6U] = 0x8042U; /* Source 2 */
- obj->stat.ropd[0xEE7U] = 0xC042U; /* Source 3 */
+ obj->stat.ropd[0xEE4U] = 0xFFFFU; /* Accelerator: Write mask high */
+ obj->stat.ropd[0xEE5U] = 0xFFFFU; /* Accelerator: Write mask low */
+ for (i = 0U; i < 12U;  i++){
+  obj->stat.ropd[0xD74U + i] = rrpge_m_ires_gdgst[i];
+ }
  obj->stat.ropd[0xD57U] = 0x0001U; /* Start in 320x400, 8bit */
 
 

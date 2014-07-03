@@ -66,16 +66,18 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_rd_data(void)
   }else{                                  /* Assume User peripheral page */
    if (rrpge_m_offlw < 0xE00U){           /* RAM pg. 0 shadow */
     rrpge_m_arlt = (auint)(rrpge_m_edat->stat.dram[rrpge_m_offlw]);
-   }else{                                 /* Repeating 32 word peripheral range */
-    if ((rrpge_m_offlw & 0x1CU) == 0x04U){   /* Graphics FIFO */
-     if ((rrpge_m_offlw & 0x1FU) == 0x05U){
-      rrpge_m_arlt = rrpge_m_edat->stat.ropd[0xEC5U]; /* FIFO non-empty flag */
+   }else if (rrpge_m_offlw < 0xF00U){     /* Repeating 16 word graphics range */
+    if ((rrpge_m_offlw & 0xCU) == 0x00U){ /* Graphics FIFO */
+     if ((rrpge_m_offlw & 0xFU) == 0x01U){
+      rrpge_m_arlt = rrpge_m_edat->stat.ropd[0xD71U]; /* FIFO busy flag */
      }else{
       rrpge_m_arlt = 0U;                  /* Other registers of the FIFO return zero */
      }
     }else{                                /* Other registers than the FIFO */
-     rrpge_m_arlt = (auint)(rrpge_m_edat->stat.ropd[0xEC0U + (rrpge_m_offlw & 0x1FU)]);
+     rrpge_m_arlt = (auint)(rrpge_m_edat->stat.ropd[0xD70U + (rrpge_m_offlw & 0xFU)]);
     }
+   }else{                                 /* Repeating 32 word audio & dma range */
+    rrpge_m_arlt = (auint)(rrpge_m_edat->stat.ropd[0xEC0U + (rrpge_m_offlw & 0x1FU)]);
    }
   }
 
@@ -115,17 +117,23 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_wr_data(auint val)
   }else if ((rrpge_m_offpg & 0x2000000U) != 0U){ /* User peripheral also accepts writes */
    if (rrpge_m_offlw < 0xE00U){           /* RAM pg. 0 shadow */
     rrpge_m_edat->stat.dram[rrpge_m_offlw] = (uint16)(val);
-   }else{                                 /* User peripheral area */
-    if ((rrpge_m_offlw & 0x16U) != 0x04U){   /* Graphics FIFO 0xE04 and 0xE05 does not accept written data.
-                                             ** Neither Audio DMA clocks at 0xE0C and 0xE0D. */
+   }else if (rrpge_m_offlw < 0xF00U){     /* Repeating 16 word graphics range */
+    if ((rrpge_m_offlw & 0xEU) != 0x0U){  /* Graphics FIFO 0xE00 and 0xE01 does not accept written data. */
+     rrpge_m_edat->stat.ropd[0xD70U + (rrpge_m_offlw & 0xFU)] = (uint16)(val);
+    }
+    switch (rrpge_m_offlw & 0xFU){        /* Process triggers */
+     case 0x01U: rrpge_m_vidfifost();                     break;
+     case 0x03U: rrpge_m_info.ocy += rrpge_m_vidfifoop(); break;
+     default:    break;
+    }
+   }else{                                 /* Repeating 32 word audio & dma range */
+    if ((rrpge_m_offlw & 0x1EU) != 0xCU){ /* Neither Audio DMA clocks at 0xF0C and 0xF0D do not accept writes. */
      rrpge_m_edat->stat.ropd[0xEC0U + (rrpge_m_offlw & 0x1FU)] = (uint16)(val);
     }
     switch (rrpge_m_offlw & 0x1FU){       /* Process triggers */
      case 0x01U: rrpge_m_info.ocy += rrpge_m_dma_fill();  break;
      case 0x02U: rrpge_m_info.ocy += rrpge_m_dma_copy();  break;
      case 0x03U: rrpge_m_info.ocy += rrpge_m_dma_vram();  break;
-     case 0x05U: rrpge_m_vidfifost();                     break;
-     case 0x07U: rrpge_m_info.ocy += rrpge_m_vidfifoop(); break;
      case 0x0BU: rrpge_m_edat->stat.ropd[0xECDU] = 0U;    break;
      case 0x1FU: rrpge_m_info.ocy += rrpge_m_mixerop();   break;
      default:    break;
@@ -133,10 +141,10 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_wr_data(auint val)
    }
   }                                       /* Other pages here (ROPD) can't accept writes */
 
- }else{                                   /* 0x8000 - 0x807F: Video pages */                                 /* Video pages / Video peripheral area */
+ }else{                                   /* 0x8000 - 0x807F: Video pages */
   rrpge_m_info.ocy += 1U;                 /* +1 cycle for graphics access */
   t0 = (rrpge_m_offlw & 1U) ^ 1U;
-  t1 = rrpge_m_edat->stat.ropd[0xEE0U + t0];
+  t1 = rrpge_m_edat->stat.ropd[0xEE4U + t0];
   t0 = t0 << 4;
   rrpge_m_edat->stat.vram[((rrpge_m_offpg & 0x7F000U) + rrpge_m_offlw) >> 1] =
     (rrpge_m_avlt & (~(t1 << t0))) | ((val & t1) << t0);
