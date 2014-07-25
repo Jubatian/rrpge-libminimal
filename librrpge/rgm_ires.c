@@ -23,8 +23,8 @@ static const uint16 rrpge_m_ires_cpurw[32] = {
 /* Graphics Display Generator's initial state */
 static const uint16 rrpge_m_ires_gdgst[12] = {
  0xD000U, 0x01FCU, 0x1020U, 0x4080U,
- 0x0014U, 0x4042U, 0x8042U, 0xC042U,
- 0x0083U, 0x8083U, 0x00C3U, 0x80C3U
+ 0x0450U, 0x4A04U, 0x8A04U, 0xCA04U,
+ 0x1308U, 0x9308U, 0x1B08U, 0x9B08U
 };
 
 /* 1st quarter for the wave sine table */

@@ -121,14 +121,14 @@ void rrpge_m_grln(void)
    cmd  = dlin[doff];             /* Current command */
    doff ++;
    csr  = rrpge_m_edat->stat.ropd[0xD78U + ((cmd >> 28) & 7U)]; /* Current source to use */
-   sbnk = &(rrpge_m_edat->stat.vram[((csr & 0xC0U) << 10)]);
-   soff = (csr & 0xFF00U) | ((((cmd >> 16) & 0xFFFU) << (csr & 7U)) & 0xFFFFU);
+   sbnk = &(rrpge_m_edat->stat.vram[((csr & 0x1800U) << 5)]);
+   soff = (csr & 0xE000U) | ((((cmd >> 16) & 0xFFFU) << ((csr >> 8) & 7U)) & 0xFFFFU);
    if       ((cmd & 0xBC00U) == 0U){ /* Render command inactive */
     scy = 0U;
-   }else if ((csr & 0x0020U) != 0U){ /* Shift source */
+   }else if ((csr & 0x0080U) != 0U){ /* Shift source */
     scy = opw;
    }else{                            /* Position source */
-    scy = ((auint)(1U) << (csr & 7U)) * (((csr & 0x18U) >> 2) + 1U);
+    scy = csr & 0x7FU;
    }
    cyr--;                         /* Cycle taken for display list entry fetch (cyr certain nonzero here) */
    if (scy > cyr){ scy = cyr; }
@@ -171,7 +171,7 @@ void rrpge_m_grln(void)
 
     /* Do the blit */
 
-    if ((csr & 0x0020U) != 0U){   /* Shift source */
+    if ((csr & 0x0080U) != 0U){   /* Shift source */
 
      /* Will shift to the left, based on low 3 bits of command. Initial source
      ** is always fetched. */
@@ -181,7 +181,7 @@ void rrpge_m_grln(void)
 
      /* Source position */
 
-     spms = (1U << (csr & 7U)) - 1U;
+     spms = (1U << ((csr >> 8) & 7U)) - 1U;
      spos = ((cmd >> 3) & 0x7FU) & spms;
 
      /* Fetch first source */

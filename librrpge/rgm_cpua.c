@@ -119,7 +119,15 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_wr_data(auint val)
     rrpge_m_edat->stat.dram[rrpge_m_offlw] = (uint16)(val);
    }else if (rrpge_m_offlw < 0xF00U){     /* Repeating 16 word graphics range */
     if ((rrpge_m_offlw & 0xEU) != 0x0U){  /* Graphics FIFO 0xE00 and 0xE01 does not accept written data. */
-     rrpge_m_edat->stat.ropd[0xD70U + (rrpge_m_offlw & 0xFU)] = (uint16)(val);
+     if ((rrpge_m_offlw & 0xFU) == 0x2U){
+      if ((val & 0x0800U) != 0U){         /* Graphics FIFO 0xE02 increment trigger */
+       rrpge_m_edat->stat.ropd[0xD72U] = (rrpge_m_edat->stat.ropd[0xD72U] + 1U) & 0x1FFU;
+      }else{
+       rrpge_m_edat->stat.ropd[0xD72U] = (uint16)(val);
+      }
+     }else{
+      rrpge_m_edat->stat.ropd[0xD70U + (rrpge_m_offlw & 0xFU)] = (uint16)(val);
+     }
     }
     switch (rrpge_m_offlw & 0xFU){        /* Process triggers */
      case 0x01U: rrpge_m_vidfifost();                     break;

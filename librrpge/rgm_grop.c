@@ -124,11 +124,11 @@ auint rrpge_m_grop_accel(void)
  auint  counr  = ((auint)(rrpge_m_edat->stat.ropd[0xEEDU])); /* Count of rows to copy */
  auint  codst;                                       /* Destination oriented (bit) count */
  uint32 ckey;
- auint  flags  = rrpge_m_edat->stat.ropd[0xEECU];    /* Colorkey also here, exported in ckey later */
- uint32 mandr  = rrpge_m_edat->stat.ropd[0xEEBU];    /* Read AND mask */
+ auint  flags  = rrpge_m_edat->stat.ropd[0xEECU];    /* Read OR mask is also here */
+ uint32 mandr  = rrpge_m_edat->stat.ropd[0xEEAU];    /* Read AND mask, and colorkey exported later */
  uint32 mandl;
  uint32 mskor;                                       /* Read OR mask */
- auint  rotr   = rrpge_m_edat->stat.ropd[0xEEAU];    /* Read rotation */
+ auint  rotr   = rrpge_m_edat->stat.ropd[0xEE9U];    /* Read rotation & colorkey flag */
  auint  rotl;
  auint  dshfr;                                       /* Destination alignment shifts (Block Blitter) */
  auint  dshfl;
@@ -175,33 +175,36 @@ auint rrpge_m_grop_accel(void)
  sxwhol = sxwhol & (~srpart); /* X whole selects the stationary part (above Y) */
  srpart = srpart & (~ssplit); /* Select only the Y component with srpart */
 
- /* Add graphics mode and substitutions to flags, so they are more accessible
- ** (increases locality accessing these). */
+ /* Prepare OR mask */
 
+ mskor = flags & 0xFFU;
+
+ /* Add graphics mode and substitutions to flags, so they are more accessible
+ ** (increases locality accessing these). Also add colorkey enable flag. */
+
+ flags &= 0x7C00U;                         /* Mask unused bits and OR mask */
  flags |= (rrpge_m_info.vbm & 0x80U) << 9; /* bit 16 set if in 8bit mode */
  flags |= (rotr & 0xE000U) << 4;           /* bit 17-19 are the substitutions */
+ flags |= (rotr & 0x8U) >> 3;              /* bit 0: VCK (Colorkey enabled) */
 
  /* Pre-calculate bank pointer for reindex modes */
 
  rrpge_m_grop_reb = &rrpge_m_info.grb[0];
  if ((flags & 0x3000U) != 0x3000U){   /* Not blending mode: init to requested bank */
-  rrpge_m_grop_reb += ((auint)(rrpge_m_edat->stat.ropd[0xEE9U] & 0x1FU) << 4);
+  rrpge_m_grop_reb += ((auint)(rrpge_m_edat->stat.ropd[0xEEBU] & 0x1FU) << 4);
   reinm = 0x00000000U;                /* Normal reindex mode masks destination */
  }else{
   reinm = wrmask;                     /* In blending reindex mode the destination passes the write mask */
  }
-
- /* Prepare OR mask */
-
- mskor = mandr >> 8;
 
  /* Mode specific calculations for all rows */
 
  if ((flags & 0x10000U) == 0U){       /* 4bit mode specific calculations */
 
   /* Prepare colorkey */
-  ckey   = flags & 0xFU;
+  ckey   = mandr & 0xFU;
   ckey  |= ckey << 4;
+  mandr >>= 8;
 
   /* Source read mask & barrel rotate calculation. In C a right and a left
   ** shift has to be combined for the effect (no rotate operation). Used in
@@ -219,7 +222,8 @@ auint rrpge_m_grop_accel(void)
  }else{                               /* 8bit mode specific calculations */
 
   /* Prepare colorkey */
-  ckey   = flags & 0xFFU;
+  ckey   = mandr & 0xFFU;
+  mandr >>= 8;
 
   /* Source read mask & barrel rotate calculation. In C a right and a left
   ** shift has to be combined for the effect (no rotate operation). Used in
@@ -447,7 +451,7 @@ auint rrpge_m_grop_accel(void)
     sdata = ((sdata >> rotr) & mandr) |  /* Source read transform */
             ((sdata << rotl) & mandl);   /* (Rotate + AND mask) */
     sdata = sdata | mskor;
-    if ((flags & 0x0100U) != 0U){        /* Pixel order swap */
+    if ((flags & 0x4000U) != 0U){        /* Pixel order swap (VMR) */
      if ((flags & 0x10000U) == 0U){      /* 4 bit mode */
       sdata = ((sdata & 0xF0F0F0F0U) >> 4) | ((sdata & 0x0F0F0F0FU) << 4);
      }
@@ -526,7 +530,7 @@ auint rrpge_m_grop_accel(void)
       sdata = rrpge_m_grop_rec8(sdata, u32 & reinm);
      }
     }
-    bmems &= t32 | (0xFFFFFFFFU + ((flags >> 9) & 1U)); /* Add colorkey to write mask if enabled */
+    bmems &= t32 | (0xFFFFFFFFU + (flags & 1U)); /* Add colorkey to write mask if enabled */
 
     /* Combine source over destination */
 
