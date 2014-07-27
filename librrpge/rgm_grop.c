@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.07.03
+**  \date      2014.07.27
 */
 
 
@@ -450,7 +450,6 @@ auint rrpge_m_grop_accel(void)
 
     sdata = ((sdata >> rotr) & mandr) |  /* Source read transform */
             ((sdata << rotl) & mandl);   /* (Rotate + AND mask) */
-    sdata = sdata | mskor;
     if ((flags & 0x4000U) != 0U){        /* Pixel order swap (VMR) */
      if ((flags & 0x10000U) == 0U){      /* 4 bit mode */
       sdata = ((sdata & 0xF0F0F0F0U) >> 4) | ((sdata & 0x0F0F0F0FU) << 4);
@@ -516,6 +515,7 @@ auint rrpge_m_grop_accel(void)
     i   = dswhol | ((dsfrac >> 16) & dspart); /* Destination offset */
     u32 = rrpge_m_edat->stat.vram[i];    /* Load current destination */
     t32 = sdata ^ ckey;                  /* Prepare for colorkey calculation */
+    sdata = sdata | mskor;               /* Apply OR mask after colorkey */
 
     if ((flags & 0x10000U) == 0U){       /* 4 bit mode */
      t32 = (((t32 & 0x77777777U) + 0x77777777U) | t32) & 0x88888888U;
