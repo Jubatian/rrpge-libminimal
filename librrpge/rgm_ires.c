@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.07.02
+**  \date      2014.08.04
 */
 
 
@@ -291,6 +291,12 @@ void rrpge_m_ires_init(rrpge_object_t* obj)
  for (i = 0U; i < 200U; i++){
   obj->stat.vram[127U * 2048U + (i * 8U) + 1U] = 0x0000C000U + (i * 0x50000U);
  }
+
+
+
+ /* Init CPU: just the xm register */
+
+ obj->stat.ropd[0xD48U] = 0x6666U; /* CPU xm register: all pointers 16 bit post-incrementing */
 
 
  /* Init video (where nonzero) */
