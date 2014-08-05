@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.07.27
+**  \date      2014.08.05
 */
 
 
@@ -211,9 +211,8 @@ auint rrpge_m_grop_accel(void)
   ** BB and SC modes. */
   rotr  &= 0x3U;
   rotl   = 4U - rotr;
-  mandr &= 0xFU;
-  mandl  = (mandr << rotl) & 0xFU;
-  mandr  = (mandr >> rotr);
+  mandl  = mandr & (0xFU << rotl);
+  mandr  = mandr & (0xFU >> rotr);
   mandl |= mandl << 4;
   mandr |= mandr << 4;
   mskor &= 0xFU;
@@ -230,9 +229,8 @@ auint rrpge_m_grop_accel(void)
   ** BB snd SC modes. */
   rotr  &= 0x7U;
   rotl   = 8U - rotr;
-  mandr &= 0xFFU;
-  mandl  = (mandr << rotl) & 0xFFU;
-  mandr  = (mandr >> rotr);
+  mandl  = mandr & (0xFFU << rotl);
+  mandr  = mandr & (0xFFU >> rotr);
   mskor &= 0xFFU;
 
  }
