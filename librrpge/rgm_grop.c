@@ -330,16 +330,6 @@ auint rrpge_m_grop_accel(void)
 
   if       (bmode == 0U){             /* Block Blitter */
 
-   /* Prepare for the Block Blitter: apply the source fraction, and set up the
-   ** omission of the first destination combine if necessary (truly fetch an
-   ** extra source first to populate the shift register proper). The shift
-   ** changes as combining the source & destination fractions. */
-
-   i = (dsfrac & 0xFFFFU) - (sxfrac & 0xFFFFU);
-   flags |= (i << 4) & 0x100000U;     /* Wrapped around - so omit first combine */
-   i &= 0xE000U ^ ((flags >> 3) & 0x2000U); /* 0xE000 in 4 bit mode, 0xC000 in 8 bit mode */
-   dshfr = i >> 11;
-
   }else if (bmode == 3U){             /* Line */
 
    lflp   = 0U;                       /* Odd / even flip for cycling the pattern */
@@ -374,8 +364,7 @@ auint rrpge_m_grop_accel(void)
    ** more than 0 pixels are remaining at this point which is relied upon for
    ** generating the shift. */
 
-   if ( ((flags & 0x100000U) == 0U) &&      /* Destination combine enabled for this run */
-        (bmode != 3U) ){                    /* And it is not Line mode */
+   if (bmode != 3U){                        /* It is not Line mode */
     if (codst < 32U){                       /* Fewer than 8 (4bit) destination pixels remaining */
      bmems &= 0xFFFFFFFFU << (32U - codst); /* Generate an end mask */
      codst  = 0U;
@@ -497,60 +486,50 @@ auint rrpge_m_grop_accel(void)
    }else{                             /* Filler - do nothing */
    }
 
-   /* Start destination combine */
+   /* Destination combine stage begins, common for all modes. Create and
+   ** apply the colorkey, perform reindexing as required, then blit it. The
+   ** colorkey is always calculated: it usually does not affect accelerator
+   ** cycle count, and in typical blits it is necessary anyway. */
 
-   if ((flags & 0x100000U) != 0U){       /* Omit first combine requested */
+   i   = dswhol | ((dsfrac >> 16) & dspart); /* Destination offset */
+   u32 = rrpge_m_edat->stat.vram[i];     /* Load current destination */
+   t32 = sdata ^ ckey;                   /* Prepare for colorkey calculation */
+   sdata = sdata | mskor;                /* Apply OR mask after colorkey */
 
-    flags &= ~(auint)(0x100000U);        /* Clear it, no combine */
-
-   }else{                                /* Destination combine proceeds */
-
-    /* Destination combine stage begins, common for all modes. Create and
-    ** apply the colorkey, perform reindexing as required, then blit it. The
-    ** colorkey is always calculated: it usually does not affect accelerator
-    ** cycle count, and in typical blits it is necessary anyway. */
-
-    i   = dswhol | ((dsfrac >> 16) & dspart); /* Destination offset */
-    u32 = rrpge_m_edat->stat.vram[i];    /* Load current destination */
-    t32 = sdata ^ ckey;                  /* Prepare for colorkey calculation */
-    sdata = sdata | mskor;               /* Apply OR mask after colorkey */
-
-    if ((flags & 0x10000U) == 0U){       /* 4 bit mode */
-     t32 = (((t32 & 0x77777777U) + 0x77777777U) | t32) & 0x88888888U;
-     t32 = (t32 - (t32 >> 3)) + t32;     /* Colorkey mask (0: background) */
-     if ((flags & 0x1000U) != 0U){       /* Reindexing is required */
-      sdata = rrpge_m_grop_rec4(sdata, u32 & reinm);
-     }
-    }else{                               /* 8 bit mode */
-     t32 = (((t32 & 0x7F7F7F7FU) + 0x7F7F7F7FU) | t32) & 0x80808080U;
-     t32 = (t32 - (t32 >> 7)) + t32;     /* Colorkey mask (0: background) */
-     if ((flags & 0x1000U) != 0U){       /* Reindexing is required */
-      sdata = rrpge_m_grop_rec8(sdata, u32 & reinm);
-     }
+   if ((flags & 0x10000U) == 0U){        /* 4 bit mode */
+    t32 = (((t32 & 0x77777777U) + 0x77777777U) | t32) & 0x88888888U;
+    t32 = (t32 - (t32 >> 3)) + t32;      /* Colorkey mask (0: background) */
+    if ((flags & 0x1000U) != 0U){        /* Reindexing is required */
+     sdata = rrpge_m_grop_rec4(sdata, u32 & reinm);
     }
-    bmems &= t32 | (0xFFFFFFFFU + (flags & 1U)); /* Add colorkey to write mask if enabled */
-
-    /* Combine source over destination */
-
-    bmems = ~bmems;                      /* Leave zero in mask where destination was dropped */
-    rrpge_m_edat->stat.vram[i] = (u32   &   bmems ) |
-                                 (sdata & (~bmems));
-    dsfrac += dsincr;
-
-    /* Calculate combine cycle count. If bmems is zero, then may accelerate */
-
-    bmems = (uint32)((bmems + 0x7FFFFFFFU) | bmems); /* bit 31 becomes set if nonzero (bmems is uint32, but just make sure no higher bits are set) */
-    cyr  += rrpge_m_grop_tc[cyf ^ (bmems >> 31)];    /* Clears "accelerated" if it was nonzero */
-
-    /* The rendering loop ends when it ran out of destination to render. */
-
-    if (codst == 0U){ break; }
-
-    /* Update begin-mid-end mask: Just the write mask */
-
-    bmems = wrmask;
-
+   }else{                                /* 8 bit mode */
+    t32 = (((t32 & 0x7F7F7F7FU) + 0x7F7F7F7FU) | t32) & 0x80808080U;
+    t32 = (t32 - (t32 >> 7)) + t32;      /* Colorkey mask (0: background) */
+    if ((flags & 0x1000U) != 0U){        /* Reindexing is required */
+     sdata = rrpge_m_grop_rec8(sdata, u32 & reinm);
+    }
    }
+   bmems &= t32 | (0xFFFFFFFFU + (flags & 1U)); /* Add colorkey to write mask if enabled */
+
+   /* Combine source over destination */
+
+   bmems = ~bmems;                       /* Leave zero in mask where destination was dropped */
+   rrpge_m_edat->stat.vram[i] = (u32   &   bmems ) |
+                                (sdata & (~bmems));
+   dsfrac += dsincr;
+
+   /* Calculate combine cycle count. If bmems is zero, then may accelerate */
+
+   bmems = (uint32)((bmems + 0x7FFFFFFFU) | bmems); /* bit 31 becomes set if nonzero (bmems is uint32, but just make sure no higher bits are set) */
+   cyr  += rrpge_m_grop_tc[cyf ^ (bmems >> 31)];    /* Clears "accelerated" if it was nonzero */
+
+   /* The rendering loop ends when it ran out of destination to render. */
+
+   if (codst == 0U){ break; }
+
+   /* Update begin-mid-end mask: Just the write mask */
+
+   bmems = wrmask;
 
   } /* End of line rendering loop */
 
