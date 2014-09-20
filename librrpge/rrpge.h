@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.29
+**  \date      2014.09.20
 */
 
 
@@ -28,23 +28,22 @@
 **
 **  Attempts to initialize an instance of an RRPGE system loading the given
 **  application. Checks all it's input for validity, and will only succeed if
-**  all it's inputs are valid and consistent. License check if appropriate
-**  also happens here. Returns with a failure code if this is not successful.
-**  The emulation state is stored into a passed appropriately sized buffer
-**  (request the necessary size using rrpge_getdescription()) which buffer
-**  will be used as object handle further. It may be discarded any time later
-**  to terminate emulation: the library does not allocate any extra resource
-**  relating to instances.
+**  all it's inputs are valid and consistent. Returns with a failure code if
+**  this is not successful. The emulation state is stored into a passed
+**  appropriately sized buffer (request the necessary size using
+**  rrpge_getdescription()) which buffer will be used as object handle
+**  further. It may be discarded any time later to terminate emulation: the
+**  library does not allocate any extra resource relating to instances.
+**
+**  Note that the application binary should be kept open to support the Start
+**  loading binary data kernel call.
 **
 **  \param[in]   cb    Callback set filled with the callbacks.
-**  \param[in]   apph  Application binary header as-is (4096 elements).
-**  \param[in]   crom  Code pages (up to 16 pages, 4096 elements per page).
-**  \param[in]   crn   Number of code pages passed.
+**  \param[in]   inid  Application initialization data.
 **  \param[out]  hnd   Emulation instance to initialize.
 **  \return            0 on success, failure code otherwise.
 */
-rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb,   rrpge_uint16 const* apph,
-                        rrpge_uint16   const* crom, rrpge_uint32 crn,
+rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb, rrpge_appini_t const* inid,
                         rrpge_object_t* hnd);
 
 
@@ -64,36 +63,63 @@ void rrpge_reset(rrpge_object_t* hnd);
 
 
 /**
-**  \brief     Loads serialized state into emulator instance.
+**  \brief     Requests emulator state for reading.
 **
-**  Attempts to load a saved state into the given emulator instance. The saved
-**  state has to be compatible with the loaded application for this to be
-**  successful. Note that this will always trigger certain operations such as
-**  starting kernel tasks if the state contains any running. All halt causes
-**  are cleared by this method when it succeeds.
-**
-**  \param[in]   hnd   Emulation instance populated by rrpge_init().
-**  \param[in]   st    Raw state to load (593 * 8192 bytes).
-**  \return            0 on success, failure code otherwise.
-*/
-rrpge_uint32 rrpge_importstate(rrpge_object_t* hnd, rrpge_uint8 const* st);
-
-
-
-/**
-**  \brief     Returns (serialized) state from emulator instance.
-**
-**  Returns or exports if necessary current application state from the
-**  emulator instace suitable for serializing and loading later with
-**  rrpge_importstate(). The data pointed by the pointer is managed by the
-**  emulation library and belongs to the instance (is a part of hnd). It
-**  persists until another operation is called on the same instance. This
-**  method should be used to watch memories during debugging sessions.
+**  Returns a pointer to the current emulator state for reading, such as for
+**  exporting it, or observing it for the purpose of debugging. The state is
+**  part of the emulation instance.
 **
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
 **  \return            State information.
 */
-rrpge_state_t const* rrpge_exportstate(rrpge_object_t* hnd);
+rrpge_state_t const* rrpge_peekstate(rrpge_object_t* hnd);
+
+
+
+/**
+**  \brief     Detaches emulator state for modifying.
+**
+**  Detaches the emulator state for writes, so it may be modified. The state
+**  is still a part of the emulation instance, however the emulator is not
+**  capable to operate on it until reattached. This may be used for debugging
+**  or importing state.
+**
+**  \param[in]   hnd   Emulation instance populated by rrpge_init().
+**  \return            State information.
+*/
+rrpge_state_t* rrpge_detachstate(rrpge_object_t* hnd);
+
+
+
+/**
+**  \brief     Reattaches emulator state.
+**
+**  Reattaches a previously detached state to it's emulation instance, so the
+**  emulation may continue. The reattach may fail if the state contains
+**  invalid information. Note that the state reattached is a part of the
+**  emulation instance. Clears all halt causes if succesful.
+**
+**  \param[in]   hnd   Emulation instance populated by rrpge_init().
+**  \return            0 on success, failure code otherwise.
+*/
+rrpge_uint32 rrpge_attachstate(rrpge_object_t* hnd);
+
+
+
+/**
+**  \brief     Reattaches emulator state with compatibility check.
+**
+**  Reattaches a previously detached state to it's emulation instance, so the
+**  emulation may continue. The reattach may fail if the state contains
+**  invalid information. Note that the state reattached is a part of the
+**  emulation instance. Clears all halt causes if succesful. This variant also
+**  checks state compatibility with the application as it was before the last
+**  rrpge_detachstate() call.
+**
+**  \param[in]   hnd   Emulation instance populated by rrpge_init().
+**  \return            0 on success, failure code otherwise.
+*/
+rrpge_uint32 rrpge_attachstatecomp(rrpge_object_t* hnd);
 
 
 
@@ -160,7 +186,7 @@ void rrpge_pushpacket(rrpge_object_t* hnd, rrpge_uint16 const* id,
 **  Returns the cause of the last termination of rrpge_run(). Multiple causes
 **  might be present simultaneously. The causes are cleared by succesfully
 **  continuing the emulation (calling rrpge_run() without it returning zero),
-**  resetting it, or loading a new state. Note that not all causes allow
+**  resetting it, or reattaching state. Note that not all causes allow
 **  continuing emulation without specific handling.
 **
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
@@ -175,11 +201,11 @@ rrpge_uint32 rrpge_gethaltcause(rrpge_object_t* hnd);
 **
 **  Queries number of 512 sample audio streaks pending, fills in audio data,
 **  and clears the RRPGE_HLT_AUDIO halt cause. Normally this should be called
-**  in response to such a stall to process audio (and by it to ensure proper
-**  timing of the emulation tied to the audio hardware). The return this case
-**  is normally 1, but with certain emulation implementations and badly
-**  programmed applications (which stall the hardware by some means) it might
-**  be more. This indicates skipping.
+**  in response to such a halt cause to process audio (and by it to ensure
+**  proper timing of the emulation tied to the audio hardware). The return
+**  this case is normally 1, but with certain emulation implementations and
+**  badly programmed applications (which stall the hardware by some means) it
+**  might be more. This indicates skipping.
 **
 **  The provided left and right buffers are filled with the data fetched in
 **  the last audio tick, 512 samples each. The format is 8 bit unsigned.
@@ -206,8 +232,8 @@ rrpge_uint32 rrpge_getaudio(rrpge_object_t* hnd, rrpge_uint8* lbuf, rrpge_uint8*
 **  becomes effective in the next frame (that is after the next experience of
 **  the RRPGE_HLT_FRAME halt cause). This may be used to implement
 **  frameskipping to drive the emulation at an accepable performance on slow
-**  systems. Disabling has no effect on the exportable emulation state (return
-**  of rrpge_exportstate()).
+**  systems. Disabling has no effect on the emulation state as seen through
+**  rrpge_peekstate().
 **
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
 **  \param[in]   tg    0: Rendering OFF, nonzero: Rendering ON.

@@ -1,10 +1,10 @@
+Working on implementing specification 00.010.000.
 
+Missing parts (otherwise):
 
-Missing parts:
-
-Application header - license & RRPGE specification check.
+Application header - RRPGE specification check.
 
 rrpge_db.h (Debug functions)
-rrpge_pr.h (Library properties)
+rrpge_pr.h (Library properties, this may even need to be revised)
 
 

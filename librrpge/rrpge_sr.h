@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.29
+**  \date      2014.09.20
 */
 
 
@@ -18,42 +18,58 @@
 
 
 /**
-**  \brief     Byte -> Word page conversion.
+**  \brief     Byte -> Word conversion.
 **
-**  Converts 8192 Big Endian ordered bytes into 4096 words (16 bit units),
-**  suitable for loading binary data.
+**  Converts Big Endian ordered bytes into words (16 bit units), suitable for
+**  loading binary data.
 **
-**  \param[in]   src   Source data (8192 bytes).
-**  \param[out]  dst   Destination data (4096 words).
+**  \param[in]   src   Source data (bct bytes).
+**  \param[out]  dst   Destination data (((bct + 1) >> 1) words).
+**  \param[in]   bct   Count of bytes to process.
 */
-void rrpge_convpg_b2w(rrpge_uint8 const* src, rrpge_uint16* dst);
+void rrpge_conv_b2w(rrpge_uint8 const* src, rrpge_uint16* dst, rrpge_uint32 bct);
 
 
 
 /**
-**  \brief     Word -> Byte page conversion.
+**  \brief     Word -> Byte conversion.
 **
-**  Converts 4096 words (16 it units) into 8192 Big Endian ordered bytes,
-**  suitable for saving data.
+**  Converts words (16 it units) into Big Endian ordered bytes, suitable for
+**  saving data.
 **
-**  \param[in]   src   Source data (4096 words).
-**  \param[out]  dst   Destination data (8192 bytes).
+**  \param[in]   src   Source data (((bct + 1) >> 1) words).
+**  \param[out]  dst   Destination data (bct bytes).
+**  \param[in]   bct   Count of bytes to process.
 */
-void rrpge_convpg_w2b(rrpge_uint16 const* src, rrpge_uint8* dst);
+void rrpge_conv_w2b(rrpge_uint16 const* src, rrpge_uint8* dst, rrpge_uint32 bct);
 
 
 
 /**
 **  \brief     Serializes state.
 **
-**  Complements rrpge_exportstate() producing a raw binary representation of
-**  the state data which may be dumped to a file for loading later using
-**  rrpge_importstate().
+**  Complements rrpge_peekstate() producing a raw binary representation of the
+**  state data which may be dumped to a file for loading later using
+**  rrpge_detachstate().
 **
-**  \param[in]   src   State data structure.
-**  \param[out]  dst   Raw binary state (must be at least 593 * 8192 bytes).
+**  \param[in]   src   Emulator state.
+**  \param[out]  dst   Raw binary state (must be at least 4290 * 1024 bytes).
 */
 void rrpge_state2raw(rrpge_state_t const* src, rrpge_uint8* dst);
+
+
+
+/**
+**  \brief     Deserializes state.
+**
+**  Deserializes raw state filling a state data structure. To load into an
+**  emulator instance, do an rrpge_detachstate() first, then use this function
+**  to fill the state up.
+**
+**  \param[in]   src   Raw binary state (must be at least 4290 * 1024 bytes).
+**  \param[out]  dst   Emulator state.
+*/
+void rrpge_raw2state(rrpge_uint8* src, rrpge_state_t const* dst);
 
 
 

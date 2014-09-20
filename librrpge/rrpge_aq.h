@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.15
+**  \date      2014.09.20
 */
 
 
@@ -20,9 +20,8 @@
 /**
 **  \brief     Get network availability status.
 **
-**  Extracts the network availability bit from the Read Only Process
-**  Descriptor. Returns zero if the user should not be available for new
-**  connections, nonzero (one) otherwise.
+**  Extracts the network availability bit from the state. Returns zero if the
+**  user should not be available for new connections, nonzero (one) otherwise.
 **
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
 **  \return            Nonzero if user is available for new connections.
@@ -34,11 +33,11 @@ rrpge_uint32 rrpge_getnetavail(rrpge_object_t* hnd);
 /**
 **  \brief     Get device exceptation for a device ID.
 **
-**  Extracts the device type exceptation for a given device ID from the Read
-**  Only Process Descriptor. The return is zero if the application does not
-**  except a device at the given ID (so the ID can be reused for any device),
-**  otherwise the return accords to the last return of 0x0410: "Get device
-**  properties" for the given ID.
+**  Extracts the device type exceptation for a given device ID from the state.
+**  The return is zero if the application does not except a device at the
+**  given ID (so the ID can be reused for any device), otherwise the return
+**  accords to the last return of 0x0410: "Get device properties" kernel call
+**  for the given ID.
 **
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
 **  \param[in]   dev   The device ID to query.
@@ -52,7 +51,7 @@ rrpge_uint32 rrpge_getlastdev(rrpge_object_t* hnd, rrpge_uint32 dev);
 **  \brief     Get allowed device types.
 **
 **  Returns the device types allowed by the application as found in the
-**  application header. Returns 16 bits, the bit's index representing the
+**  application descriptor. Returns 16 bits, the bit's index representing the
 **  device type, if the bit set, the device being allowed.
 **
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
@@ -63,26 +62,11 @@ rrpge_uint32 rrpge_getalloweddevs(rrpge_object_t* hnd);
 
 
 /**
-**  \brief     Get touch sensitive area definition.
-**
-**  Extracts a touch sensitive area's bounding box from the Read Only Process
-**  Descriptor. Returns zero if the area is not defined (width or height is
-**  zero), and fills the return array with zero. Otherwise returns nonzero and
-**  fills the provided array with the coordinates.
-**
-**  \param[in]   hnd   Emulation instance populated by rrpge_init().
-**  \param[in]   ari   Area ID to query.
-**  \param[out]  cor   Coordinates in x, y, width, height order (4 elements).
-**  \return            Nonzero if the area is available.
-*/
-rrpge_uint32 rrpge_gettoucharea(rrpge_object_t* hnd, rrpge_uint32 ari, rrpge_uint32* cor);
-
-
-
-/**
 **  \brief     Get current video mode.
 **
-**  Returns current video mode. 0: 640x400, 4bit; 1: 320x400, 8bit.
+**  Returns current video mode. 0: 640x400, 4bit; 1: 320x400, 8bit. Double
+**  scanning is handled by the emulation library, so those are not returned
+**  (640x200 returns 0, 320x200 returns 1).
 **
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
 **  \return            Video mode.

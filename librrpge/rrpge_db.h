@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.09.20
 */
 
 
@@ -14,42 +14,6 @@
 
 
 #include "rrpge_tp.h"
-
-
-
-/**
-**  \brief     Uploads a page into the emulator.
-**
-**  Uploads a page (4096 words) into the emulator. All the pages except one
-**  are ordinary memory pages (even the Code ROM) without any content checks.
-**  The exception is the ROPD (Read Only Process Descriptor) containing the
-**  application header as well. Uploading this page may fail if it is
-**  improperly formatted or contains such changes to the current state which
-**  the library does not support. Moreover it might trigger events when the
-**  emulation is started, like starting newly occurred kernel tasks (note that
-**  previously running unchanged tasks are not restarted!).
-**
-**  \param[in]   hnd   Emulation instance populated by rrpge_init().
-**  \param[in]   pg    The page to upload (see defines in rrpge_tp.h).
-**  \param[in]   src   The data to be loaded into the page (4096 elements).
-**  \return            0 on success, failure code otherwise.
-*/
-rrpge_uint32 rrpge_loadpage(rrpge_object_t* hnd, rrpge_uint32 pg, rrpge_uint16 const* src);
-
-
-
-/**
-**  \brief     Downloads a page from the emulator.
-**
-**  Downloads a page (4096 words) from the emulator. This always succeeds if
-**  the page selection is valid.
-**
-**  \param[in]   hnd   Emulation instance populated by rrpge_init().
-**  \param[in]   pg    The page to download (see defines in rrpge_tp.h).
-**  \param[out]  dst   The data area to be filled (4096 elements).
-**  \return            0 on success, failure code otherwise.
-*/
-rrpge_uint32 rrpge_savepage(rrpge_object_t* hnd, rrpge_uint32 pg, rrpge_uint16* dst);
 
 
 

@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.26
+**  \date      2014.09.20
 */
 
 
@@ -25,9 +25,9 @@
 **  pointed to the appropriate types of stdint.h.
 **
 **  \{ */
-typedef uint32_t rrpge_uint32;  /**< 32 bit unsigned integer */
-typedef uint16_t rrpge_uint16;  /**< 16 bit unsigned integer */
-typedef uint8_t  rrpge_uint8;   /**< 8 bit unsigned integer */
+typedef uint32_t rrpge_uint32; /**< 32 bit unsigned integer */
+typedef uint16_t rrpge_uint16; /**< 16 bit unsigned integer */
+typedef uint8_t  rrpge_uint8;  /**< 8 bit unsigned integer */
 /** \} */
 
 
@@ -45,19 +45,61 @@ typedef struct rrpge_object_s rrpge_object_t;
 /**
 **  \brief     Emulator state
 **
-**  The state of the emulator for exporting or importing. Note that the Read
-**  Only Process Descriptor is presented populated according to the state
-**  export's requirements (packed with the video hardware peripheral data and
-**  internal state). Code ROM is not included as it comes from the application
-**  binary.
+**  The state of the emulator for exporting and importing.
 */
 typedef struct{
- rrpge_uint32 vram[128U * 2048U]; /**< Video memory (128 pages) */
- rrpge_uint16 dram[448U * 4096U]; /**< Data memory (448 pages) */
- rrpge_uint16 sram[8U   * 4096U]; /**< Stack memory (8 pages) */
- rrpge_uint16 fram[8U   * 4096U]; /**< FIFO memory (8 pages) */
- rrpge_uint16 ropd[4096U];        /**< Read only process descriptor */
+ rrpge_uint32 pram[1048576U];  /**< Peripheral RAM (1M * 32 bits) */
+ rrpge_uint16 dram[  65536U];  /**< CPU data memory accessible to user */
+ rrpge_uint16 sram[  32768U];  /**< CPU stack memory accessible to user */
+ rrpge_uint16 stat[   1024U];  /**< Application state (and header) */
 }rrpge_state_t;
+
+
+
+/**
+**  \brief     Initialization data
+**
+**  Data extracted from an RRPGE Application file by which the RRPGE
+**  Application may be initialized for emulation using the rrpge_init()
+**  function. The data member must be filled with the appropriate contents of
+**  the application binary beginning with address 0.
+*/
+typedef struct{
+ rrpge_uint16 head[64U];       /**< Application header (first 64 words) */
+ rrpge_uint16 desc[10U];       /**< Application descriptor's first 10 words */
+ rrpge_uint16 crom[65536U];    /**< Application code */
+ rrpge_uint16 data[65536U];    /**< Initial data */
+ rrpge_uint32 ccnt;            /**< Count of valid code words */
+ rrpge_uint32 dcnt;            /**< Count of valid data words */
+}rrpge_appini_t;
+
+
+
+/**
+**  \anchor    state_regions
+**  \name      Application State regions
+**
+**  These are the region start offsets within the Application State
+**  (rrpge_state_t.stat).
+**
+**  \{ */
+/** Application header */
+#define RRPGE_STA_HEAD     0x000U
+/** State variables */
+#define RRPGE_STA_VARS     0x040U
+/** Mixer */
+#define RRPGE_STA_MIXER    0x090U
+/** Accelerator */
+#define RRPGE_STA_ACC      0x0A0U
+/** User Peripheral Area */
+#define RRPGE_STA_UPA      0x0C0U
+/** Palette */
+#define RRPGE_STA_PAL      0x100U
+/** Kernel task data */
+#define RRPGE_STA_KTASK    0x200U
+/** Accelerator reindex table */
+#define RRPGE_STA_REIND    0x300U
+/** \} */
 
 
 
@@ -76,56 +118,21 @@ typedef struct{
 **  libraries which may fail for implementation related reasons may use this
 **  to indicate such a failure. */
 #define RRPGE_ERR_UNK  0x0001U
-/** License of the application is not supported by the library. */
-#define RRPGE_ERR_LIC  0x0002U
-/** Nonexistent page when uploading / downloading state, or too few code pages
-**  when initializing. */
-#define RRPGE_ERR_PG   0x0003U
+/** Initialization data error. Normally for Application Header problems, the
+**  RRPGE_ERR_INV constant should be returned, this code is reserved for
+**  problems specific to the initialization data which hinder loading it. */
+#define RRPGE_ERR_INI  0x0002U
 /** Version mismatch. This can result when loading an application, indicating
 **  that it can not be ran since it was written according to a newer RRPGE
 **  specification. It also happens if a state is attempted to be loaded whose
 **  data does not match the application's. */
-#define RRPGE_ERR_VER  0x0004U
-/** Page contains invalid value (applies to elements of the Read Only Process
-**  Descriptor including application header). In the low 12 bits the location
+#define RRPGE_ERR_VER  0x0003U
+/** Application State contains invalid value. In the low 10 bits the location
 **  containing the erratic value is returned. */
 #define RRPGE_ERR_INV  0x1000U
-/** Page contains unsupported value (applies to elements of the Read Only
-**  Process Descriptor including application header). In the low 12 bits the
-**  location containing the erratic value is returned. This can be returned
-**  for example if the host wants to change the RRPGE variant during emulation
-**  by uploading a new application binary header, and the library can not
-**  support this. */
+/** Application State contains unsupported value. In the low 10 bits the
+**  location containing the erratic value is returned. */
 #define RRPGE_ERR_UNS  0x2000U
-/** \} */
-
-
-
-/**
-**  \anchor    page_ids
-**  \name      Page indices
-**
-**  Page indices for uploading / downloading specific pages of the state or
-**  code. Mostly these may be used for debugging applications (or cheating).
-**
-**  \{ */
-/** Video RAM. Low 7 bits (0-127) select the page to use. */
-#define RRPGE_PG_VRAM  0x0000U
-/** Data RAM. Low 8 bits (0-223) select the page to use. */
-#define RRPGE_PG_DRAM  0x1000U
-/** Code ROM. Low 4 bits (0-15) select the page to use. Note that it is
-**  possible to populate any of the 16 code pages even if the application
-**  contained less. This is not preserved after the destruction of the
-**  emulator instance (it is not contained in the exported state). */
-#define RRPGE_PG_CROM  0x2000U
-/** Stack RAM. Low 3 bits (0-7) select the page to use. */
-#define RRPGE_PG_SRAM  0x3000U
-/** Read Only Process Descriptor. Note that it may be rejected when uploading
-**  if it contains invalid values. Low bits must be 0. */
-#define RRPGE_PG_ROPD  0x4000U
-/** Application binary header.  Note that it may be rejected when uploading
-**  if it contains invalid values. Low bits must be 0. */
-#define RRPGE_PG_APPH  0x5000U
 /** \} */
 
 
@@ -172,17 +179,13 @@ typedef struct{
 **  should not be continued. If so, the PC will point after the offending
 **  instruction. */
 #define RRPGE_HLT_STACK       0x0080U
-/** Graphics fault. Either overflowing the Graphics FIFO, or attempting to
-**  access graphics during the execution of a FIFO operation. */
-#define RRPGE_HLT_GRAPHICS    0x0100U
-/** DMA fault. One of the DMA peripherals are attempted to be fired with
-**  improper address. This may also be fired alongside a GRAPHICS halt if the
-**  CPU <=> VRAM DMA is attempted to be fired during FIFO not empty. */
-#define RRPGE_HLT_DMA         0x0200U
+/** Emulator state is detached. To continue emulation, rrpge_attachstate()
+**  needs to be called first. */
+#define RRPGE_HLT_DETACHED    0x0100U
 /** Application fault (other). The emulation can not continue. This normally
 **  should not happen, emulators may use this to signal internal errors where
 **  it is detected they can not continue running the emulation. */
-#define RRPGE_HLT_FAULT       0x0400U
+#define RRPGE_HLT_FAULT       0x0200U
 /** \} */
 
 
