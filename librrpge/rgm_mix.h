@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.09.21
 */
 
 
@@ -15,9 +15,9 @@
 #include "rgm_info.h"
 
 
-/* Performs a Mixer DMA operation using the parameters in the ROPD (area
-** 0xED0 - 0xEDF). Updates the Mixer area in the ROPD according to the result
-** of the operation. Returns the number of cycles the operation takes. */
+/* Performs a Mixer DMA operation using the parameters in the application
+** state (area RRPGE_STA_MIXER). Returns the number of cycles the operation
+** takes. */
 auint rrpge_m_mixerop(void);
 
 

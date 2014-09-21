@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.29
+**  \date      2014.09.21
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -13,11 +13,10 @@
 ** instances simultaneously as it is supposed to). The reason behind using
 ** this architecture is performance.
 **
-** Some of the values are just copies from the read only process descriptor,
-** if modified, updated before return. The reason is that the process
-** descriptor comes through an indirection by an RRPGE library interface data
-** pointer, using that directly multiple times through non native sized (16bit
-** instead of 32/64) is slower.
+** Some of the values are just copies from the application state, if modified,
+** updated before return. The reason is that the app. state comes through an
+** indirection by an RRPGE library interface data pointer, using that directly
+** multiple times through non native sized (16bit instead of 32/64) is slower.
 */
 
 
@@ -51,8 +50,8 @@ typedef unsigned int  auint;
 /* Number of video lines total. At least 449, resulting in 70Hz VGA. */
 #define RRPGE_M_VLN 449U
 
-/* Video RAM size. 128 pages, but in 32bit units. */
-#define RRPGE_M_VRAMS (2048U * 128U)
+/* Peripheral RAM size. 1M * 32bit units. */
+#define RRPGE_M_PRAMS (1024U * 1024U)
 
 /* Null constant */
 #define RRPGE_M_NULL (0)
@@ -72,13 +71,11 @@ typedef unsigned int  auint;
 /* (Maybe will be put somewhere else more appropriate) */
 struct rrpge_object_s{
 
- rrpge_state_t stat; /* Complete emulator state as defined in the library interface */
+ rrpge_state_t st;   /* Complete emulator state as defined in the library interface */
 
  uint16 crom[16U * 4096U]; /* Code memory */
 
  uint32 brkp[2048U]; /* Bit map marking code addresses as breakpoints */
-
- uint16 ropc[704U];  /* Read Only Process Descriptor constant area (0xD40 - 0xFFF) */
 
  uint16 recb[4096U]; /* Receive data buffer for network packets */
  uint16 reci[512U];  /* Receive source ID buffer (64 sources, 8 words each) */
@@ -123,20 +120,19 @@ struct rrpge_object_s{
 /* Global info structure. This is used to accelerate emulation */
 typedef struct{
 
- uint8  grb[512];    /* Recolor bank data extracted from the ROPD */
-
- auint  rbk[16];     /* Read banks << 12 (ROPD: 0xD00-0xD0F) */
- auint  wbk[16];     /* Write banks << 12 (ROPD: 0xD10-0xD1F) */
-
- auint  vln;         /* Video line count (ROPD: 0xD50) */
- auint  vlc;         /* Video cycle within line (ROPD: 0xD51) */
- auint  auc;         /* Cycles until next audio event (ROPD: 0xD52-0xD53) */
- auint  vac;         /* Cycles remaining from video acc. op. (ROPD: 0xD54-0xD55) */
-
+ uint8  grb[512];    /* Recolor bank data extracted from the state */
  auint  grr;         /* Recolor bank load necessary flag: set on entry, will
                      ** ask for populating grb[] when it is needed. */
+
+ auint  vln;         /* Video line count (State: 0x050) */
+ auint  vlc;         /* Video remaining cycles within line (State: 0x051) */
+ auint  atc;         /* Cycles until next audio tick (State: 0x053) */
+ auint  cya;         /* Cycles remaining from video acc. op. (State: 0x06A-0x06B) */
+ auint  cym;         /* Cycles remaining from mixer op. (State: 0x062-0x063) */
+ auint  cys;         /* PRAM Stall cycles collected during a run of CPU emulation */
+
  auint  vbm;         /* Video mode bitmask. 0xF for 4bit mode, 0xFF for 8bit
-                     ** mode. (From ROPD: 0xBC0) */
+                     ** mode. (From State: 0x052) */
 
  auint  hlt;         /* Collects halt cause if any. */
 
@@ -151,11 +147,11 @@ typedef struct{
                      ** function parameters it is also used for passing the
                      ** first word of the parameter components. */
 
- auint  xr[8];       /* CPU general registers (A-D, X0-X3) (ROPD: 0xD40-0xD47) */
- auint  xmh[2];      /* CPU pointer mode/high registers (XM, XH) (ROPD: 0xD48-0xD49) */
- auint  pc;          /* CPU program counter (ROPD: 0xD4A) */
- auint  sp;          /* CPU stack pointer (ROPD: 0xD4B) */
- auint  bp;          /* CPU base pointer (ROPD: 0xD4C) */
+ auint  xr[8];       /* CPU general registers (A-D, X0-X3) (State: 0x040-0x047) */
+ auint  xmh[2];      /* CPU pointer mode/high registers (XM, XH) (State: 0x048-0x049) */
+ auint  pc;          /* CPU program counter (State: 0x04A) */
+ auint  sp;          /* CPU stack pointer (State: 0x04B) */
+ auint  bp;          /* CPU base pointer (State: 0x04C) */
 
 }rrpge_m_info_t;
 
