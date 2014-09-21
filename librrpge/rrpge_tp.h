@@ -49,8 +49,7 @@ typedef struct rrpge_object_s rrpge_object_t;
 */
 typedef struct{
  rrpge_uint32 pram[1048576U];  /**< Peripheral RAM (1M * 32 bits) */
- rrpge_uint16 dram[  65536U];  /**< CPU data memory accessible to user */
- rrpge_uint16 sram[  32768U];  /**< CPU stack memory accessible to user */
+ rrpge_uint16 dram[  98304U];  /**< CPU data & stack memory accessible to user (96K * 16 bits) */
  rrpge_uint16 stat[   1024U];  /**< Application state (and header) */
 }rrpge_state_t;
 
@@ -66,7 +65,7 @@ typedef struct{
 */
 typedef struct{
  rrpge_uint16 head[64U];       /**< Application header (first 64 words) */
- rrpge_uint16 desc[10U];       /**< Application descriptor's first 10 words */
+ rrpge_uint16 desc[12U];       /**< Application descriptor's first 12 words */
  rrpge_uint16 crom[65536U];    /**< Application code */
  rrpge_uint16 data[65536U];    /**< Initial data */
  rrpge_uint32 ccnt;            /**< Count of valid code words */
@@ -118,8 +117,9 @@ typedef struct{
 **  libraries which may fail for implementation related reasons may use this
 **  to indicate such a failure. */
 #define RRPGE_ERR_UNK  0x0001U
-/** Initialization data error. Normally for Application Header problems, the
-**  RRPGE_ERR_INV constant should be returned, this code is reserved for
+/** Initialization data error. Returned only by rrpge_init(). Normally for
+**  Application Header or Descriptor problems, the RRPGE_ERR_INV or the
+**  RRPGE_ERR_DSC constant should be returned, this code is reserved for other
 **  problems specific to the initialization data which hinder loading it. */
 #define RRPGE_ERR_INI  0x0002U
 /** Version mismatch. This can result when loading an application, indicating
@@ -129,10 +129,14 @@ typedef struct{
 #define RRPGE_ERR_VER  0x0003U
 /** Application State contains invalid value. In the low 10 bits the location
 **  containing the erratic value is returned. */
-#define RRPGE_ERR_INV  0x1000U
+#define RRPGE_ERR_STA  0x1000U
 /** Application State contains unsupported value. In the low 10 bits the
-**  location containing the erratic value is returned. */
+**  location containing the unsupported value is returned. */
 #define RRPGE_ERR_UNS  0x2000U
+/** Application descriptor contains invalid value. Returned only by
+**  rrpge_init(). In the low 4 bits the location containing the erratic value
+**  is returned. */
+#define RRPGE_ERR_DSC  0x3000U
 /** \} */
 
 
