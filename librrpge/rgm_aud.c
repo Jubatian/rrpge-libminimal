@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.29
+**  \date      2014.09.23
 */
 
 
@@ -13,53 +13,69 @@
 
 
 
+/* Peripheral memory size in 32bit units.
+** Must be a power of 2 and a multiple of 64K. */
+#define  PRAMS  RRPGE_M_PRAMS
+
+
+
 /* Based on the cycles needing emulation, processes audio into the internal
 ** audio buffer, flagging the 512 sample passed event as required. */
 void rrpge_m_audproc(auint cy)
 {
- auint lof = (auint)(rrpge_m_edat->stat.ropd[0xEC8U]) << 4;
- auint rof = (auint)(rrpge_m_edat->stat.ropd[0xEC9U]) << 4;
- auint msk = (auint)(rrpge_m_edat->stat.ropd[0xECAU]) << 4;
+ auint lof = (auint)(rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 0x4U]) << 4;
+ auint rof = (auint)(rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 0x5U]) << 4;
+ auint msk = (auint)(rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 0x6U]) << 4;
  auint t;
 
- lof &= msk;      /* Part to fetch from the start offset */
+ lof &= msk;        /* Part to fetch from the start offset */
  rof &= msk;
- msk ^= 0xFFFFFU; /* Invert mask (staying in appropriate range) to use on next read offset */
+ msk ^= PRAMS - 1U; /* Invert mask (staying in appropriate range) to use on next read offset */
 
  /* Consume the provided number of cycles */
 
- rrpge_m_info.auc -= cy;
+ rrpge_m_info.atc -= cy;
 
  /* Until the remaining cycles to next audio event is negative or zero,
  ** process */
 
- while ( ((rrpge_m_info.auc & 0x80000000U) != 0U) ||
-         (rrpge_m_info.auc == 0U) ){
+ while ( ((rrpge_m_info.atc & 0x80000000U) != 0U) ||
+         (rrpge_m_info.atc == 0U) ){
 
   /* One audio tick will be processed */
 
-  rrpge_m_info.auc += (RRPGE_M_OSC + 24000U) / 48000U;
+  rrpge_m_info.atc += (RRPGE_M_OSC + 24000U) / 48000U;
 
   /* Load samples from data memory into the internal double buffer */
 
-  t = rrpge_m_edat->stat.ropd[0xECCU];
+  t = rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 0x2U];
   rrpge_m_edat->audl[(rrpge_m_edat->audp) & 0x3FFU] =
-    (uint8)( rrpge_m_edat->stat.dram[lof | ((t >> 1) & msk)] >> (((t & 1U) ^ 1U) << 3) );
+    (uint8)( rrpge_m_edat->st.pram[lof | ((t >> 2) & msk)] >> (((t & 3U) ^ 3U) << 3) );
   rrpge_m_edat->audr[(rrpge_m_edat->audp) & 0x3FFU] =
-    (uint8)( rrpge_m_edat->stat.dram[rof | ((t >> 1) & msk)] >> (((t & 1U) ^ 1U) << 3) );
+    (uint8)( rrpge_m_edat->st.pram[rof | ((t >> 2) & msk)] >> (((t & 3U) ^ 3U) << 3) );
 
   /* Increment pointers */
 
   rrpge_m_edat->audp ++;
-  rrpge_m_edat->stat.ropd[0xECDU] ++;
-  if (rrpge_m_edat->stat.ropd[0xECDU] == rrpge_m_edat->stat.ropd[0xECBU]){
-   rrpge_m_edat->stat.ropd[0xECDU] = 0U;
-   rrpge_m_edat->stat.ropd[0xECCU] ++;
+  rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 0x3U] ++;
+  if (rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 0x3U] ==
+      rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 0x7U]){
+   rrpge_m_edat->stat.ropd[RRPGE_STA_UPA_A + 3U] = 0U;
+   rrpge_m_edat->stat.ropd[RRPGE_STA_UPA_A + 2U] ++;
+  }
+
+  /* Increment 187.5Hz clock */
+
+  rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x14U] ++;
+  if ((rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x14U] & 0xFFU) == 0U){
+   rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 1U] =
+       ((rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 1U] + 0x1) & 0xFF00U) +
+       (rrpge_m_edat->st.stat[RRPGE_STA_VARS + 14U] >> 8);
   }
 
   /* Generate an event every 512 output (48KHz) samples */
 
-  if ((rrpge_m_edat->audp & 0x1FF) == 0U){
+  if ((rrpge_m_edat->audp & 0x1FFU) == 0U){
    rrpge_m_edat->aco ++;
    rrpge_m_info.hlt |= RRPGE_HLT_AUDIO;
   }
