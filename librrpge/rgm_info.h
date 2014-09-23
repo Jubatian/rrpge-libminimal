@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.09.21
+**  \date      2014.09.23
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -127,8 +127,9 @@ typedef struct{
  auint  vln;         /* Video line count (State: 0x050) */
  auint  vlc;         /* Video remaining cycles within line (State: 0x051) */
  auint  atc;         /* Cycles until next audio tick (State: 0x053) */
- auint  cya;         /* Cycles remaining from video acc. op. (State: 0x06A-0x06B) */
- auint  cym;         /* Cycles remaining from mixer op. (State: 0x062-0x063) */
+ auint  cyf[2];      /* FIFO cycles:
+                     ** 0: Cycles remaining from mixer op. (State: 0x062-0x063)
+                     ** 1: Cycles remaining from video acc. op. (State: 0x06A-0x06B) */
  auint  cys;         /* PRAM Stall cycles collected during a run of CPU emulation */
 
  auint  vbm;         /* Video mode bitmask. 0xF for 4bit mode, 0xFF for 8bit
