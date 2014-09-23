@@ -5,16 +5,16 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.07.02
+**  \date      2014.09.23
 */
 
 
 #include "rgm_grln.h"
 
 
-/* Video memory size in 32bit units.
+/* Peripheral memory size in 32bit units.
 ** Must be a power of 2 and a multiple of 64K. */
-#define  VRAMS  RRPGE_M_VRAMS
+#define  PRAMS  RRPGE_M_PRAMS
 
 
 /* Local buffer for rendering lines. Only first 80 cells are used for output,
@@ -23,9 +23,8 @@ static uint32 rrpge_m_grln_buf[128U];
 
 
 /* Mask / colorkey values */
-static const uint8 rrpge_m_grln_msk[12U] = {
- 0x00U, 0xFFU, 0x0FU, 0x3FU, 0x03U, 0x0CU, 0x30U, 0xC0U,
- 0x01U, 0x02U, 0x04U, 0x08U};
+static const uint8 rrpge_m_grln_msk[8U] = {
+ 0x00U, 0xFFU, 0x0FU, 0x3FU, 0x03U, 0x0CU, 0x30U, 0xC0U};
 
 
 
@@ -33,12 +32,12 @@ static const uint8 rrpge_m_grln_msk[12U] = {
 void rrpge_m_grln(void)
 {
  uint32 const* dlin;           /* Display list line */
- uint32 const* sbnk;           /* Source VRAM bank */
- auint  soff;                  /* Source base offset within VRAM bank */
+ uint32 const* sbnk;           /* Source PRAM bank */
+ auint  soff;                  /* Source base offset within PRAM bank */
  auint  doff;                  /* Offset within display list */
  auint  dsiz;                  /* Size of display list line */
- auint  opw;                   /* Output width */
- auint  opb;                   /* Output begin */
+ auint  opw[2];                /* Output width */
+ auint  opb[2];                /* Output begin */
  auint  dbl;                   /* Double scan flag */
  auint  cyr;                   /* Cycles remaining */
  auint  cmd;                   /* Current display list command */
@@ -68,17 +67,24 @@ void rrpge_m_grln(void)
  if (rrpge_m_info.vln >= 400U){ return; }
 
  /* Read display list offset & entry size */
- /* Read output width & begin position */
 
- i = rrpge_m_edat->stat.ropd[0xD75U] & ((VRAMS - 1U) >> 9); /* Display list definition */
+ i = rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x7U] & ((PRAMS - 1U) >> 9); /* Display list definition */
  i = i & (~(((auint)(4U) << (i & 3U)) - 4U));
- dlin = &(rrpge_m_edat->stat.vram[(i & (~(auint)(3U))) << 9]);
+ dlin = &(rrpge_m_edat->st.pram[(i & (~(auint)(3U))) << 9]);
  dsiz = (i & 3U) + 2U;
  dlin += rrpge_m_info.vln << dsiz; /* Position on the current line in display list */
- opb  = rrpge_m_edat->stat.ropd[0xD74U]; /* Output width, begin & double scan */
- dbl  = opb >> 15;
- opw  = (opb >> 8) & 0x7FU;
- opb  = opb & 0x7FU;
+
+ /* Read output width & begin positions */
+
+ for (i = 0U; i < 2U; i++){
+  opb[i] = rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 4U + i];
+  opw[i] = (opb[i] >> 8) & 0x7FU;
+  opb[i] = opb[i] & 0x7FU;
+ }
+
+ /* Double scan: Bus access cycle count available & display list size adjust */
+
+ dbl  = (rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x12U] >> 1) & 1U;
  cyr  = 192U;
  if (dbl != 0U){ /* Double scan */
   dsiz ++;
@@ -120,15 +126,15 @@ void rrpge_m_grln(void)
 
    cmd  = dlin[doff];             /* Current command */
    doff ++;
-   csr  = rrpge_m_edat->stat.ropd[0xD78U + ((cmd >> 28) & 7U)]; /* Current source to use */
-   sbnk = &(rrpge_m_edat->stat.vram[((csr & 0x1800U) << 5)]);
-   soff = (csr & 0xE000U) | ((((cmd >> 16) & 0xFFFU) << ((csr >> 8) & 7U)) & 0xFFFFU);
+   csr  = rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x8U + ((cmd >> 28) & 7U)]; /* Current source to use */
+   sbnk = &((rrpge_m_edat->stat.pram[((csr & 0x0F00U) << 8)]) & (PRAMS - 1U));
+   soff = (csr & 0xF000U) | ((((cmd >> 16) & 0xFFFU) << ((csr >> 5) & 7U)) & 0xFFFFU);
    if       ((cmd & 0xBC00U) == 0U){ /* Render command inactive */
     scy = 0U;
    }else if ((csr & 0x0080U) != 0U){ /* Shift source */
-    scy = opw;
-   }else{                            /* Position source */
-    scy = csr & 0x7FU;
+    scy = opw[(cmd >> 30) & 1U];
+   }else{                            /* Positioned source */
+    scy = (((csr & 0xFU) << 1) + 1U) << ((csr >> 5) & 7U);
    }
    cyr--;                         /* Cycle taken for display list entry fetch (cyr certain nonzero here) */
    if (scy > cyr){ scy = cyr; }
@@ -139,13 +145,13 @@ void rrpge_m_grln(void)
     /* Source line select in cmd is no longer used. Substitute with the
     ** current graphics mode for accessing the latter faster later on */
 
-    cmd  = (cmd & 0x8000FFFFU) | ((rrpge_m_info.vbm & 0x80U) << 9); /* bit 16 set in 8bit mode */
+    cmd  = (cmd & 0xF000FFFFU) | ((rrpge_m_info.vbm & 0x80U) << 9); /* bit 16 set in 8bit mode */
 
     /* Calculate mask / colorkey */
 
     i    = (cmd >> 10) & 0xFU;    /* Colorkey / Mask selector */
-    if (i > 12U){                 /* Load user masks */
-     msk = rrpge_m_edat->stat.ropd[0xD76U + ((i >> 1) & 1U)] >> (((i & 1U) ^ 1U) << 3);
+    if (i > 8U){                  /* Load user masks */
+     msk = rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + ((i >> 1) & 3U)] >> (((i & 1U) ^ 1U) << 3);
      msk = msk & 0xFFU;
     }else{                        /* Load one of the pre-defined masks */
      msk = rrpge_m_grln_msk[i];
@@ -192,7 +198,7 @@ void rrpge_m_grln(void)
 
      /* Do the blitting loop */
 
-     i    = opb;
+     i    = opb[(cmd >> 30) & 1U];
      while (scy != 0U){
 
       csd  = sbnk[soff + spos];

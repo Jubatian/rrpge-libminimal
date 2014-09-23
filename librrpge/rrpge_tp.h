@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.09.20
+**  \date      2014.09.23
 */
 
 
@@ -92,6 +92,16 @@ typedef struct{
 #define RRPGE_STA_ACC      0x0A0U
 /** User Peripheral Area */
 #define RRPGE_STA_UPA      0x0C0U
+/** User Peripheral Area, Audio */
+#define RRPGE_STA_UPA_A    0x0C0U
+/** User Peripheral Area, Mixer FIFO */
+#define RRPGE_STA_UPA_MF   0x0C8U
+/** User Peripheral Area, Graphics FIFO */
+#define RRPGE_STA_UPA_GF   0x0CCU
+/** User Peripheral Area, Graphics Display Generator */
+#define RRPGE_STA_UPA_G    0x0D0U
+/** User Peripheral Area, Pointers (PRAM interface) */
+#define RRPGE_STA_UPA_P    0x0E0U
 /** Palette */
 #define RRPGE_STA_PAL      0x100U
 /** Kernel task data */
