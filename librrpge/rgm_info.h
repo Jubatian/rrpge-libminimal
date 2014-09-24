@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.09.23
+**  \date      2014.09.24
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -117,7 +117,9 @@ struct rrpge_object_s{
 };
 
 
-/* Global info structure. This is used to accelerate emulation */
+/* Global info structure. This is used to accelerate emulation. Note that
+** preferably all globals are placed here to increase locality, and to have
+** everything preventing threaded use in one place. */
 typedef struct{
 
  uint8  grb[512];    /* Recolor bank data extracted from the state */
@@ -139,7 +141,7 @@ typedef struct{
 
  auint  ocy;         /* Opcode address extra cycles. This is used by the
                      ** addressing mode unit to mark if extra cycles were
-                     ** consumed. */
+                     ** consumed for any reason stalling the CPU. */
  auint  oaw;         /* Opcode address extra word. This is used by the
                      ** addressing mode unit to mark if an extra opcode word
                      ** was consumed. */
@@ -153,6 +155,11 @@ typedef struct{
  auint  pc;          /* CPU program counter (State: 0x04A) */
  auint  sp;          /* CPU stack pointer (State: 0x04B) */
  auint  bp;          /* CPU base pointer (State: 0x04C) */
+
+ auint  pia;         /* Temporary values for Peripheral RAM interface */
+ auint  pid;
+ auint  pis;
+ auint  pim;
 
 }rrpge_m_info_t;
 
