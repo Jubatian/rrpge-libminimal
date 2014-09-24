@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.09.23
+**  \date      2014.09.24
 */
 
 
@@ -68,7 +68,7 @@ void rrpge_m_grln(void)
 
  /* Read display list offset & entry size */
 
- i = rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x7U] & ((PRAMS - 1U) >> 9); /* Display list definition */
+ i = rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x15U] & ((PRAMS - 1U) >> 9); /* Display list definition */
  i = i & (~(((auint)(4U) << (i & 3U)) - 4U));
  dlin = &(rrpge_m_edat->st.pram[(i & (~(auint)(3U))) << 9]);
  dsiz = (i & 3U) + 2U;
