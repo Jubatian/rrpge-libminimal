@@ -5,11 +5,22 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.29
+**  \date      2014.09.24
 */
 
 
 #include "rgm_task.h"
+
+
+
+/* Checks an offset & size pair if it is within the Data RAM. Returns
+** nonzero if it is not within. */
+RRPGE_M_FASTCALL auint rrpge_m_task_chkdata(auint off, auint len)
+{
+ if (len > 0xFFC0U){ return 1; }
+ if ( (off < 0x40U) || (off > (0x10000U - len)) ){ return 1; }
+ return 0;
+}
 
 
 
@@ -18,53 +29,56 @@
 ** input (for example starting from a restored state which could be faulty).
 ** Returns nonzero if the parameters are erratic. It does not write any of
 ** the data structures. 'n' is the task to check (0-15, unchecked). Returns
-** 1 if not valid, 0 otherwise. */
+** 1 if not valid, 0 otherwise. 'd' is the application state to check. */
 auint rrpge_m_taskcheck(uint16 const* d, auint n)
 {
- uint16 const* p = &(d[(n<<4) + 0xD80U]);
+ uint16 const* p = &(d[RRPGE_STA_KTASK + (n<<4)]);
 
- if (p[0xFU] == 0x0000U) return 0; /* Empty task is OK */
- if (p[0xFU] >= 0x8000U) return 0; /* Finished task is OK */
+ if (p[0xFU] == 0x0000U){ return 0; } /* Empty task is OK */
+ if (p[0xFU] >= 0x8000U){ return 0; } /* Finished task is OK */
 
  switch (p[0]){ /* Process by kernel function */
 
   case 0x0100U: /* Kernel task: Start loading binary data page */
-   if ((p[1] < 0x4000U) || (p[1] >= 0x41C0U)) return 1; /* Not an RW page */
-   if ( (((auint)(p[2]) << 16) + (auint)(p[3])) >=
-        ( ((((auint)(d[0xBC2U]) & 0xFFU)) << 16) +
-          ((auint)(d[0xBC3U])) )
-      )                                       return 1; /* Data page does not exist */
+   if (rrpge_m_task_chkdata(p[1], p[2]){ return 1; } /* Not in Data area */
+   if ( (((auint)(p[3]) << 16) + (auint)(p[4]) + (auint)(p[2])) >
+        ( ((auint)(d[RRPGE_STA_VARS + 0x18U]) << 16) +
+          ((auint)(d[RRPGE_STA_VARS + 0x19U])) ) ){ return 1; } /* Out of data area */
    return 0;
 
   case 0x0110U: /* Kernel task: Start loading page from file */
-   if ((p[1] < 0x4000U) || (p[1] >= 0x41C0U)) return 1; /* Target is not an RW page */
-   if ((p[5] < 0x4000U) || (p[5] >= 0x41C0U)) return 1; /* File name is not on an RW page */
+   if (rrpge_m_task_chkdata(p[1], (((auint)(p[2]) + 1U) >> 1))){ return 1; } /* Target not in Data area */
+   if (rrpge_m_task_chkdata(p[5], p[6])){ return 1; } /* Name not in Data area */
    return 0;
 
   case 0x0111U: /* Kernel task: Start saving page into file */
-   if ((p[1] < 0x4000U) || (p[1] >= 0x41C0U)) return 1; /* Target is not an RW page */
-   if ((p[5] < 0x4000U) || (p[5] >= 0x41C0U)) return 1; /* File name is not on an RW page */
+   if (rrpge_m_task_chkdata(p[1], (((auint)(p[2]) + 1U) >> 1))){ return 1; } /* Source not in Data area */
+   if (rrpge_m_task_chkdata(p[5], p[6])){ return 1; } /* Name not in Data area */
    return 0;
 
   case 0x0112U: /* Kernel task: Find next file */
-   if ((p[1] < 0x4000U) || (p[1] >= 0x41C0U)) return 1; /* File name is not on an RW page */
+   if (rrpge_m_task_chkdata(p[1], p[2])){ return 1; } /* Name not in Data area */
    return 0;
 
   case 0x0113U: /* Kernel task: Move a file */
-   if ((p[1] < 0x4000U) || (p[1] >= 0x41C0U)) return 1; /* File name is not on an RW page */
-   if ((p[3] < 0x4000U) || (p[3] >= 0x41C0U)) return 1; /* File name is not on an RW page */
+   if (rrpge_m_task_chkdata(p[1], p[2])){ return 1; } /* Name not in Data area */
+   if (rrpge_m_task_chkdata(p[3], p[4])){ return 1; } /* Name not in Data area */
    return 0;
 
   case 0x0601U: /* Kernel task: Read UTF-8 representation of user */
-   if ((p[1] < 0x4000U) || (p[1] >= 0x41C0U)) return 1; /* Not an RW page */
+   if (rrpge_m_task_chkdata(p[1], p[2])){ return 1; } /* Main part not in Data area */
+   if (rrpge_m_task_chkdata(p[3], p[4])){ return 1; } /* Extended part not in Data area */
+   if (rrpge_m_task_chkdata(p[5],   8U)){ return 1; } /* User ID not in Data area */
    return 0;
 
   case 0x0700U: /* Kernel task: Send data to user */
-   if ((p[1] < 0x4000U) || (p[1] >= 0x41C0U)) return 1; /* Not an RW page */
+   if (rrpge_m_task_chkdata(p[1], p[2])){ return 1; } /* Source not in Data area */
+   if (rrpge_m_task_chkdata(p[3],   8U)){ return 1; } /* User ID not in Data area */
    return 0;
 
   case 0x0710U: /* Kernel task: List accessible users */
-   if ((p[1] < 0x4000U) || (p[1] >= 0x41C0U)) return 1; /* Not an RW page */
+   if (rrpge_m_task_chkdata(p[1], (auint)(p[2]) << 3)){ return 1; } /* Target not in Data area */
+   if (rrpge_m_task_chkdata(p[3],   8U)){ return 1; } /* User ID not in Data area */
    return 0;
 
   default:      /* Not a valid kernel function for tasks - invalid! */
@@ -84,11 +98,8 @@ auint rrpge_m_taskcheck(uint16 const* d, auint n)
 ** It generates RRPGE_HLT_FAULT causes if it fails (shouldn't happen). */
 void rrpge_m_tasksched(void)
 {
- auint i, j;
- auint t0;
- auint t1;
- auint t2;
- auint t3;
+ auint i;
+ uint16* tskp;
  rrpge_cbp_loadbin_t   cbp_loadbin;
  rrpge_cbp_load_t      cbp_load;
  rrpge_cbp_save_t      cbp_save;
@@ -100,7 +111,7 @@ void rrpge_m_tasksched(void)
 
 
  for (i = 0U; i < 16U; i++){
-  if ( ((rrpge_m_edat->stat.ropd[0xD8FU + (i << 4)]) == 0x0001U) &&
+  if ( ((rrpge_m_edat->st.stat[RRPGE_STA_KTASK + 0xFU + (i << 4)]) == 0x0001U) &&
        ((rrpge_m_edat->tsfl & (1U << i)) == 0) ){
 
    /* Kernel task is waiting to be dispatched, so do it! It's parameter 0
@@ -109,28 +120,25 @@ void rrpge_m_tasksched(void)
    rrpge_m_edat->tsfl |= (1U << i); /* Task is marked running (rrpge_taskend()
                                     ** will clear this or any reset. */
 
-   if (rrpge_m_taskcheck(&(rrpge_m_edat->stat.ropd[0]), i)){ /* Check if task has proper parameters */
+   if (rrpge_m_taskcheck(&(rrpge_m_edat->st.stat[0]), i)){ /* Check if task has proper parameters */
     rrpge_m_info.hlt |= RRPGE_HLT_FAULT;
 
    }else{
 
     /* At this point task parameters are valid, so they can not index out of
-    ** the emulated machine's memories, or specify an invalid source page (for
-    ** loadbin). It is so safe to use the parameters to form memory pointers
-    ** from. */
+    ** the emulated machine's memories. It is so safe to use the parameters to
+    ** form memory pointers from. */
 
-    switch (rrpge_m_edat->stat.ropd[0xD80U + (i << 4)]){
+    tskp = &(rrpge_m_edat->st.stat[RRPGE_STA_KTASK + (i << 4)])
+
+    switch (tskp[0]){
 
 
      case 0x0100U: /* Start loading binary data page */
 
-      t0 = rrpge_m_edat->stat.ropd[0xD81U + (i << 4)]; /* Page to load into */
-      t0 = (t0 & 0xFFU) << 12;                         /* Make offset */
-      t1 = ((auint)(rrpge_m_edat->stat.ropd[0xD82U + (i << 4)]) << 16) +
-           ((auint)(rrpge_m_edat->stat.ropd[0xD83U + (i << 4)])); /* Page to load */
-
-      cbp_loadbin.spg = t1;
-      cbp_loadbin.buf = &rrpge_m_edat->stat.dram[t0];
+      cbp_loadbin.buf = &rrpge_m_edat->st.dram[tskp[1]];
+      cbp_loadbin.scw = tskp[2];
+      cbp_loadbin.sow = ((auint)(tskp[3]) << 16) + (auint)(tskp[4]);
       rrpge_m_edat->cb_tsk[RRPGE_CB_LOADBIN](rrpge_m_edat, i, &cbp_loadbin);
 
       break;
@@ -138,22 +146,11 @@ void rrpge_m_tasksched(void)
 
      case 0x0110U: /* Start loaing page from file */
 
-      t0 = rrpge_m_edat->stat.ropd[0xD81U + (i << 4)]; /* Page to load into */
-      t0 = (t0 & 0xFFU) << 12;                         /* Make offset */
-      t1 = ((auint)(rrpge_m_edat->stat.ropd[0xD82U + (i << 4)]) << 16) +
-           ((auint)(rrpge_m_edat->stat.ropd[0xD83U + (i << 4)])); /* Page to load */
-      t2 = rrpge_m_edat->stat.ropd[0xD84U + (i << 4)]; /* Number of bytes to load */
-      if (t2 > 8192U){ t2 = 8192U; }                   /* Saturate byte count if needed */
-      t3 = rrpge_m_edat->stat.ropd[0xD85U + (i << 4)]; /* Page of file name */
-      t3 = (t3 & 0xFFU) << 12;                         /* Make offset */
-      t3 = t3 +                                        /* File name start offset got */
-           (((auint)(rrpge_m_edat->stat.ropd[0xD86U + (i << 4)])) & 0x0F80U);
-
-      cbp_load.spg = t1;
-      cbp_load.sno = t2;
-      cbp_load.buf = &rrpge_m_edat->stat.dram[t0];
-      cbp_load.nam = &rrpge_m_edat->stat.dram[t3];
-      for (j = 0U; j < 4096U; j++){ cbp_load.buf[j] = 0U; }
+      cbp_load.buf = &rrpge_m_edat->st.dram[tskp[1]];
+      cbp_load.scb = tskp[2];
+      cbp_load.sob = ((auint)(tskp[3]) << 16) + (auint)(tskp[4]);
+      cbp_load.nam = &rrpge_m_edat->st.dram[tskp[5]];
+      cbp_load.ncw = tskp[6];
       rrpge_m_edat->cb_tsk[RRPGE_CB_LOAD](rrpge_m_edat, i, &cbp_load);
 
       break;
@@ -161,21 +158,11 @@ void rrpge_m_tasksched(void)
 
      case 0x0111U: /* Start saving page into file */
 
-      t0 = rrpge_m_edat->stat.ropd[0xD81U + (i << 4)]; /* Page to save from */
-      t0 = (t0 & 0xFFU) << 12;                         /* Make offset */
-      t1 = ((auint)(rrpge_m_edat->stat.ropd[0xD82U + (i << 4)]) << 16) +
-           ((auint)(rrpge_m_edat->stat.ropd[0xD83U + (i << 4)])); /* Page to save into */
-      t2 = rrpge_m_edat->stat.ropd[0xD84U + (i << 4)]; /* Number of bytes to save */
-      if (t2 > 8192U){ t2 = 8192U; }                   /* Saturate byte count if needed */
-      t3 = rrpge_m_edat->stat.ropd[0xD85U + (i << 4)]; /* Page of file name */
-      t3 = (t3 & 0xFFU) << 12;                         /* Make offset */
-      t3 = t3 +                                        /* File name start offset got */
-           (((auint)(rrpge_m_edat->stat.ropd[0xD86U + (i << 4)])) & 0x0F80U);
-
-      cbp_save.tpg = t1;
-      cbp_save.tno = t2;
-      cbp_save.buf = &rrpge_m_edat->stat.dram[t0];
-      cbp_save.nam = &rrpge_m_edat->stat.dram[t3];
+      cbp_save.buf = &rrpge_m_edat->st.dram[tskp[1]];
+      cbp_save.tcb = tskp[2];
+      cbp_save.tob = ((auint)(tskp[3]) << 16) + (auint)(tskp[4]);
+      cbp_save.nam = &rrpge_m_edat->st.dram[tskp[5]];
+      cbp_save.ncw = tskp[6];
       rrpge_m_edat->cb_tsk[RRPGE_CB_SAVE](rrpge_m_edat, i, &cbp_save);
 
       break;
@@ -183,12 +170,8 @@ void rrpge_m_tasksched(void)
 
      case 0x0112U: /* Find next file */
 
-      t0 = rrpge_m_edat->stat.ropd[0xD81U + (i << 4)]; /* Page of file name */
-      t0 = (t0 & 0xFFU) << 12;                         /* Make offset */
-      t0 = t0 +                                        /* File name start offset got */
-           (((auint)(rrpge_m_edat->stat.ropd[0xD82U + (i << 4)])) & 0x0F80U);
-
-      cbp_next.nam = &rrpge_m_edat->stat.dram[t0];
+      cbp_next.nam = &rrpge_m_edat->st.dram[tskp[1]];
+      cbp_next.ncw = tskp[2];
       rrpge_m_edat->cb_tsk[RRPGE_CB_NEXT](rrpge_m_edat, i, &cbp_next);
 
       break;
@@ -196,17 +179,10 @@ void rrpge_m_tasksched(void)
 
      case 0x0113U: /* Move a file */
 
-      t0 = rrpge_m_edat->stat.ropd[0xD81U + (i << 4)]; /* Page of file name */
-      t0 = (t0 & 0xFFU) << 12;                         /* Make offset */
-      t0 = t0 +                                        /* File name start offset got */
-           (((auint)(rrpge_m_edat->stat.ropd[0xD82U + (i << 4)])) & 0x0F80U);
-      t1 = rrpge_m_edat->stat.ropd[0xD83U + (i << 4)]; /* Page of file name */
-      t1 = (t1 & 0xFFU) << 12;                         /* Make offset */
-      t1 = t1 +                                        /* File name start offset got */
-           (((auint)(rrpge_m_edat->stat.ropd[0xD84U + (i << 4)])) & 0x0F80U);
-
-      cbp_move.snm = &rrpge_m_edat->stat.dram[t1];
-      cbp_move.tnm = &rrpge_m_edat->stat.dram[t0];
+      cbp_move.tnm = &rrpge_m_edat->st.dram[tskp[1]];
+      cbp_move.tcw = tskp[2];
+      cbp_move.snm = &rrpge_m_edat->st.dram[tskp[3]];
+      cbp_move.scw = tskp[4];
       rrpge_m_edat->cb_tsk[RRPGE_CB_MOVE](rrpge_m_edat, i, &cbp_move);
 
       break;
@@ -214,16 +190,11 @@ void rrpge_m_tasksched(void)
 
      case 0x0601U: /* Get UTF-8 representation of User ID */
 
-      t0 = rrpge_m_edat->stat.ropd[0xD81U + (i << 4)]; /* Page to load into */
-      t0 = (t0 & 0xFFU) << 12;                         /* Make offset */
-      t0 = t0 +                                        /* Add start offset within page */
-           (((auint)(rrpge_m_edat->stat.ropd[0xD82U + (i << 4)])) & 0x0F00U);
-
-      for (j = 0; j < 8U; j++){
-       cbp_getutf.id[j] = rrpge_m_edat->stat.ropd[0xD83U + (i << 4) + j];
-      }
-      cbp_getutf.buf = &rrpge_m_edat->stat.dram[t0];
-      for (j = 0; j < 256U; j++){ cbp_getutf.buf[j] = 0U; }
+      cbp_getutf.nam = &rrpge_m_edat->st.dram[tskp[1]];
+      cbp_getutf.ncw = tskp[2];
+      cbp_getutf.ext = &rrpge_m_edat->st.dram[tskp[3]];
+      cbp_getutf.ecw = tskp[4];
+      cbp_getutf.id  = &rrpge_m_edat->st.dram[tskp[5]];
       rrpge_m_edat->cb_tsk[RRPGE_CB_GETUTF](rrpge_m_edat, i, &cbp_getutf);
 
       break;
@@ -231,17 +202,9 @@ void rrpge_m_tasksched(void)
 
      case 0x0700U: /* Send data to user */
 
-      t0 = rrpge_m_edat->stat.ropd[0xD81U + (i << 4)]; /* Page to send from */
-      t0 = (t0 & 0xFFU) << 12;                         /* Make offset */
-      t1 = rrpge_m_edat->stat.ropd[0xD82U + (i << 4)]; /* Count of words to send */
-      t1 = ((t1 - 1U) & 0xFFFU) + 1U;
-
-      for (j = 0; j < 8U; j++){
-       cbp_send.id[j] = rrpge_m_edat->stat.ropd[0xD83U + (i << 4) + j];
-      }
-      cbp_send.no  = t1;
-      cbp_send.buf = &rrpge_m_edat->stat.dram[t0];
-
+      cbp_send.buf = &rrpge_m_edat->st.dram[tskp[1]];
+      cbp_send.bcw = tskp[2];
+      cbp_send.id  = &rrpge_m_edat->st.dram[tskp[3]];
       rrpge_m_edat->cb_tsk[RRPGE_CB_SEND](rrpge_m_edat, i, &cbp_send);
 
       break;
@@ -249,14 +212,9 @@ void rrpge_m_tasksched(void)
 
      case 0x0710U: /* List accessible users */
 
-      t0 = rrpge_m_edat->stat.ropd[0xD81U + (i << 4)]; /* Page to load into */
-      t0 = (t0 & 0xFFU) << 12;                         /* Make offset */
-
-      for (j = 0; j < 8U; j++){
-       cbp_listusers.id[j] = rrpge_m_edat->stat.ropd[0xD82U + (i << 4) + j];
-      }
-      cbp_listusers.buf = &rrpge_m_edat->stat.dram[t0];
-      for (j = 0; j < 4096U; j++){ cbp_listusers.buf[j] = 0U; }
+      cbp_listusers.buf = &rrpge_m_edat->st.dram[tskp[1]];
+      cbp_listusers.bcu = tskp[2];
+      cbp_listusers.id  = &rrpge_m_edat->st.dram[tskp[3]];
       rrpge_m_edat->cb_tsk[RRPGE_CB_LISTUSERS](rrpge_m_edat, i, &cbp_listusers);
 
       break;
