@@ -117,6 +117,13 @@ struct rrpge_object_s{
 };
 
 
+
+/* Addressing unit's function types. */
+typedef RRPGE_M_FASTCALL auint (rrpge_m_addr_read_t)(void);
+typedef RRPGE_M_FASTCALL void (rrpge_m_addr_write_t)(auint);
+
+
+
 /* Global info structure. This is used to accelerate emulation. Note that
 ** preferably all globals are placed here to increase locality, and to have
 ** everything preventing threaded use in one place. */
@@ -156,10 +163,25 @@ typedef struct{
  auint  sp;          /* CPU stack pointer (State: 0x04B) */
  auint  bp;          /* CPU base pointer (State: 0x04C) */
 
+ auint  sbt;         /* Stack bottom, also high bit(s) for bp and sp */
+ auint  stp;         /* Stack top */
+
  auint  pia;         /* Temporary values for Peripheral RAM interface */
  auint  pid;
  auint  pis;
  auint  pim;
+
+ auint  ada;         /* Temporary values for the Addressing unit */
+ auint  add;
+ auint  ads;
+ auint  adm;
+
+ rrpge_m_addr_write_t* awf;
+                     /* Addressing mode specific write. Must be used with a
+                     ** corresponding addressing mode read to complete an
+                     ** R-M-W cycle. The read function sets this function
+                     ** pointer to the appropriate write function so it can be
+                     ** called. Increments rrpge_m_info.ocy if necessary. */
 
 }rrpge_m_info_t;
 
