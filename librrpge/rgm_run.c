@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.29
+**  \date      2014.09.24
 */
 
 
@@ -16,6 +16,7 @@
 #include "rgm_cpuo.h"
 #include "rgm_prng.h"
 #include "rgm_task.h"
+#include "rgm_fifo.h"
 
 
 
@@ -26,8 +27,10 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
  auint cy;                     /* Cycle counting work variable */
  auint r  = 0U;                /* Return number of cycles */
  auint fo = 1U;                /* Is this the first operation? (For breakpoints) */
+ uint16* stat;
 
  rrpge_m_edat = hnd;
+ stat = &(rrpge_m_edat->st.stat[0]);
 
  /* Check halt causes, break emulation if necessary. */
 
@@ -39,31 +42,37 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
  }
  rrpge_m_info.hlt = 0U;        /* All other halt causes simply clear */
 
- /* Export ROPD data into info structure */
+ /* Export Application state data into info structure */
 
- for (i=0; i<16; i++){
-  rrpge_m_info.rbk[i] = (auint)(rrpge_m_edat->stat.ropd[0xD00U + i]) << 12;
-  rrpge_m_info.wbk[i] = (auint)(rrpge_m_edat->stat.ropd[0xD10U + i]) << 12;
- }
- rrpge_m_info.vln = rrpge_m_edat->stat.ropd[0xD50U];
- rrpge_m_info.vlc = rrpge_m_edat->stat.ropd[0xD51U];
- rrpge_m_info.auc = rrpge_m_edat->stat.ropd[0xD53U];
- rrpge_m_info.vac = ((auint)(rrpge_m_edat->stat.ropd[0xD54U]) << 16) +
-                    ((auint)(rrpge_m_edat->stat.ropd[0xD55U]));
+ rrpge_m_info.vln = stat[RRPGE_STA_VARS + 0x10U];
+ rrpge_m_info.vlc = stat[RRPGE_STA_VARS + 0x11U];
+ rrpge_m_info.atc = stat[RRPGE_STA_VARS + 0x13U];
+ rrpge_m_info.cyf[0] = ((auint)(stat[RRPGE_STA_VARS + 0x22U]) << 16) +
+                       ((auint)(stat[RRPGE_STA_VARS + 0x23U]));
+ rrpge_m_info.cyf[1] = ((auint)(stat[RRPGE_STA_VARS + 0x2AU]) << 16) +
+                       ((auint)(stat[RRPGE_STA_VARS + 0x2BU]));
+ rrpge_m_info.cys = 0U;   /* Stall cycles are always consumed right away (no carry-over between runs) */
  rrpge_m_info.grr = 1U;   /* Reload recolor banks */
- if ((rrpge_m_edat->stat.ropd[0xD57U] & 0xFFFFU) != 1U){ /* 4bit mode */
+ if ((stat[RRPGE_STA_VARS + 0x12U] & 0x1U) != 1U){ /* 4bit mode */
   rrpge_m_info.vbm = 0x0FU;
  }else{                   /* 8bit mode */
   rrpge_m_info.vbm = 0xFFU;
  }
- for (i=0; i<8; i++){
-  rrpge_m_info.xr[i] = rrpge_m_edat->stat.ropd[0xD40U + i];
+ for (i = 0U; i < 8U; i++){
+  rrpge_m_info.xr[i] = stat[RRPGE_STA_VARS + 0x00U + i];
  }
- rrpge_m_info.xmh[0] = rrpge_m_edat->stat.ropd[0xD48U];
- rrpge_m_info.xmh[1] = rrpge_m_edat->stat.ropd[0xD49U];
- rrpge_m_info.pc = rrpge_m_edat->stat.ropd[0xD4AU];
- rrpge_m_info.sp = rrpge_m_edat->stat.ropd[0xD4BU];
- rrpge_m_info.bp = rrpge_m_edat->stat.ropd[0xD4CU];
+ rrpge_m_info.xmh[0] = stat[RRPGE_STA_VARS + 0x08U];
+ rrpge_m_info.xmh[1] = stat[RRPGE_STA_VARS + 0x09U];
+ rrpge_m_info.pc = stat[RRPGE_STA_VARS + 0x0AU];
+ rrpge_m_info.sp = stat[RRPGE_STA_VARS + 0x0BU];
+ rrpge_m_info.bp = stat[RRPGE_STA_VARS + 0x0CU];
+ if (stat[RRPGE_STA_VARS + 0x1AU] == 0U){ /* Separate stack */
+  rrpge_m_info.sbt = 0x10000U;
+  rrpge_m_info.stp = 0x18000U;
+ }else{                   /* Data area stack */
+  rrpge_m_info.sbt = stat[RRPGE_STA_VARS + 0x1BU];
+  rrpge_m_info.stp = stat[RRPGE_STA_VARS + 0x1AU] + rrpge_m_info.sbt;
+ }
 
 
  /* Enter main loop */
@@ -72,8 +81,7 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
 
   /* Emulate at most as many cycles as fits in what remains from the current
   ** video line. Random kernel stall is only applied after this: it is
-  ** irrelevant if it extends into more video lines (just as DMA could span
-  ** multiple lines this way) */
+  ** irrelevant if it extends into more video lines. */
 
   cy = 0U;                     /* Count of emulated cycles */
 
@@ -131,13 +139,17 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
   /* Process asynchronous tasks which should perform during the consumed
   ** cycles. */
 
+  /* Peripheral processing (FIFO: Mixer and Accelerator) */
+
+  rrpge_m_fifoproc(cy);
+
   /* Audio processing. This may also raise an audio halt cause indicating an
   ** 512 sample streak. */
 
   rrpge_m_audproc(cy);
 
   /* Video processing. Generates display output (including calling the line
-  ** callback), and processes Graphics FIFO as required. */
+  ** callback), and processes Display List clear. */
 
   rrpge_m_vidproc(cy);
 
@@ -162,25 +174,23 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
  }while (1);
 
 
- /* Write-back ROPD data from info structure */
+ /* Write-back Application state data from info structure */
 
- for (i=0; i<16; i++){
-  rrpge_m_edat->stat.ropd[0xD00U + i] = (uint16)(rrpge_m_info.rbk[i] >> 12);
-  rrpge_m_edat->stat.ropd[0xD10U + i] = (uint16)(rrpge_m_info.wbk[i] >> 12);
+ stat[RRPGE_STA_VARS + 0x10U] = rrpge_m_info.vln;
+ stat[RRPGE_STA_VARS + 0x11U] = rrpge_m_info.vlc;
+ stat[RRPGE_STA_VARS + 0x13U] = rrpge_m_info.atc;
+ stat[RRPGE_STA_VARS + 0x22U] = (uint16)(rrpge_m_info.cyf[0] >> 16);
+ stat[RRPGE_STA_VARS + 0x23U] = (uint16)(rrpge_m_info.cyf[0]);
+ stat[RRPGE_STA_VARS + 0x2AU] = (uint16)(rrpge_m_info.cyf[1] >> 16);
+ stat[RRPGE_STA_VARS + 0x2BU] = (uint16)(rrpge_m_info.cyf[1]);
+ for (i = 0U; i < 8U; i++){
+  stat[RRPGE_STA_VARS + 0x00U + i] = rrpge_m_info.xr[i];
  }
- rrpge_m_edat->stat.ropd[0xD50U] = rrpge_m_info.vln;
- rrpge_m_edat->stat.ropd[0xD51U] = rrpge_m_info.vlc;
- rrpge_m_edat->stat.ropd[0xD53U] = rrpge_m_info.auc;
- rrpge_m_edat->stat.ropd[0xD54U] = (uint16)(rrpge_m_info.vac >> 16);
- rrpge_m_edat->stat.ropd[0xD55U] = (uint16)(rrpge_m_info.vac);
- for (i=0; i<8; i++){
-  rrpge_m_edat->stat.ropd[0xD40U + i] = rrpge_m_info.xr[i];
- }
- rrpge_m_edat->stat.ropd[0xD48U] = rrpge_m_info.xmh[0];
- rrpge_m_edat->stat.ropd[0xD49U] = rrpge_m_info.xmh[1];
- rrpge_m_edat->stat.ropd[0xD4AU] = rrpge_m_info.pc;
- rrpge_m_edat->stat.ropd[0xD4BU] = rrpge_m_info.sp;
- rrpge_m_edat->stat.ropd[0xD4CU] = rrpge_m_info.bp;
+ stat[RRPGE_STA_VARS + 0x08U] = rrpge_m_info.xmh[0];
+ stat[RRPGE_STA_VARS + 0x09U] = rrpge_m_info.xmh[1];
+ stat[RRPGE_STA_VARS + 0x0AU] = rrpge_m_info.pc;
+ stat[RRPGE_STA_VARS + 0x0BU] = rrpge_m_info.sp;
+ stat[RRPGE_STA_VARS + 0x0CU] = rrpge_m_info.bp;
 
  rrpge_m_edat->hlt = rrpge_m_info.hlt; /* Update halt cause */
 
