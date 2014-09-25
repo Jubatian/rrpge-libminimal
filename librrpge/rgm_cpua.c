@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.09.24
+**  \date      2014.09.25
 */
 
 
@@ -16,8 +16,33 @@
 
 
 
-/* Pointer op. function type for the pointer op. table */
-typedef RRPGE_M_FASTCALL void (rrpge_m_xop_t)(void);
+/* Shift values to produce rrpge_m_info.ads. High 4 bits are pointer mode, low 4 bits are address low 4 bits. */
+static const uint8  rrpge_m_addr_svl[256] = {
+ 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U,
+12U, 8U, 4U, 0U,12U, 8U, 4U, 0U,12U, 8U, 4U, 0U,12U, 8U, 4U, 0U,
+14U,12U,10U, 8U, 6U, 4U, 2U, 0U,14U,12U,10U, 8U, 6U, 4U, 2U, 0U,
+15U,14U,13U,12U,11U,10U, 9U, 8U, 7U, 6U, 5U, 4U, 3U, 2U, 1U, 0U,
+ 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U,
+ 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U,
+ 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U,
+ 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U,
+ 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U,
+12U, 8U, 4U, 0U,12U, 8U, 4U, 0U,12U, 8U, 4U, 0U,12U, 8U, 4U, 0U,
+14U,12U,10U, 8U, 6U, 4U, 2U, 0U,14U,12U,10U, 8U, 6U, 4U, 2U, 0U,
+15U,14U,13U,12U,11U,10U, 9U, 8U, 7U, 6U, 5U, 4U, 3U, 2U, 1U, 0U,
+ 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U,
+12U, 8U, 4U, 0U,12U, 8U, 4U, 0U,12U, 8U, 4U, 0U,12U, 8U, 4U, 0U,
+14U,12U,10U, 8U, 6U, 4U, 2U, 0U,14U,12U,10U, 8U, 6U, 4U, 2U, 0U,
+15U,14U,13U,12U,11U,10U, 9U, 8U, 7U, 6U, 5U, 4U, 3U, 2U, 1U, 0U};
+
+/* Data mask values by pointer mode */
+static const uint16 rrpge_m_addr_dms[16] = {
+ 0x00FFU, 0x000FU, 0x0003U, 0x0001U, 0xFFFFU, 0xFFFFU, 0xFFFFU, 0xFFFFU,
+ 0x00FFU, 0x000FU, 0x0003U, 0x0001U, 0x00FFU, 0x000FU, 0x0003U, 0x0001U};
+
+/* Address shift values by pointer mode */
+static const uint8  rrpge_m_addr_ads[16] = {
+ 1U, 2U, 3U, 4U, 0U, 0U, 0U, 0U, 1U, 2U, 3U, 4U, 1U, 2U, 3U, 4U};
 
 
 
@@ -84,242 +109,6 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_wr_data(auint val)
 
 
 
-/* Pre/Post operations on address registers by opcode. There are 15 routines
-** contained within a table, the appropriate one has to be selected by the
-** contents of the XM register (rrpge_m_info.xmh[0]). The lowest bits of the
-** opcode (rrpge_m_info.opc) are used to select the register. Fills up address
-** (rrpge_m_info.ada) and shift / mask (rrpge_m_info.ads, rrpge_m_info.adm),
-** along with performing the necessary addressing operations. The address will
-** only have bits of the low 16 set. Sets rrpge_m_info.ocy one for
-** pre-decrements. */
-
-/* 0000: 8bit stationary */
-RRPGE_M_FASTCALL static void rrpge_m_addr_xop_0(void)
-{
- auint t0 = rrpge_m_info.opc & 0x3U;
- t0 = (rrpge_m_info.xr[t0 + 4U] & 0xFFFFU) +               /* Offset base */
-      (((rrpge_m_info.xmh[1] >> (t0 << 2)) & 0x1U) << 16); /* Offset high */
- rrpge_m_info.ads = ((t0 & 0x1U) ^ 0x1U) << 3;
- rrpge_m_info.adm = 0x00FFU << rrpge_m_info.ads;
- rrpge_m_info.ada = t0 >> 1;
-}
-
-/* 0001: 4bit stationary */
-RRPGE_M_FASTCALL static void rrpge_m_addr_xop_1(void)
-{
- auint t0 = rrpge_m_info.opc & 0x3U;
- t0 = (rrpge_m_info.xr[t0 + 4U] & 0xFFFFU) +               /* Offset base */
-      (((rrpge_m_info.xmh[1] >> (t0 << 2)) & 0x3U) << 16); /* Offset high */
- rrpge_m_info.ads = ((t0 & 0x3U) ^ 0x3U) << 2;
- rrpge_m_info.adm = 0x000FU << rrpge_m_info.ads;
- rrpge_m_info.ada = t0 >> 2;
-}
-
-/* 0010: 2bit stationary */
-RRPGE_M_FASTCALL static void rrpge_m_addr_xop_2(void)
-{
- auint t0 = rrpge_m_info.opc & 0x3U;
- t0 = (rrpge_m_info.xr[t0 + 4U] & 0xFFFFU) +               /* Offset base */
-      (((rrpge_m_info.xmh[1] >> (t0 << 2)) & 0x7U) << 16); /* Offset high */
- rrpge_m_info.ads = ((t0 & 0x7U) ^ 0x7U) << 1;
- rrpge_m_info.adm = 0x0003U << rrpge_m_info.ads;
- rrpge_m_info.ada = t0 >> 3;
-}
-
-/* 0011: 1bit stationary */
-RRPGE_M_FASTCALL static void rrpge_m_addr_xop_3(void)
-{
- auint t0 = rrpge_m_info.opc & 0x3U;
- t0 = (rrpge_m_info.xr[t0 + 4U] & 0xFFFFU) +               /* Offset base */
-      (((rrpge_m_info.xmh[1] >> (t0 << 2)) & 0xFU) << 16); /* Offset high */
- rrpge_m_info.ads = ((t0 & 0xFU) ^ 0xFU);
- rrpge_m_info.adm = 0x0001U << rrpge_m_info.ads;
- rrpge_m_info.ada = t0 >> 4;
-}
-
-/* 010-: 16bit stationary */
-RRPGE_M_FASTCALL static void rrpge_m_addr_xop_4(void)
-{
- rrpge_m_info.ads = 0U;
- rrpge_m_info.adm = 0xFFFFU;
- rrpge_m_info.ada = rrpge_m_info.xr[(rrpge_m_info.opc & 0x3U) + 4U] & 0xFFFFU;
-}
-
-/* 0110: 16bit post-incrementing */
-RRPGE_M_FASTCALL static void rrpge_m_addr_xop_6(void)
-{
- auint t0 = (rrpge_m_info.opc & 0x3U) + 4U;
- rrpge_m_info.ads = 0U;
- rrpge_m_info.adm = 0xFFFFU;
- rrpge_m_info.ada = rrpge_m_info.xr[t0] & 0xFFFFU;
- rrpge_m_info.xr[t0]++;
-}
-
-/* 0111: 16bit pre-decrementing */
-RRPGE_M_FASTCALL static void rrpge_m_addr_xop_7(void)
-{
- auint t0 = (rrpge_m_info.opc & 0x3U) + 4U;
- rrpge_m_info.ads = 0U;
- rrpge_m_info.adm = 0xFFFFU;
- rrpge_m_info.xr[t0]--;
- rrpge_m_info.ada = rrpge_m_info.xr[t0] & 0xFFFFU;
- rrpge_m_info.ocy++;
-}
-
-/* 1000: 8bit post-incrementing */
-RRPGE_M_FASTCALL static void rrpge_m_addr_xop_8(void)
-{
- auint t0 = rrpge_m_info.opc & 0x3U;
- auint t1 = t0 << 2; /* 0, 4, 8 or 12, shift amount for xmh */
- auint t2 = t0 + 4U; /* 3 - 7 selecting X0 - X3 */
- t0 = (rrpge_m_info.xr[t2] & 0xFFFFU) +             /* Offset base */
-      (((rrpge_m_info.xmh[1] >> t1) & 0x1U) << 16); /* Offset high */
- rrpge_m_info.ads = ((t0 & 1U) ^ 1U) << 3;
- rrpge_m_info.adm = 0x00FFU << rrpge_m_info.ads;
- rrpge_m_info.ada = t0 >> 1;
- t0++;
- rrpge_m_info.xr[t2] = t0;
- rrpge_m_info.xmh[1] = (rrpge_m_info.xmh[1] & (~(0x0001U << t1))) |
-                       ((t0 & 0x10000U) >> (16 - t1));
-}
-
-/* 1001: 4bit post-incrementing */
-RRPGE_M_FASTCALL static void rrpge_m_addr_xop_9(void)
-{
- auint t0 = rrpge_m_info.opc & 0x3U;
- auint t1 = t0 << 2; /* 0, 4, 8 or 12, shift amount for xmh */
- auint t2 = t0 + 4U; /* 3 - 7 selecting X0 - X3 */
- t0 = (rrpge_m_info.xr[t2] & 0xFFFFU) +             /* Offset base */
-      (((rrpge_m_info.xmh[1] >> t1) & 0x3U) << 16); /* Offset high */
- rrpge_m_info.ads = ((t0 & 0x3U) ^ 0x3U) << 2;
- rrpge_m_info.adm = 0x000FU << rrpge_m_info.ads;
- rrpge_m_info.ada = t0 >> 2;
- t0++;
- rrpge_m_info.xr[t2] = t0;
- rrpge_m_info.xmh[1] = (rrpge_m_info.xmh[1] & (~(0x0003U << t1))) |
-                       ((t0 & 0x30000U) >> (16 - t1));
-}
-
-/* 1010: 2bit post-incrementing */
-RRPGE_M_FASTCALL static void rrpge_m_addr_xop_a(void)
-{
- auint t0 = rrpge_m_info.opc & 0x3U;
- auint t1 = t0 << 2; /* 0, 4, 8 or 12, shift amount for xmh */
- auint t2 = t0 + 4U; /* 3 - 7 selecting X0 - X3 */
- t0 = (rrpge_m_info.xr[t2] & 0xFFFFU) +             /* Offset base */
-      (((rrpge_m_info.xmh[1] >> t1) & 0x7U) << 16); /* Offset high */
- rrpge_m_info.ads = ((t0 & 0x7U) ^ 0x7U) << 1;
- rrpge_m_info.adm = 0x0003U << rrpge_m_info.ads;
- rrpge_m_info.ada = t0 >> 3;
- t0++;
- rrpge_m_info.xr[t2] = t0;
- rrpge_m_info.xmh[1] = (rrpge_m_info.xmh[1] & (~(0x0007U << t1))) |
-                       ((t0 & 0x70000U) >> (16 - t1));
-}
-
-/* 1011: 1bit post-incrementing */
-RRPGE_M_FASTCALL static void rrpge_m_addr_xop_b(void)
-{
- auint t0 = rrpge_m_info.opc & 0x3U;
- auint t1 = t0 << 2; /* 0, 4, 8 or 12, shift amount for xmh */
- auint t2 = t0 + 4U; /* 3 - 7 selecting X0 - X3 */
- t0 = (rrpge_m_info.xr[t2] & 0xFFFFU) +             /* Offset base */
-      (((rrpge_m_info.xmh[1] >> t1) & 0xFU) << 16); /* Offset high */
- rrpge_m_info.ads = ((t0 & 0xFU) ^ 0xFU);
- rrpge_m_info.adm = 0x0001U << rrpge_m_info.ads;
- rrpge_m_info.ada = t0 >> 4;
- t0++;
- rrpge_m_info.xr[t2] = t0;
- rrpge_m_info.xmh[1] = (rrpge_m_info.xmh[1] & (~(0x000FU << t1))) |
-                       ((t0 & 0xF0000U) >> (16 - t1));
-}
-
-/* 1100: 8bit pre-decrementing */
-RRPGE_M_FASTCALL static void rrpge_m_addr_xop_c(void)
-{
- auint t0 = rrpge_m_info.opc & 0x3U;
- auint t1 = t0 << 2; /* 0, 4, 8 or 12, shift amount for xmh */
- auint t2 = t0 + 4U; /* 3 - 7 selecting X0 - X3 */
- t0 = (rrpge_m_info.xr[t2] & 0xFFFFU) +             /* Offset base */
-      (((rrpge_m_info.xmh[1] >> t1) & 0x1U) << 16); /* Offset high */
- t0--;
- rrpge_m_info.ads = ((t0 & 1U) ^ 1U) << 3;
- rrpge_m_info.adm = 0x00FFU << rrpge_m_info.ads;
- rrpge_m_info.ada = t0 >> 1;
- rrpge_m_info.xr[t2] = t0;
- rrpge_m_info.xmh[1] = (rrpge_m_info.xmh[1] & (~(0x0001U << t1))) |
-                       ((t0 & 0x10000U) >> (16 - t1));
- rrpge_m_info.ocy = 1U;
-}
-
-/* 1101: 4bit pre-decrementing */
-RRPGE_M_FASTCALL static void rrpge_m_addr_xop_d(void)
-{
- auint t0 = rrpge_m_info.opc & 0x3U;
- auint t1 = t0 << 2; /* 0, 4, 8 or 12, shift amount for xmh */
- auint t2 = t0 + 4U; /* 3 - 7 selecting X0 - X3 */
- t0 = (rrpge_m_info.xr[t2] & 0xFFFFU) +             /* Offset base */
-      (((rrpge_m_info.xmh[1] >> t1) & 0x3U) << 16); /* Offset high */
- t0--;
- rrpge_m_info.ads = ((t0 & 0x3U) ^ 0x3U) << 2;
- rrpge_m_info.adm = 0x000FU << rrpge_m_info.ads;
- rrpge_m_info.ada = t0 >> 2;
- rrpge_m_info.xr[t2] = t0;
- rrpge_m_info.xmh[1] = (rrpge_m_info.xmh[1] & (~(0x0003U << t1))) |
-                       ((t0 & 0x30000U) >> (16 - t1));
- rrpge_m_info.ocy = 1U;
-}
-
-/* 1110: 2bit pre-decrementing */
-RRPGE_M_FASTCALL static void rrpge_m_addr_xop_e(void)
-{
- auint t0 = rrpge_m_info.opc & 0x3U;
- auint t1 = t0 << 2; /* 0, 4, 8 or 12, shift amount for xmh */
- auint t2 = t0 + 4U; /* 3 - 7 selecting X0 - X3 */
- t0 = (rrpge_m_info.xr[t2] & 0xFFFFU) +             /* Offset base */
-      (((rrpge_m_info.xmh[1] >> t1) & 0x7U) << 16); /* Offset high */
- t0--;
- rrpge_m_info.ads = ((t0 & 0x7U) ^ 0x7U) << 1;
- rrpge_m_info.adm = 0x0003U << rrpge_m_info.ads;
- rrpge_m_info.ada = t0 >> 3;
- rrpge_m_info.xr[t2] = t0;
- rrpge_m_info.xmh[1] = (rrpge_m_info.xmh[1] & (~(0x0007U << t1))) |
-                       ((t0 & 0x70000U) >> (16 - t1));
- rrpge_m_info.ocy = 1U;
-}
-
-/* 1111: 1bit pre-decrementing */
-RRPGE_M_FASTCALL static void rrpge_m_addr_xop_f(void)
-{
- auint t0 = rrpge_m_info.opc & 0x3U;
- auint t1 = t0 << 2; /* 0, 4, 8 or 12, shift amount for xmh */
- auint t2 = t0 + 4U; /* 3 - 7 selecting X0 - X3 */
- t0 = (rrpge_m_info.xr[t2] & 0xFFFFU) +             /* Offset base */
-      (((rrpge_m_info.xmh[1] >> t1) & 0xFU) << 16); /* Offset high */
- t0--;
- rrpge_m_info.ads = ((t0 & 0xFU) ^ 0xFU);
- rrpge_m_info.adm = 0x0001U << rrpge_m_info.ads;
- rrpge_m_info.ada = t0 >> 4;
- rrpge_m_info.xr[t2] = t0;
- rrpge_m_info.xmh[1] = (rrpge_m_info.xmh[1] & (~(0x000FU << t1))) |
-                       ((t0 & 0xF0000U) >> (16 - t1));
- rrpge_m_info.ocy = 1U;
-}
-
-/* Table of pointer ops */
-static rrpge_m_xop_t* const rrpge_m_xop_table[16U]={
- &rrpge_m_addr_xop_0, &rrpge_m_addr_xop_1, &rrpge_m_addr_xop_2, &rrpge_m_addr_xop_3,
- &rrpge_m_addr_xop_4, &rrpge_m_addr_xop_4, &rrpge_m_addr_xop_6, &rrpge_m_addr_xop_7,
- &rrpge_m_addr_xop_8, &rrpge_m_addr_xop_9, &rrpge_m_addr_xop_a, &rrpge_m_addr_xop_b,
- &rrpge_m_addr_xop_c, &rrpge_m_addr_xop_d, &rrpge_m_addr_xop_e, &rrpge_m_addr_xop_f
-};
-
-
-
-
-/* Addressing mode process functions. These are selected from a 16 element
-** table based on bits 2-5 inclusive of the opcode */
-
 /* Write functions */
 
 /* 00--: imm4 */
@@ -367,6 +156,7 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_wr_sx16(auint val)
   rrpge_m_edat->st.dram[rrpge_m_info.ada] = (uint16)(val);
  }
 }
+
 
 
 /* Read functions */
@@ -461,10 +251,30 @@ RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_xr(void)
 /* 1110: Data: x16 */
 RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_dx16(void)
 {
+ auint s = rrpge_m_info.opc & 0x3U;            /* Pointer register select */
+ auint t = (s << 2);                           /* 0, 4, 8 or 12, shift amount for xm & xh */
+ auint m = (rrpge_m_info.xmh[0] >> t) & 0xFU;  /* Pointer mode */
+ auint a;                                      /* Address */
+ auint u;
+
  rrpge_m_info.awf = rrpge_m_addr_wr_dx16;
  rrpge_m_info.ocy = 0U;
  rrpge_m_info.oaw = 1U;
- rrpge_m_xop_table[(rrpge_m_info.xmh[0] >> ((rrpge_m_info.opc & 0x3U) << 2)) & 0xFU]();
+
+ t  = 16U - t;                                 /* 16, 12, 8 or 4, shift amount for xh */
+ a  = (rrpge_m_info.xr[s + 4U] & 0xFFFFU) +    /* Address base */
+      ((rrpge_m_info.xmh[1] << t) & 0xF0000U); /* Address high */
+ u  = (0xF080U >> m) & 1U;                     /* 1 if pre-decrementing ptr. mode */
+ a -= u
+ rrpge_m_info.ocy += u;
+ rrpge_m_info.ads = rrpge_m_addr_svl[(a & 0xFU) | (m << 4)];
+ rrpge_m_info.adm = rrpge_m_addr_dms[m] << rrpge_m_info.ads;
+ rrpge_m_info.ada = (a >> rrpge_m_addr_ads[m]) & 0xFFFFU;
+ a += (0x0F40U >> m) & 1U;                     /* 1 if post-incrementing ptr. mode */
+ rrpge_m_info.xr[s + 4U] = a;
+ rrpge_m_info.xmh[1] = (rrpge_m_info.xmh[1] & (0xFFF0FFFFU >> t)) |
+                       ((t0 & 0xF0000U) >> t); /* Address write-back */
+
  rrpge_m_addr_rd_data();
  return (rrpge_m_info.add & rrpge_m_info.adm) >> rrpge_m_info.ads;
 }
@@ -472,10 +282,30 @@ RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_dx16(void)
 /* 1111: Stack: BP + x16 */
 RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_sx16(void)
 {
+ auint s = rrpge_m_info.opc & 0x3U;            /* Pointer register select */
+ auint t = (s << 2);                           /* 0, 4, 8 or 12, shift amount for xm & xh */
+ auint m = (rrpge_m_info.xmh[0] >> t) & 0xFU;  /* Pointer mode */
+ auint a;                                      /* Address */
+ auint u;
+
  rrpge_m_info.awf = rrpge_m_addr_wr_sx16;
  rrpge_m_info.ocy = 0U;
  rrpge_m_info.oaw = 1U;
- rrpge_m_xop_table[(rrpge_m_info.xmh[0] >> ((rrpge_m_info.opc & 0x3U) << 2)) & 0xFU]();
+
+ t  = 16U - t;                                 /* 16, 12, 8 or 4, shift amount for xh */
+ a  = (rrpge_m_info.xr[s + 4U] & 0xFFFFU) +    /* Address base */
+      ((rrpge_m_info.xmh[1] << t) & 0xF0000U); /* Address high */
+ u  = (0xF080U >> m) & 1U;                     /* 1 if pre-decrementing ptr. mode */
+ a -= u
+ rrpge_m_info.ocy += u;
+ rrpge_m_info.ads = rrpge_m_addr_svl[(a & 0xFU) | (m << 4)];
+ rrpge_m_info.adm = rrpge_m_addr_dms[m] << rrpge_m_info.ads;
+ rrpge_m_info.ada = a >> rrpge_m_addr_ads[m];
+ a += (0x0F40U >> m) & 1U;                     /* 1 if post-incrementing ptr. mode */
+ rrpge_m_info.xr[s + 4U] = a;
+ rrpge_m_info.xmh[1] = (rrpge_m_info.xmh[1] & (0xFFF0FFFFU >> t)) |
+                       ((t0 & 0xF0000U) >> t); /* Address write-back */
+
  rrpge_m_info.ada = ((rrpge_m_info.ada + rrpge_m_info.bp) & 0xFFFFU) |
                     (rrpge_m_info.sbt & (~0xFFFFU));
  if ( (rrpge_m_info.ada <  rrpge_m_info.stp) &&

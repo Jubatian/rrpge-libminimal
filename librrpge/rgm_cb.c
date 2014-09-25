@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.10
+**  \date      2014.09.25
 */
 
 
@@ -45,10 +45,9 @@ static void rrpge_m_cb_save(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* p
 /* Task: Find next file */
 static void rrpge_m_cb_next(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
 {
- auint i;
  rrpge_cbp_next_t const* p = (rrpge_cbp_next_t const*)(par);
- for (i = 0U; i < 128U; i++){ p->nam[i] = 0U; } /* No files can be found */
- rrpge_taskend(hnd, tsh, 0x8000U);    /* Normal termination */
+ if ((p->ncw) != 0U){ p->nam[0] = 0U; }     /* No files can be found */
+ rrpge_taskend(hnd, tsh, 0x8000U);          /* Normal termination */
 }
 
 /* Task: Move a file */
@@ -108,11 +107,6 @@ static rrpge_uint32 rrpge_m_cb_popchar(rrpge_object_t* hnd, const void* par)
  return 0;
 }
 
-/* Subroutine: Set touch sensitive area */
-static void rrpge_m_cb_settouch(rrpge_object_t* hnd, const void* par)
-{
-}
-
 /* Subroutine: Get local users */
 static void rrpge_m_cb_getlocal(rrpge_object_t* hnd, const void* par)
 {
@@ -148,6 +142,45 @@ static void rrpge_m_cb_listusers(rrpge_object_t* hnd, rrpge_uint32 tsh, const vo
  rrpge_taskend(hnd, tsh, 0x8000U);    /* No users found. */
 }
 
+/* Function: Return area activity. This is public (RRPGE library interface) */
+rrpge_uint32 rrpge_m_cb_checkarea(rrpge_object_t* hnd, const void* par)
+{
+ rrpge_cbp_checkarea_t const* p = par;
+ rrpge_cbp_getdi_t sdi;
+ rrpge_cbp_getai_t sai;
+ auint x;
+ auint y;
+ auint b;
+ auint t;
+
+ t = (hnd->st.stat[RRPGE_STA_VARS + 0x30U + ((p->dev) & 0xFU)]) & 0xF800U;
+
+ if ( (t != ((RRPGE_INPT_MOUSE << 12) | 0x0800U)) &&
+      (t != ((RRPGE_INPT_TOUCH << 12) | 0x0800U)) ){ return 0; }
+
+ sdi.dev = p->dev;
+ sdi.ing = 0U;
+ b = hnd->cb_fun[RRPGE_CB_GETDI](hnd, &sdi);
+
+ if (t == ((RRPGE_INPT_TOUCH << 12) | 0x0800U)){
+  if ((b & 0x1010U) == 0U){ return 0; } /* Neither touch, neither hover */
+ }else{
+  b |= b >> 1;                          /* Mouse: Also active for right button press */
+ }
+ b = (b >> 4) & 1U;                     /* Button / Press activity */
+
+ sai.dev = p->dev;
+ sai.inp = 0U;
+ x = hnd->cb_fun[RRPGE_CB_GETAI](hnd, &sai);
+ sai.inp = 1U;
+ y = hnd->cb_fun[RRPGE_CB_GETAI](hnd, &sai);
+
+ if ( (x >= (p->x)) && (x < ((p->x) + (p->w))) &&
+      (y >= (p->y)) && (y < ((p->y) + (p->h))) ){ return (2U + b); }
+
+ return 0;
+}
+
 
 
 /* Check ID for validity. Returns nonzero if valid, 0 otherwise. */
@@ -164,7 +197,7 @@ static auint rrpge_m_cbid_isvalid(auint id)
  if (id == RRPGE_CB_SETPAL)   { return 1; }
  if (id == RRPGE_CB_MODE)     { return 1; }
  if (id == RRPGE_CB_DROPDEV)  { return 1; }
- if (id == RRPGE_CB_SETTOUCH) { return 1; }
+ if (id == RRPGE_CB_CHECKAREA){ return 1; }
  if (id == RRPGE_CB_GETLOCAL) { return 1; }
  if (id == RRPGE_CB_GETPROPS) { return 1; }
  if (id == RRPGE_CB_GETDIDESC){ return 1; }
@@ -198,7 +231,7 @@ void rrpge_m_cb_process(rrpge_object_t* obj, rrpge_cbpack_t const* cbp)
  obj->cb_sub[RRPGE_CB_SETPAL]    = &rrpge_m_cb_setpal;
  obj->cb_sub[RRPGE_CB_MODE]      = &rrpge_m_cb_mode;
  obj->cb_sub[RRPGE_CB_DROPDEV]   = &rrpge_m_cb_dropdev;
- obj->cb_sub[RRPGE_CB_SETTOUCH]  = &rrpge_m_cb_settouch;
+ obj->cb_sub[RRPGE_CB_CHECKAREA] = &rrpge_m_cb_checkarea;
  obj->cb_sub[RRPGE_CB_GETLOCAL]  = &rrpge_m_cb_getlocal;
  obj->cb_fun[RRPGE_CB_GETPROPS]  = &rrpge_m_cb_getprops;
  obj->cb_fun[RRPGE_CB_GETDIDESC] = &rrpge_m_cb_getdidesc;
