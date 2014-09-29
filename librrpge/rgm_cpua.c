@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.09.25
+**  \date      2014.09.29
 */
 
 
@@ -15,25 +15,6 @@
 #include "rgm_vid.h"
 
 
-
-/* Shift values to produce rrpge_m_info.ads. High 4 bits are pointer mode, low 4 bits are address low 4 bits. */
-static const uint8  rrpge_m_addr_svl[256] = {
- 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U,
-12U, 8U, 4U, 0U,12U, 8U, 4U, 0U,12U, 8U, 4U, 0U,12U, 8U, 4U, 0U,
-14U,12U,10U, 8U, 6U, 4U, 2U, 0U,14U,12U,10U, 8U, 6U, 4U, 2U, 0U,
-15U,14U,13U,12U,11U,10U, 9U, 8U, 7U, 6U, 5U, 4U, 3U, 2U, 1U, 0U,
- 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U,
- 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U,
- 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U,
- 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U,
- 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U,
-12U, 8U, 4U, 0U,12U, 8U, 4U, 0U,12U, 8U, 4U, 0U,12U, 8U, 4U, 0U,
-14U,12U,10U, 8U, 6U, 4U, 2U, 0U,14U,12U,10U, 8U, 6U, 4U, 2U, 0U,
-15U,14U,13U,12U,11U,10U, 9U, 8U, 7U, 6U, 5U, 4U, 3U, 2U, 1U, 0U,
- 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U, 8U, 0U,
-12U, 8U, 4U, 0U,12U, 8U, 4U, 0U,12U, 8U, 4U, 0U,12U, 8U, 4U, 0U,
-14U,12U,10U, 8U, 6U, 4U, 2U, 0U,14U,12U,10U, 8U, 6U, 4U, 2U, 0U,
-15U,14U,13U,12U,11U,10U, 9U, 8U, 7U, 6U, 5U, 4U, 3U, 2U, 1U, 0U};
 
 /* Data mask values by pointer mode */
 static const uint16 rrpge_m_addr_dms[16] = {
@@ -258,7 +239,6 @@ RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_dx16(void)
  auint u;
 
  rrpge_m_info.awf = rrpge_m_addr_wr_dx16;
- rrpge_m_info.ocy = 0U;
  rrpge_m_info.oaw = 1U;
 
  t  = 16U - t;                                 /* 16, 12, 8 or 4, shift amount for xh */
@@ -266,10 +246,11 @@ RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_dx16(void)
       ((rrpge_m_info.xmh[1] << t) & 0xF0000U); /* Address high */
  u  = (0xF080U >> m) & 1U;                     /* 1 if pre-decrementing ptr. mode */
  a -= u
- rrpge_m_info.ocy += u;
- rrpge_m_info.ads = rrpge_m_addr_svl[(a & 0xFU) | (m << 4)];
+ rrpge_m_info.ocy = u;
+ u  = rrpge_m_addr_ads[m];
+ rrpge_m_info.ads = ((~a) << (4U - u)) & ((0xFF0FU >> (m & 0xCU)) & 0xFU);
  rrpge_m_info.adm = rrpge_m_addr_dms[m] << rrpge_m_info.ads;
- rrpge_m_info.ada = (a >> rrpge_m_addr_ads[m]) & 0xFFFFU;
+ rrpge_m_info.ada = (a >> u) & 0xFFFFU;
  a += (0x0F40U >> m) & 1U;                     /* 1 if post-incrementing ptr. mode */
  rrpge_m_info.xr[s + 4U] = a;
  rrpge_m_info.xmh[1] = (rrpge_m_info.xmh[1] & (0xFFF0FFFFU >> t)) |
@@ -289,7 +270,6 @@ RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_sx16(void)
  auint u;
 
  rrpge_m_info.awf = rrpge_m_addr_wr_sx16;
- rrpge_m_info.ocy = 0U;
  rrpge_m_info.oaw = 1U;
 
  t  = 16U - t;                                 /* 16, 12, 8 or 4, shift amount for xh */
@@ -297,10 +277,11 @@ RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_sx16(void)
       ((rrpge_m_info.xmh[1] << t) & 0xF0000U); /* Address high */
  u  = (0xF080U >> m) & 1U;                     /* 1 if pre-decrementing ptr. mode */
  a -= u
- rrpge_m_info.ocy += u;
- rrpge_m_info.ads = rrpge_m_addr_svl[(a & 0xFU) | (m << 4)];
+ rrpge_m_info.ocy = u;
+ u  = rrpge_m_addr_ads[m];
+ rrpge_m_info.ads = ((~a) << (4U - u)) & ((0xFF0FU >> (m & 0xCU)) & 0xFU);
  rrpge_m_info.adm = rrpge_m_addr_dms[m] << rrpge_m_info.ads;
- rrpge_m_info.ada = a >> rrpge_m_addr_ads[m];
+ rrpge_m_info.ada = a >> u;
  a += (0x0F40U >> m) & 1U;                     /* 1 if post-incrementing ptr. mode */
  rrpge_m_info.xr[s + 4U] = a;
  rrpge_m_info.xmh[1] = (rrpge_m_info.xmh[1] & (0xFFF0FFFFU >> t)) |
