@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.09.24
+**  \date      2014.09.30
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -50,8 +50,8 @@ typedef unsigned int  auint;
 /* Number of video lines total. At least 449, resulting in 70Hz VGA. */
 #define RRPGE_M_VLN 449U
 
-/* Peripheral RAM size. 1M * 32bit units. */
-#define RRPGE_M_PRAMS (1024U * 1024U)
+/* Peripheral RAM size. */
+#define RRPGE_M_PRAMS (sizeof(rrpge_state_t.pram) / sizeof(rrpge_state_t.pram[0]))
 
 /* Null constant */
 #define RRPGE_M_NULL (0)

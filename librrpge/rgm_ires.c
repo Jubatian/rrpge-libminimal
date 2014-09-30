@@ -5,26 +5,50 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.08.04
+**  \date      2014.09.30
 */
 
 
 #include "rgm_ires.h"
 
 
-/* ROPD, CPU Read & Write pages */
-static const uint16 rrpge_m_ires_cpurw[32] = {
- 0x41C0U, 0x7FFFU, 0x807FU, 0x4001U, 0x4002U, 0x4003U, 0x4004U, 0x4005U,
- 0x8000U, 0x8001U, 0x8002U, 0x8003U, 0x8004U, 0x8005U, 0x8006U, 0x8007U,
- 0x7FFFU, 0x7FFFU, 0x807FU, 0x4001U, 0x4002U, 0x4003U, 0x4004U, 0x4005U,
- 0x8000U, 0x8001U, 0x8002U, 0x8003U, 0x8004U, 0x8005U, 0x8006U, 0x8007U
-};
-
-/* Graphics Display Generator's initial state */
-static const uint16 rrpge_m_ires_gdgst[12] = {
- 0xD000U, 0x01FCU, 0x1020U, 0x4080U,
- 0x0450U, 0x4A04U, 0x8A04U, 0xCA04U,
- 0x1308U, 0x9308U, 0x1B08U, 0x9B08U
+/* State: Nonzero elements in the VARS area (address, data high, data low) */
+#define STANZ_CT 34U
+static const uint8  rrpge_m_ires_stanz[3U * STANZ_CT] = {
+ 0x48U, 0x66U, 0x66U, /* XM register */
+ 0x52U, 0x00U, 0x03U, /* Graphics mode */
+ 0x95U, 0x05U, 0x58U, /* Mixer partitioning */
+ 0x99U, 0x01U, 0x00U, /* Mixer amplitudo */
+ 0xA0U, 0xFFU, 0xFFU, /* Accelerator write mask high */
+ 0xA1U, 0xFFU, 0xFFU, /* Accelerator write mask low */
+ 0xC4U, 0xFFU, 0x80U, /* Audio left buffer */
+ 0xC5U, 0xFFU, 0x80U, /* Audio right buffer */
+ 0xC6U, 0xFFU, 0xC0U, /* Audio buffer size mask */
+ 0xC7U, 0x00U, 0x01U, /* Audio divider */
+ 0xC8U, 0x1FU, 0xFCU, /* Mixer FIFO location & size */
+ 0xCCU, 0x4FU, 0xE0U, /* Graphics FIFO location & size */
+ 0xD0U, 0x01U, 0x02U, /* GDG mask / ckey 0 */
+ 0xD1U, 0x04U, 0x08U, /* GDG mask / ckey 1 */
+ 0xD2U, 0x10U, 0x20U, /* GDG mask / ckey 2 */
+ 0xD3U, 0x40U, 0x80U, /* GDG mask / ckey 3 */
+ 0xD4U, 0x50U, 0x00U, /* GDG shift mode region A */
+ 0xD5U, 0x50U, 0x00U, /* GDG shift mode region B */
+ 0xD7U, 0x07U, 0xF8U, /* GDG display list definition */
+ 0xD8U, 0x00U, 0x82U, /* GDG source A0 */
+ 0xD9U, 0x41U, 0x40U, /* GDG source A1 */
+ 0xDAU, 0x81U, 0x40U, /* GDG source A2 */
+ 0xDBU, 0xC1U, 0x40U, /* GDG source A3 */
+ 0xDCU, 0x02U, 0x60U, /* GDG source B0 */
+ 0xDCU, 0x82U, 0x60U, /* GDG source B1 */
+ 0xDCU, 0x03U, 0x60U, /* GDG source B2 */
+ 0xDCU, 0x83U, 0x60U, /* GDG source B3 */
+ 0xE3U, 0x00U, 0x01U, /* Pointer 0 increment */
+ 0xEBU, 0x00U, 0x04U, /* Pointer 1 increment */
+ 0xECU, 0x00U, 0x02U, /* Pointer 1 size */
+ 0xF3U, 0x00U, 0x08U, /* Pointer 2 increment */
+ 0xF4U, 0x00U, 0x03U, /* Pointer 2 size */
+ 0xFBU, 0x00U, 0x10U, /* Pointer 3 increment */
+ 0xFCU, 0x00U, 0x04U  /* Pointer 3 size */
 };
 
 /* 1st quarter for the wave sine table */
@@ -108,22 +132,13 @@ static const uint16 rrpge_m_ires_pal[256] = {
 
 
 
-/* Read a byte from word memory */
-/* !!! Left unused for now !!! */
-static uint8 rrpge_m_ires_getb(uint16 const* d, auint o)
+/* Write a byte to 32 bit memory */
+static void rrpge_m_ires_setb(uint32* d, auint o, auint v)
 {
- return (uint8)(d[o >> 1] >> (((o & 1U) ^ 1U) << 3));
-}
+ auint oh = o >> 2;
+ auint ol = ((o & 3U) ^ 3U) << 3;
 
-
-
-/* Write a byte to word memory */
-static void rrpge_m_ires_setb(uint16* d, auint o, uint8 v)
-{
- auint oh = o >> 1;
- auint ol = ((o & 1U) ^ 1U) << 3;
-
- d[oh] = (uint16)((d[oh] & (0xFF00U >> ol)) | ((auint)(v) << ol));
+ d[oh] = (uint32)((d[oh] & (~((auint)(0xFFU) << ol))) | ((v & 0xFFU) << ol));
 }
 
 
@@ -161,208 +176,170 @@ void rrpge_m_ires_initl(rrpge_object_t* obj)
 
 
 /* Initializes starting resources for an RRPGE emulator object. This includes
-** areas of the ROPD and data memory areas. It does not depend on the
-** application loaded or to be loaded. */
+** areas of the application state and data memory areas. It does not depend on
+** the application loaded or to be loaded. */
 void rrpge_m_ires_init(rrpge_object_t* obj)
 {
  auint i;
  auint j;
- uint8 r;
+ auint t;
+ auint r;
 
- /* Reset ROPD areas */
- for (i = 0xC00U; i < 0x1000U; i++){
-  obj->stat.ropd[i] = 0;
+
+ /* Reset Application State */
+ for (i = 0U; i < (sizeof(obj->st.stat) / sizeof(obj->st.stat[0])); i++){
+  obj->st.stat[i] = 0U;
  }
 
  /* Reset memories */
- for (i = 0U * 4096U; i < 448U * 4096U; i++){
-  obj->stat.dram[i] = 0;
+ for (i = 0U; i < (sizeof(obj->st.dram) / sizeof(obj->st.dram[0])); i++){
+  obj->st.dram[i] = 0U;
  }
- for (i = 0U * 4096U; i <   8U * 4096U; i++){
-  obj->stat.sram[i] = 0;
- }
- for (i = 0U * 2048U; i < 128U * 2048U; i++){
-  obj->stat.vram[i] = 0;
- }
- for (i = 0U * 4096U; i <   8U * 4096U; i++){
-  obj->stat.fram[i] = 0;
+ for (i = 0U; i < RRPGE_M_PRAMS; i++){
+  obj->st.pram[i] = 0U;
  }
 
 
- /* Populate Data RAM page 0 */
-
- /* Fill in first half of it with silence */
- for (i = 0U; i < 0x800U; i++){
-  obj->stat.dram[i] = 0x8080U;
- }
-
- /* 0x800 - 0x87F: 50% square wave */
- for (i = 0x1000U; i < 0x1080U; i++){
-  rrpge_m_ires_setb(&(obj->stat.dram[0]), i, 0xFFU);
- }
- for (i = 0x1080U; i < 0x1100U; i++){
-  rrpge_m_ires_setb(&(obj->stat.dram[0]), i, 0x00U);
- }
-
- /* 0x880 - 0x8FF: Sine */
- for (i = 0x1100U; i < 0x1140U; i++){
-  rrpge_m_ires_setb(&(obj->stat.dram[0]), i, rrpge_m_ires_sinq8[i - 0x1100U]);
- }
- for (i = 0x1140U; i < 0x1180U; i++){
-  rrpge_m_ires_setb(&(obj->stat.dram[0]), i, rrpge_m_ires_sinq8[0x117FU - i]);
- }
- for (i = 0x1180U; i < 0x11C0U; i++){
-  rrpge_m_ires_setb(&(obj->stat.dram[0]), i, 0xFFU - rrpge_m_ires_sinq8[i - 0x1180U]);
- }
- for (i = 0x11C0U; i < 0x1200U; i++){
-  rrpge_m_ires_setb(&(obj->stat.dram[0]), i, 0xFFU - rrpge_m_ires_sinq8[0x11FFU - i]);
- }
-
- /* 0x900 - 0x97F: Triangle */
- for (i = 0x1200U; i < 0x1240U; i++){
-  rrpge_m_ires_setb(&(obj->stat.dram[0]), i, ((i - 0x1200U) << 1) + 0x80U);
- }
- for (i = 0x1240U; i < 0x12C0U; i++){
-  rrpge_m_ires_setb(&(obj->stat.dram[0]), i, ((0x12BFU - i) << 1) + 0x01U);
- }
- for (i = 0x12C0U; i < 0x1300U; i++){
-  rrpge_m_ires_setb(&(obj->stat.dram[0]), i, ((i - 0x12C0U) << 1));
- }
-
- /* 0x900 - 0x9FF: Spikes */
- for (i = 0x1300U; i < 0x1340U; i++){
-  rrpge_m_ires_setb(&(obj->stat.dram[0]), i, 0x80U + 0xFFU - rrpge_m_ires_sinq8[0x133FU - i]);
- }
- for (i = 0x1340U; i < 0x1380U; i++){
-  rrpge_m_ires_setb(&(obj->stat.dram[0]), i, 0x80U + 0xFFU - rrpge_m_ires_sinq8[i - 0x1340U]);
- }
- for (i = 0x1380U; i < 0x13C0U; i++){
-  rrpge_m_ires_setb(&(obj->stat.dram[0]), i, rrpge_m_ires_sinq8[0x13BFU - i] - 0x80U);
- }
- for (i = 0x13C0U; i < 0x1400U; i++){
-  rrpge_m_ires_setb(&(obj->stat.dram[0]), i, rrpge_m_ires_sinq8[i - 0x13C0U] - 0x80U);
- }
-
- /* 0xA00 - 0xA7F: Sawtooth, incremental */
- for (i = 0x1400U; i < 0x14FFU; i++){
-  rrpge_m_ires_setb(&(obj->stat.dram[0]), i, i - 0x1400U);
- }
-
- /* 0xA80 - 0xAFF: Sawtooth, decremental */
- for (i = 0x1500U; i < 0x15FFU; i++){
-  rrpge_m_ires_setb(&(obj->stat.dram[0]), i, 0x15FFU - i);
- }
-
- /* 0xB00 - 0xB7F: Noise 1 */
- r = 0U;
- for (i = 0x1600U; i < 0x16FFU; i++){
-  rrpge_m_ires_setb(&(obj->stat.dram[0]), i, r);
-  r = (uint8)(((r >> 7) + (r + r) + 0xBBU) ^ 0x7FU);
- }
-
- /* 0xB80 - 0xBFF: Noise 2 */
- r = 0U;
- for (i = 0x1700U; i < 0x17FFU; i++){
-  rrpge_m_ires_setb(&(obj->stat.dram[0]), i, r);
-  r = (uint8)(((r >> 7) + (r + r) + 0xA3U) ^ 0xB3U);
- }
-
- /* 0xC00 - 0xCFF: Frequency table, whole parts (not initializing all, rest is
- ** just left being zero from the initial zeroing). */
- for (j = 0U; j < 16U; j++){
-  for (i = 0U; i < 12U; i++){
-   obj->stat.dram[i + (0xCF4U - (j * 12U))] = (uint16)(rrpge_m_ires_ft[i] >> (16 + j));
-  }
- }
-
- /* 0xD00 - 0xDFF: Frequency table, fractional parts */
- for (j = 0U; j < 21U; j++){
-  for (i = 0U; i < 12U; i++){
-   obj->stat.dram[i + (0xDF4U - (j * 12U))] = (uint16)(rrpge_m_ires_ft[i] >> j);
-  }
- }
- for (i = 8U; i < 12U; i++){
-  obj->stat.dram[i + (0xDF4U - (21U * 12U))] = (uint16)(rrpge_m_ires_ft[i] >> 21);
- }
-
-
- /* Populate Video RAM pages (initial display list on page 127) */
-
- for (i = 0U; i < 200U; i++){
-  obj->stat.vram[127U * 2048U + (i * 8U) + 1U] = 0x0000C000U + (i * 0x50000U);
- }
-
-
-
- /* Init CPU: just the xm register */
-
- obj->stat.ropd[0xD48U] = 0x6666U; /* CPU xm register: all pointers 16 bit post-incrementing */
-
-
- /* Init video (where nonzero) */
-
- obj->stat.ropd[0xEE4U] = 0xFFFFU; /* Accelerator: Write mask high */
- obj->stat.ropd[0xEE5U] = 0xFFFFU; /* Accelerator: Write mask low */
- for (i = 0U; i < 12U;  i++){
-  obj->stat.ropd[0xD74U + i] = rrpge_m_ires_gdgst[i];
- }
- obj->stat.ropd[0xD57U] = 0x0001U; /* Start in 320x400, 8bit */
-
-
- /* Set up audio mixer */
-
- obj->stat.ropd[0xECEU] = 0x000CU; /* Freq. table whole pointer */
- obj->stat.ropd[0xECFU] = 0x000DU; /* Freq. table fraction pointer */
- obj->stat.ropd[0xED7U] = 0x6667U; /* Partitioning */
- obj->stat.ropd[0xEDAU] = 0x0100U; /* Amplitudo: max (multiplier off) */
-
-
- /* Set up audio */
-
- obj->stat.ropd[0xECAU] = 0xFF80U; /* DMA buffer size mask */
- obj->stat.ropd[0xECBU] = 0x0001U; /* Divider: 48KHz */
-
-
- /* Populate ROPD areas (only the CPU R/W address space, rest are zero) */
-
- for (i = 0U; i < 32U;  i++){
-  obj->stat.ropd[0xD00U + i] = rrpge_m_ires_cpurw[i];
- }
-
-
- /* Populate ROPD constant areas and color palette */
+ /* Populate CPU Data memory */
 
  /* Color palette */
  for (i = 0U; i < 256U; i++){
-  obj->stat.ropd[0xC00U + i] = rrpge_m_ires_pal[i];
+  obj->st.dram[0xFB00U + i] = rrpge_m_ires_pal[i];
  }
 
- /* 0xD40 - 0xD7F: Color palette low 64 colors */
- for (i = 0U; i < 64U;  i++){
-  obj->ropc[0x000U + i] = rrpge_m_ires_pal[i];
+ /* Musical logarithmic table */
+ j = 12U;
+ t = 0U;
+ i = 256U;
+ do{
+  i--;
+  j--;
+  r = rrpge_m_ires_ft[j] >> t;
+  obj->st.dram[0xFC00U + (i << 1)] = (uint16)(r >> 16);
+  obj->st.dram[0xFC01U + (i << 1)] = (uint16)(r);
+  if (j == 0U){
+   t++;
+   j = 12U;
+  }
+ }while (i != 0U);
+
+ /* Large sine table */
+ obj->st.dram[0xFE00U] = 0x0000U;
+ obj->st.dram[0xFE80U] = 0x4000U;
+ obj->st.dram[0xFF00U] = 0x0000U;
+ obj->st.dram[0xFF80U] = 0xC000U;
+ for (i = 1U; i < 128U; i++){
+  obj->st.dram[0xFE00U + i] = rrpge_m_ires_sinq16[i];
+ }
+ for (i = 1U; i < 128U; i++){
+  obj->st.dram[0xFE80U + i] = rrpge_m_ires_sinq16[128U - i];
+ }
+ for (i = 1U; i < 128U; i++){
+  obj->st.dram[0xFF00U + i] = 0x0000U - rrpge_m_ires_sinq16[i];
+ }
+ for (i = 1U; i < 128U; i++){
+  obj->st.dram[0xFF80U + i] = 0x0000U - rrpge_m_ires_sinq16[128U - i];
  }
 
- /* 0xD80 - 0xDFF: Audio sine, copy from data page 0. */
- for (i = 0U; i < 128U; i++){
-  obj->ropc[0x040U + i] = obj->stat.dram[0x880U + i];
+
+ /* Populate Peripheral RAM with initial data blocks */
+
+ /* 0xFFE00 - 0xFFE3F: 50% square wave */
+ for (i = 0U; i < 0x80U; i++){
+  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFE00U << 2) + i, 0xFFU);
+ }
+ for (i = 0U; i < 0x80U; i++){
+  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFE20U << 2) + i, 0x00U);
  }
 
- /* 0xC00 - 0xFFF: HQ 512 element sine */
- obj->ropc[0x0C0U] = 0x0000U;
- obj->ropc[0x140U] = 0x4000U;
- obj->ropc[0x1C0U] = 0x0000U;
- obj->ropc[0x240U] = 0xC000U;
- for (i = 1U; i < 128U; i++){
-  obj->ropc[0x0C0U + i] = rrpge_m_ires_sinq16[i];
+ /* 0xFFE40 - 0xFFE7F: Sine */
+ for (i = 0U; i < 0x40U; i++){
+  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFE40U << 2) + i, rrpge_m_ires_sinq8[i]);
  }
- for (i = 1U; i < 128U; i++){
-  obj->ropc[0x140U + i] = rrpge_m_ires_sinq16[128U - i];
+ for (i = 0U; i < 0x40U; i++){
+  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFE50U << 2) + i, rrpge_m_ires_sinq8[0x3FU - i]);
  }
- for (i = 1U; i < 128U; i++){
-  obj->ropc[0x1C0U + i] = 0x0000U - rrpge_m_ires_sinq16[i];
+ for (i = 0U; i < 0x40U; i++){
+  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFE60U << 2) + i, 0xFFU - rrpge_m_ires_sinq8[i]);
  }
- for (i = 1U; i < 128U; i++){
-  obj->ropc[0x240U + i] = 0x0000U - rrpge_m_ires_sinq16[128U - i];
+ for (i = 0U; i < 0x40U; i++){
+  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFE70U << 2) + i, 0xFFU - rrpge_m_ires_sinq8[0x3FU - i]);
+ }
+
+ /* 0xFFE80 - 0xFFEBF: Triangle */
+ for (i = 0U; i < 0x40U; i++){
+  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFE80U << 2) + i, (i << 1) + 0x80U);
+ }
+ for (i = 0U; i < 0x80U; i++){
+  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFE90U << 2) + i, ((0x7FU - i) << 1) + 0x01U);
+ }
+ for (i = 0U; i < 0x40U; i++){
+  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFEB0U << 2) + i, (i << 1));
+ }
+
+ /* 0xFFEC0 - 0xFFEFF: Spikes */
+ for (i = 0U; i < 0x40U; i++){
+  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFEC0U << 2) + i, 0x80U + (0xFFU - rrpge_m_ires_sinq8[0x3FU - i]));
+ }
+ for (i = 0U; i < 0x40U; i++){
+  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFED0U << 2) + i, 0x80U + (0xFFU - rrpge_m_ires_sinq8[i]));
+ }
+ for (i = 0U; i < 0x40U; i++){
+  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFEE0U << 2) + i, rrpge_m_ires_sinq8[0x3FU - i] - 0x80U);
+ }
+ for (i = 0U; i < 0x40U; i++){
+  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFEF0U << 2) + i, rrpge_m_ires_sinq8[i] - 0x80U);
+ }
+
+ /* 0xFFF00 - 0xFFF3F: Sawtooth, incremental */
+ for (i = 0U; i < 0x100U; i++){
+  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFF00U << 2) + i, i);
+ }
+
+ /* 0xFFF40 - 0xFFF7F: Sawtooth, decremental */
+ for (i = 0U; i < 0x100U; i++){
+  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFF40U << 2) + i, 0xFFU - i);
+ }
+
+ /* 0xFFF80 - 0xFFFBF: Noise 1 */
+ r = 0U;
+ for (i = 0U; i < 0x100U; i++){
+  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFF80U << 2) + i, r);
+  r = (((r >> 7) + (r + r) + 0xBBU) ^ 0x7FU) & 0xFFU;
+ }
+
+ /* 0xFFFC0 - 0xFFFFF: Noise 2 */
+ r = 0U;
+ for (i = 0U; i < 0x100U; i++){
+  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFFC0U << 2) + i, r);
+  r = (((r >> 7) + (r + r) + 0xA3U) ^ 0xB3U) & 0xFFU;
+ }
+
+
+ /* Populate Peripheral RAM with boot data blocks */
+
+ /* 0xFF000 - 0xFF7FF: Display list (only first 1600 entries used) */
+ for (i = 0U; i < 200U; i++){
+  obj->st.pram[0xFF000U + (i * 8U) + 1U] = 0x0000C000U + (i * 0x50000U);
+ }
+
+ /* 0xFF800 - 0xFFBFF: Audio buffers (silence) */
+ for (i = 0U; i < 1024U; i++){
+  obj->st.pram[0xFF800U + i] = 0x80808080U;
+ }
+
+
+ /* Populate nonzero members of Application State */
+
+ /* Stuff in the VARS area */
+ for (i = 0U; i < STANZ_CT; i++){
+  obj->st.stat[rrpge_m_ires_stanz[i * 3U]] = ((auint)(rrpge_m_ires_stanz[(i * 3U) + 1U]) << 8) +
+                                             ((auint)(rrpge_m_ires_stanz[(i * 3U) + 2U]));
+ }
+
+ /* Color palette */
+ for (i = 0U; i < 256U; i++){
+  obj->st.stat[RRPGE_STA_PAL + i] = rrpge_m_ires_pal[i];
  }
 
 
