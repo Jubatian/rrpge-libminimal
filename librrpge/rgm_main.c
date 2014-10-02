@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.29
+**  \date      2014.10.02
 */
 
 
@@ -18,45 +18,59 @@
 
 
 /* Initialize emulator - implementation of RRPGE library function */
-rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb,   rrpge_uint16 const* apph,
-                        rrpge_uint16   const* crom, rrpge_uint32 crn,
+rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb, rrpge_appini_t const* inid,
                         rrpge_object_t* hnd)
 {
  auint f;
  auint i;
 
  /* First check the application header, and return if it is problematic. */
- f = rrpge_checkapphead(apph);
- if (f != RRPGE_ERR_OK) return f;
- if ( ((((apph[0xBC2U] >> 8) - 1U) & 0xFU) + 1U) != crn ) return RRPGE_ERR_PG;
+
+ f = rrpge_checkapphead(inid->head);
+ if (f != RRPGE_ERR_OK){ return f; }
+
+ if (inid->ccnt > 0x10000U){ return RRPGE_ERR_INI; }
+ if (inid->dcnt >  0xFFC0U){ return RRPGE_ERR_INI; }
 
  /* OK, if got here, the application header is fine. The emulation instance
  ** can be constructed. This only involves loading the application and calling
  ** reset. */
 
+ /* Add callbacks */
+
  rrpge_m_cb_process(hnd, cb);
 
- for (i = 0; i < 0xC00U; i++){
-  hnd->stat.ropd[i] = apph[i];
- }
- hnd->stat.ropd[1] = (((auint)('S')) << 8) + (auint)('\n'); /* "RPA\n" -> "RPS\n" */
+ /* Do an init to get initial data RAM. This is not nice, and later should be
+ ** re-organized, so init won't be necessary to be called twice (secondly in
+ ** reset) by properly implementing handling the initial state of data memory
+ ** as combined from the app. binary and the initial RRPGE data. */
 
- for (i = 0; i < (crn << 12); i++){
-  hnd->crom[i] = crom[i];
+ rrpge_m_ires_init(hnd);
+
+ /* Code ROM */
+
+ for (i = 0U; i < inid->ccnt; i++){
+  hnd->crom[i] = inid->crom[i];
  }
- for (i = (crn << 12); i < (16U << 12); i++){
-  hnd->crom[i] = 0;
+ for (      ; i < 0x10000U;   i++){
+  hnd->crom[i] = 0U;
+ }
+
+ /* CPU Data memory (initializer) */
+
+ for (i = 0U; i < inid->dcnt; i++){
+  hnd->dini[i + 0x40U] = inid->dram[i];
+ }
+
+ /* Also clear all breakpoints */
+
+ for (i = 0U; i < 2048U; i++){
+  hnd->brkp[i] = 0U;
  }
 
  /* Now do a reset to finish the initialization so emulation may start. */
 
  rrpge_reset(hnd);
-
- /* Also clear all breakpoints */
-
- for (i = 0; i < 2048U; i++){
-  hnd->brkp[i] = 0;
- }
 
  /* Done, emulation can start */
 
@@ -68,55 +82,42 @@ rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb,   rrpge_uint16 const* apph,
 /* Reset emulator instance - implementation of RRPGE library function */
 void rrpge_reset(rrpge_object_t* hnd)
 {
+ auint i;
+
  rrpge_m_ires_init(hnd);
+
+ for (i = 0U; i < 65536U; i++){
+  hnd->st.dram[i] = hnd->dini[i];
+ }
 }
 
 
 
-/* Loads serialized state - implementation of RRPGE library function */
-rrpge_uint32 rrpge_importstate(rrpge_object_t* hnd, rrpge_uint8 const* st)
+/* Request emu. state for read - implementation of RRPGE library function */
+rrpge_state_t const* rrpge_peekstate(rrpge_object_t* hnd)
 {
- uint16 tropd[4096U];
- auint  f;
- auint  i;
+ return hnd->st;
+}
 
- rrpge_convpg_b2w(&(st[0U << 13]), &(tropd[0]));
- f = rrpge_checkropd(&(tropd[0]));
- if (f != RRPGE_ERR_OK) return f;
 
- f = rrpge_checkapphead(&(hnd->stat.ropd[0]));
- if (f != RRPGE_ERR_OK) return RRPGE_ERR_UNK; /* Should not happen */
 
- if (!rrpge_isstatecomp(&(tropd[0]), &(hnd->stat.ropd[0]))) return RRPGE_ERR_VER;
+/* Request emu. state for modify - implementation of RRPGE library function */
+rrpge_state_t* rrpge_peekstate(rrpge_object_t* hnd)
+{
+ return hnd->st;
+}
 
- /* OK, state is fine, and is compatible, so can be loaded */
 
- for (i = 0; i < 4096U; i++){
-  hnd->stat.ropd[i] = tropd[i];
- }
 
- for (i = 0; i < 8U; i++){
-  rrpge_convpg_b2w(&(st[(i + 1U) << 13]), &(hnd->stat.sram[i << 12]));
- }
+/* Reattaches emulator state - implementation of RRPGE library function */
+rrpge_uint32 rrpge_attachstate(rrpge_object_t* hnd)
+{
+ auint f;
 
- for (i = 0; i < 448U; i++){
-  rrpge_convpg_b2w(&(st[(i + 9U) << 13]), &(hnd->stat.dram[i << 12]));
- }
+ /* Check application state */
 
- for (i = 0; i < (128U * 2048U); i++){
-  hnd->stat.vram[i] = ((uint32)(st[(457U << 13) + (i << 2) + 0U]) << 24) +
-                      ((uint32)(st[(457U << 13) + (i << 2) + 1U]) << 16) +
-                      ((uint32)(st[(457U << 13) + (i << 2) + 2U]) <<  8) +
-                      ((uint32)(st[(457U << 13) + (i << 2) + 3U])      );
- }
-
- for (i = 0; i < 8U; i++){
-  rrpge_convpg_b2w(&(st[(i + 585U) << 13]), &(hnd->stat.fram[i << 12]));
- }
-
- /* Also reset library internal components */
-
- rrpge_m_ires_initl(hnd);
+ f = rrpge_checkappstate(&(hnd->st.stat[0]));
+ if (f != RRPGE_ERR_OK){ return f; }
 
  /* Done */
 
@@ -125,10 +126,10 @@ rrpge_uint32 rrpge_importstate(rrpge_object_t* hnd, rrpge_uint8 const* st)
 
 
 
-/* Return state - implementation of RRPGE library function */
-rrpge_state_t const* rrpge_exportstate(rrpge_object_t* hnd)
+/* Reattaches emulator state with comp. check - implementation of RRPGE library function */
+rrpge_uint32 rrpge_attachstatecomp(rrpge_object_t* hnd)
 {
- return &(hnd->stat);
+ return rrpge_attachstate(hnd); /* Needs additional though... */
 }
 
 
@@ -139,22 +140,26 @@ void rrpge_taskend(rrpge_object_t* hnd, rrpge_uint32 tsh, rrpge_uint32 res)
  res |= 0x8000U;
  tsh &= 0xFU;
 
- switch (hnd->stat.ropd[0xD80U + (tsh << 4)]){
+ switch (hnd->st.stat[RRPGE_STA_KTASK + (tsh << 4)]){
 
   case 0x0100U: /* Start loading bin. page */
    res = 0x8000U;
    break;
 
-  case 0x0110U: /* Start loading nv. save */
-   res &= 0xFFFFU;
+  case 0x0110U: /* Start loading from file */
+   res |= 0x8000U;
    break;
 
-  case 0x0111U: /* Start saving nv. save */
-   res &= 0x8001U;
+  case 0x0111U: /* Start saving into file */
+   res |= 0x8000U;
    break;
 
-  case 0x0112U: /* List available nv. saves */
-   if ((res & 0x7FFFU) > 1024U) res = 0x8000U + 1024U;
+  case 0x0112U: /* Find next file */
+   res = 0x8000U;
+   break;
+
+  case 0x0113U: /* Move a file */
+   res |= 0x8000U;
    break;
 
   case 0x0601U: /* Read user UTF-8 */
@@ -166,7 +171,7 @@ void rrpge_taskend(rrpge_object_t* hnd, rrpge_uint32 tsh, rrpge_uint32 res)
    break;
 
   case 0x0710U: /* List accessible users */
-   if ((res & 0x7FFFU) > 256U) res = 0x8000U + 256U;
+   res |= 0x8000U;
    break;
 
   default:      /* Should not happen */
@@ -174,7 +179,7 @@ void rrpge_taskend(rrpge_object_t* hnd, rrpge_uint32 tsh, rrpge_uint32 res)
    break;
  }
 
- hnd->stat.ropd[0xD8F + (tsh << 4)] = (uint16)(res);
+ hnd->st.stat[RRPGE_STA_KTASK + 0xF + (tsh << 4)] = (uint16)(res);
 
  /* (Note: no need to clear the task started flags, it will be done when a
  ** new task is started) */

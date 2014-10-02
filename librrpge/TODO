@@ -1,5 +1,12 @@
 Working on implementing specification 00.010.000.
 
+Need to fix initial data memory problem (see rrpge_init in rgm_main()).
+
+For now, the state attach and detach features are left in a not quite
+functional state. This part of the interface needs some additional tought
+(when to reset the emulator, how it should proceed after a state load, how it
+should replace the app. header if requested by no compatibility check).
+
 Missing parts (otherwise):
 
 Application header - RRPGE specification check.

@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.09.30
+**  \date      2014.10.02
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -73,7 +73,8 @@ struct rrpge_object_s{
 
  rrpge_state_t st;   /* Complete emulator state as defined in the library interface */
 
- uint16 crom[16U * 4096U]; /* Code memory */
+ uint16 crom[65536U];   /* Code memory */
+ uint16 dini[65536U];   /* Initial data memory (for resets) */
 
  uint32 brkp[2048U]; /* Bit map marking code addresses as breakpoints */
 
