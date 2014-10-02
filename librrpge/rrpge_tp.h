@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.09.23
+**  \date      2014.10.02
 */
 
 
@@ -128,7 +128,7 @@ typedef struct{
 **  to indicate such a failure. */
 #define RRPGE_ERR_UNK  0x0001U
 /** Initialization data error. Returned only by rrpge_init(). Normally for
-**  Application Header or Descriptor problems, the RRPGE_ERR_INV or the
+**  Application Header or Descriptor problems, the RRPGE_ERR_STA or the
 **  RRPGE_ERR_DSC constant should be returned, this code is reserved for other
 **  problems specific to the initialization data which hinder loading it. */
 #define RRPGE_ERR_INI  0x0002U
@@ -137,15 +137,15 @@ typedef struct{
 **  specification. It also happens if a state is attempted to be loaded whose
 **  data does not match the application's. */
 #define RRPGE_ERR_VER  0x0003U
-/** Application State contains invalid value. In the low 10 bits the location
-**  containing the erratic value is returned. */
+/** Application State contains invalid value. In the low 10 bits the word
+**  location containing the erratic value is returned. */
 #define RRPGE_ERR_STA  0x1000U
-/** Application State contains unsupported value. In the low 10 bits the
+/** Application State contains unsupported value. In the low 10 bits the word
 **  location containing the unsupported value is returned. */
 #define RRPGE_ERR_UNS  0x2000U
 /** Application descriptor contains invalid value. Returned only by
-**  rrpge_init(). In the low 4 bits the location containing the erratic value
-**  is returned. */
+**  rrpge_init(). In the low 4 bits the word location containing the erratic
+**  value is returned. */
 #define RRPGE_ERR_DSC  0x3000U
 /** \} */
 

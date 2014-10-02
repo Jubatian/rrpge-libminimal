@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.29
+**  \date      2014.10.02
 */
 
 
@@ -13,33 +13,33 @@
 
 
 /* Byte -> Word page conversion - Implementation of RRPGE library function. */
-void rrpge_convpg_b2w(rrpge_uint8 const* src, rrpge_uint16* dst)
+void rrpge_conv_b2w(rrpge_uint8 const* src, rrpge_uint16* dst, rrpge_uint32 bct)
 {
- auint i = 4096U;
-
- do{
-  i--;
-  dst[i] = (uint16)(src[(i << 1) + 1U]) + ((uint16)(src[i << 1]) << 8);
-  i--;
-  dst[i] = (uint16)(src[(i << 1) + 1U]) + ((uint16)(src[i << 1]) << 8);
- }while (i);
+ if ((bct & 1U) != 0U){
+  bct -= 1U;
+  dst[bct >> 1] = (uint16)(src[bct]) << 8;
+ }
+ while (bct != 0U){
+  bct -= 2U;
+  dst[bct >> 1] = ((uint16)(src[bct + 1U])) |
+                  ((uint16)(src[bct     ]) << 8);
+ }
 }
 
 
 
 /* Word -> Byte page conversion - Implementation of RRPGE library function. */
-void rrpge_convpg_w2b(rrpge_uint16 const* src, rrpge_uint8* dst)
+void rrpge_conv_w2b(rrpge_uint16 const* src, rrpge_uint8* dst, rrpge_uint32 bct)
 {
- auint i = 4096U;
-
- do{
-  i--;
-  dst[(i << 1) + 1U] = (uint8)(src[i]);
-  dst[(i << 1)     ] = (uint8)(src[i] >> 8);
-  i--;
-  dst[(i << 1) + 1U] = (uint8)(src[i]);
-  dst[(i << 1)     ] = (uint8)(src[i] >> 8);
- }while (i);
+ if ((bct & 1U) != 0U){
+  bct -= 1U;
+  dst[bct] = (uint8)(src[bct >> 1]) >> 8;
+ }
+ while (bct != 0U){
+  bct -= 2U;
+  dst[bct + 1U] = (uint8)(src[bct >> 1]);
+  dst[bct     ] = (uint8)(src[bct >> 1] >> 8);
+ }
 }
 
 
@@ -50,28 +50,40 @@ void rrpge_state2raw(rrpge_state_t const* src, rrpge_uint8* dst)
  auint  i;
  uint32 t;
 
- /* Order is: ROPD; Stack; Data; Video; FIFO */
+ /* Order is: State (including app. header); CPU Data; PRAM */
 
- rrpge_convpg_w2b(&(src->ropd[0]), dst);
+ rrpge_conv_w2b(&(src->stat[0]), dst, sizeof(src->stat));
+ dst += sizeof(src->stat);
+ rrpge_conv_w2b(&(src->dram[0]), dst, sizeof(src->dram));
+ dst += sizeof(src->dram);
 
- for (i = 0; i < 8U; i++){
-  rrpge_convpg_w2b(&(src->sram[i * 4096U]), dst + ((i +   1U) * 4096U));
+ for (i = 0; i < (sizeof(src->pram) / sizeof(src->pram[0])); i++){
+  t = src->pram[i];
+  dst[(i << 2) + 0U] = (uint8)(t >> 24);
+  dst[(i << 2) + 1U] = (uint8)(t >> 16);
+  dst[(i << 2) + 2U] = (uint8)(t >>  8);
+  dst[(i << 2) + 3U] = (uint8)(t      );
  }
+}
 
- for (i = 0; i < 448U; i++){
-  rrpge_convpg_w2b(&(src->dram[i * 4096U]), dst + ((i +   9U) * 4096U));
+
+
+/* State deserialization - Implementation of RRPGE library function */
+void rrpge_raw2state(rrpge_uint8 const* src, rrpge_state_t* dst)
+{
+ auint i;
+
+ /* Order is: State (including app. header); CPU Data; PRAM */
+
+ rrpge_conv_b2w(src, &(dst->stat[0]), sizeof(dst->stat));
+ src += sizeof(dst->stat);
+ rrpge_conv_b2w(src, &(dst->dram[0]), sizeof(dst->dram));
+ src += sizeof(dst->dram);
+
+ for (i = 0; i < (sizeof(dst->pram) / sizeof(dst->pram[0])); i++){
+  dst->pram[i] = ((auint)(src[(i << 2) + 0U]) << 24) |
+                 ((auint)(src[(i << 2) + 1U]) << 16) |
+                 ((auint)(src[(i << 2) + 2U]) <<  8) |
+                 ((auint)(src[(i << 2) + 3U]));
  }
-
- for (i = 0; i< 128U * 4096U; i++){
-  t = src->vram[i];
-  dst[457U * 4096U + (i << 2) + 0U] = (uint8)(t >> 24);
-  dst[457U * 4096U + (i << 2) + 1U] = (uint8)(t >> 16);
-  dst[457U * 4096U + (i << 2) + 2U] = (uint8)(t >>  8);
-  dst[457U * 4096U + (i << 2) + 3U] = (uint8)(t      );
- }
-
- for (i = 0; i < 8U; i++){
-  rrpge_convpg_w2b(&(src->fram[i * 4096U]), dst + ((i + 585U) * 4096U));
- }
-
 }

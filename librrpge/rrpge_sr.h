@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.09.20
+**  \date      2014.10.02
 */
 
 
@@ -69,7 +69,7 @@ void rrpge_state2raw(rrpge_state_t const* src, rrpge_uint8* dst);
 **  \param[in]   src   Raw binary state (must be at least 4290 * 1024 bytes).
 **  \param[out]  dst   Emulator state.
 */
-void rrpge_raw2state(rrpge_uint8* src, rrpge_state_t const* dst);
+void rrpge_raw2state(rrpge_uint8 const * src, rrpge_state_t* dst);
 
 
 
