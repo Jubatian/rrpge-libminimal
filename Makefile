@@ -43,6 +43,6 @@ $(OBB):
 	$(SHMKDIR) $(OBB)
 
 $(OBD)main.o: main.c
-	$(CC) -c main.c -o $(OBD)main.o $(CFSIZ)
+#	$(CC) -c main.c -o $(OBD)main.o $(CFSIZ)
 
 .PHONY: all clean

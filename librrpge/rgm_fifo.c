@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.09.23
+**  \date      2014.10.02
 **
 **
 **  Contains the Graphics & Mixer FIFO's logic. The FIFOs operate detached
@@ -59,10 +59,10 @@ RRPGE_M_FASTCALL static void rrpge_m_fifomix(auint adr, auint val)
 
 /* Internal function to generate address from a given FIFO pointer and
 ** position & size register value */
-RRPGE_M_FASTCALL static void rrpge_m_fifoadr(auint ptr, auint ps)
+RRPGE_M_FASTCALL static auint rrpge_m_fifoadr(auint ptr, auint ps)
 {
  auint ms = 0xFFFFFFFFU << ((ps >> 12) + 8U);
- return ((t & (~ms)) | ((ps << 8) & ms)) & (PRAMS - 1U);
+ return ((ptr & (~ms)) | ((ps << 8) & ms)) & (PRAMS - 1U);
 }
 
 
@@ -184,7 +184,7 @@ void  rrpge_m_fifowrite(auint adr, auint val)
 
    }else{                     /* No bypass */
 
-    t = RRPGE_STA_VARS + 20U + ((adr & 4U) << 1)]; /* Write pointer address */
+    t = RRPGE_STA_VARS + 20U + ((adr & 4U) << 1);  /* Write pointer address */
     u = rrpge_m_edat->st.stat[t];                  /* Write pointer value */
     p = rrpge_m_edat->st.stat[RRPGE_STA_UPA_MF + adr - 3U]; /* FIFO position & size */
     rrpge_m_edat->st.pram[rrpge_m_fifoadr(u, p)] =

@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.09.24
+**  \date      2014.10.02
 */
 
 
@@ -127,7 +127,7 @@ void rrpge_m_grln(void)
    cmd  = dlin[doff];             /* Current command */
    doff ++;
    csr  = rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x8U + ((cmd >> 28) & 7U)]; /* Current source to use */
-   sbnk = &((rrpge_m_edat->stat.pram[((csr & 0x0F00U) << 8)]) & (PRAMS - 1U));
+   sbnk = &(rrpge_m_edat->st.pram[((csr & 0x0F00U) << 8) & (PRAMS - 1U)]);
    soff = (csr & 0xF000U) | ((((cmd >> 16) & 0xFFFU) << ((csr >> 5) & 7U)) & 0xFFFFU);
    if       ((cmd & 0xBC00U) == 0U){ /* Render command inactive */
     scy = 0U;

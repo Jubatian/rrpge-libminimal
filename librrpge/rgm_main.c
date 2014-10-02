@@ -59,7 +59,7 @@ rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb, rrpge_appini_t const* inid,
  /* CPU Data memory (initializer) */
 
  for (i = 0U; i < inid->dcnt; i++){
-  hnd->dini[i + 0x40U] = inid->dram[i];
+  hnd->dini[i + 0x40U] = inid->data[i];
  }
 
  /* Also clear all breakpoints */
@@ -96,15 +96,15 @@ void rrpge_reset(rrpge_object_t* hnd)
 /* Request emu. state for read - implementation of RRPGE library function */
 rrpge_state_t const* rrpge_peekstate(rrpge_object_t* hnd)
 {
- return hnd->st;
+ return &(hnd->st);
 }
 
 
 
 /* Request emu. state for modify - implementation of RRPGE library function */
-rrpge_state_t* rrpge_peekstate(rrpge_object_t* hnd)
+rrpge_state_t* rrpge_detachstate(rrpge_object_t* hnd)
 {
- return hnd->st;
+ return &(hnd->st);
 }
 
 

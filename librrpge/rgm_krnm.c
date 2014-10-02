@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.09.24
+**  \date      2014.10.02
 */
 
 
@@ -151,7 +151,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    if (par[1] > 3U){ cbp_mode.mod = 0U; }
    else{             cbp_mode.mod = par[1]; }
-   rrpge_m_edat->stat.ropd[RRPGE_STA_VARS + 0x12U] = cbp_mode.mod;
+   rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x12U] = cbp_mode.mod;
    rrpge_m_edat->cb_sub[RRPGE_CB_MODE](rrpge_m_edat, &cbp_mode);
 
    /* Note: rrpge_m_info.vbm is purposefully not updated here. The emulator

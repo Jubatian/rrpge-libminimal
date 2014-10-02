@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.09.23
+**  \date      2014.10.02
 */
 
 
@@ -60,8 +60,8 @@ void rrpge_m_audproc(auint cy)
   rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 0x3U] ++;
   if (rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 0x3U] ==
       rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 0x7U]){
-   rrpge_m_edat->stat.ropd[RRPGE_STA_UPA_A + 3U] = 0U;
-   rrpge_m_edat->stat.ropd[RRPGE_STA_UPA_A + 2U] ++;
+   rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 3U] = 0U;
+   rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 2U] ++;
   }
 
   /* Increment 187.5Hz clock */

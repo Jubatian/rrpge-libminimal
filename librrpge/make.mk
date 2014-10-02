@@ -6,9 +6,9 @@
 #
 
 OBJECTS+= $(OBD)rgm_aq.o   $(OBD)rgm_aud.o  $(OBD)rgm_cb.o   $(OBD)rgm_chk.o
-OBJECTS+= $(OBD)rgm_cpua.o $(OBD)rgm_cpuo.o $(OBD)rgm_dma.o
-OBJECTS+= $(OBD)rgm_grln.o $(OBD)rgm_grop.o $(OBD)rgm_info.o $(OBD)rgm_ires.o
-OBJECTS+= $(OBD)rgm_krnm.o $(OBD)rgm_main.o $(OBD)rgm_mix.o  $(OBD)rgm_prng.o
+OBJECTS+= $(OBD)rgm_cpua.o $(OBD)rgm_cpuo.o $(OBD)rgm_fifo.o $(OBD)rgm_grln.o
+OBJECTS+= $(OBD)rgm_grop.o $(OBD)rgm_info.o $(OBD)rgm_ires.o $(OBD)rgm_krnm.o
+OBJECTS+= $(OBD)rgm_main.o $(OBD)rgm_mix.o  $(OBD)rgm_pram.o $(OBD)rgm_prng.o
 OBJECTS+= $(OBD)rgm_run.o  $(OBD)rgm_ser.o  $(OBD)rgm_task.o $(OBD)rgm_vid.o
 
 $(OBD)rgm_aq.o: librrpge/rgm_aq.c librrpge/rgm_aq.h
@@ -35,9 +35,9 @@ $(OBD)rgm_cpuo.o: librrpge/rgm_cpuo.c librrpge/rgm_cpuo.h
 	$(CC) -c librrpge/rgm_cpuo.c -o $(OBD)rgm_cpuo.o -fomit-frame-pointer $(CFSPD)
 	$(CC) -S librrpge/rgm_cpuo.c -o $(OBD)rgm_cpuo.asm -fomit-frame-pointer $(CFSPD)
 
-$(OBD)rgm_dma.o: librrpge/rgm_dma.c librrpge/rgm_dma.h
-	$(CC) -c librrpge/rgm_dma.c -o $(OBD)rgm_dma.o $(CFSPD)
-	$(CC) -S librrpge/rgm_dma.c -o $(OBD)rgm_dma.asm $(CFSPD)
+$(OBD)rgm_fifo.o: librrpge/rgm_fifo.c librrpge/rgm_fifo.h
+	$(CC) -c librrpge/rgm_fifo.c -o $(OBD)rgm_fifo.o $(CFSPD)
+	$(CC) -S librrpge/rgm_fifo.c -o $(OBD)rgm_fifo.asm $(CFSPD)
 
 $(OBD)rgm_grln.o: librrpge/rgm_grln.c librrpge/rgm_grln.h
 	$(CC) -c librrpge/rgm_grln.c -o $(OBD)rgm_grln.o $(CFSPD)
@@ -66,6 +66,10 @@ $(OBD)rgm_main.o: librrpge/rgm_main.c librrpge/rgm_main.h
 $(OBD)rgm_mix.o: librrpge/rgm_mix.c librrpge/rgm_mix.h
 	$(CC) -c librrpge/rgm_mix.c -o $(OBD)rgm_mix.o $(CFSPD)
 	$(CC) -S librrpge/rgm_mix.c -o $(OBD)rgm_mix.asm $(CFSPD)
+
+$(OBD)rgm_pram.o: librrpge/rgm_pram.c librrpge/rgm_pram.h
+	$(CC) -c librrpge/rgm_pram.c -o $(OBD)rgm_pram.o $(CFSPD)
+	$(CC) -S librrpge/rgm_pram.c -o $(OBD)rgm_pram.asm $(CFSPD)
 
 $(OBD)rgm_prng.o: librrpge/rgm_prng.c librrpge/rgm_prng.h
 	$(CC) -c librrpge/rgm_prng.c -o $(OBD)rgm_prng.o $(CFSPD)

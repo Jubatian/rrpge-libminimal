@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.09.21
+**  \date      2014.10.02
 */
 
 
@@ -17,7 +17,7 @@
 ** takes. */
 auint rrpge_m_mixerop(void)
 {
- uint32* pram = &(rrpge_m_edat->stat.pram[0]); /* Address of RW data RAM */
+ uint32* pram = &(rrpge_m_edat->st.pram[0]); /* Address of RW data RAM */
  auint ssoh = rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0xAU]; /* Sample source, whole */
  auint ssol = ((auint)(rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0xBU]) << 16) + (auint)(rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0xCU]); /* Sample source, fraction */
  auint asoh = rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0x0U]; /* Amplitude source, whole */
@@ -62,7 +62,7 @@ auint rrpge_m_mixerop(void)
  afrq = afrq << 2;
 
  /* Calculate return value */
- ret = (clno * 14U) + 16U; }
+ ret = (clno * 14U) + 16U;
 
  /* In the main loop the flgs variable is used for conditional processing.
  ** This variable is not changed in the loop, so branch prediction works just

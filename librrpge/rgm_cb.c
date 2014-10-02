@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.09.25
+**  \date      2014.10.02
 */
 
 
@@ -231,13 +231,13 @@ void rrpge_m_cb_process(rrpge_object_t* obj, rrpge_cbpack_t const* cbp)
  obj->cb_sub[RRPGE_CB_SETPAL]    = &rrpge_m_cb_setpal;
  obj->cb_sub[RRPGE_CB_MODE]      = &rrpge_m_cb_mode;
  obj->cb_sub[RRPGE_CB_DROPDEV]   = &rrpge_m_cb_dropdev;
- obj->cb_sub[RRPGE_CB_CHECKAREA] = &rrpge_m_cb_checkarea;
  obj->cb_sub[RRPGE_CB_GETLOCAL]  = &rrpge_m_cb_getlocal;
  obj->cb_fun[RRPGE_CB_GETPROPS]  = &rrpge_m_cb_getprops;
  obj->cb_fun[RRPGE_CB_GETDIDESC] = &rrpge_m_cb_getdidesc;
  obj->cb_fun[RRPGE_CB_GETDI]     = &rrpge_m_cb_getdi;
  obj->cb_fun[RRPGE_CB_GETAI]     = &rrpge_m_cb_getai;
  obj->cb_fun[RRPGE_CB_POPCHAR]   = &rrpge_m_cb_popchar;
+ obj->cb_fun[RRPGE_CB_CHECKAREA] = &rrpge_m_cb_checkarea;
  obj->cb_fun[RRPGE_CB_GETLANG]   = &rrpge_m_cb_getlang;
  obj->cb_fun[RRPGE_CB_GETCOLORS] = &rrpge_m_cb_getcolors;
 

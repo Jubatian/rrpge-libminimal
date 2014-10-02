@@ -312,7 +312,7 @@ rrpge_uint32 rrpge_checkappstate(rrpge_uint16 const* d)
  /* Variables */
 
  for (f = RRPGE_STA_VARS + 0x30; f < RRPGE_STA_VARS + 0x40U; f++){
-  if ((d[f] & 0x07E0U) != 0U){ goto ropd_fault; } /* Last device IDs */
+  if ((d[f] & 0x07E0U) != 0U){ goto stat_fault; } /* Last device IDs */
  }
 
  for (f = RRPGE_STA_VARS + 0x40; f < RRPGE_STA_VARS + 0x4FU; f++){
@@ -322,9 +322,9 @@ rrpge_uint32 rrpge_checkappstate(rrpge_uint16 const* d)
  /* Zero mask checks */
 
  for (i = 0U; i < STAZC_CT; i++){
-  f = rrpge_m_chk_stazct[i * 3U];
-  if ( (d[f] & ( ((auint)(rrpge_m_chk_stazct[i * 3U + 1U]) << 8) |
-                 ((auint)(rrpge_m_chk_stazct[i * 3U + 2U])) ) ) != 0U){
+  f = rrpge_m_chk_stazc[i * 3U];
+  if ( (d[f] & ( ((auint)(rrpge_m_chk_stazc[i * 3U + 1U]) << 8) |
+                 ((auint)(rrpge_m_chk_stazc[i * 3U + 2U])) ) ) != 0U){
    goto stat_fault;
   }
  }
@@ -334,7 +334,7 @@ rrpge_uint32 rrpge_checkappstate(rrpge_uint16 const* d)
  for (i = 0U; i < 16U; i++){
   if (rrpge_m_taskcheck(d, i)){
    f = RRPGE_STA_KTASK + (i << 4);
-   goto ropd_fault;
+   goto stat_fault;
   }
  }
 

@@ -51,7 +51,7 @@ typedef unsigned int  auint;
 #define RRPGE_M_VLN 449U
 
 /* Peripheral RAM size. */
-#define RRPGE_M_PRAMS (sizeof(rrpge_state_t.pram) / sizeof(rrpge_state_t.pram[0]))
+#define RRPGE_M_PRAMS (sizeof(((rrpge_state_t*)(0))->pram) / sizeof(((rrpge_state_t*)(0))->pram[0]))
 
 /* Null constant */
 #define RRPGE_M_NULL (0)

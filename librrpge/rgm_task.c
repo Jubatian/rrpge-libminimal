@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.09.24
+**  \date      2014.10.02
 */
 
 
@@ -40,7 +40,7 @@ auint rrpge_m_taskcheck(uint16 const* d, auint n)
  switch (p[0]){ /* Process by kernel function */
 
   case 0x0100U: /* Kernel task: Start loading binary data page */
-   if (rrpge_m_task_chkdata(p[1], p[2]){ return 1; } /* Not in Data area */
+   if (rrpge_m_task_chkdata(p[1], p[2])){ return 1; } /* Not in Data area */
    if ( (((auint)(p[3]) << 16) + (auint)(p[4]) + (auint)(p[2])) >
         ( ((auint)(d[RRPGE_STA_VARS + 0x18U]) << 16) +
           ((auint)(d[RRPGE_STA_VARS + 0x19U])) ) ){ return 1; } /* Out of data area */
@@ -129,7 +129,7 @@ void rrpge_m_tasksched(void)
     ** the emulated machine's memories. It is so safe to use the parameters to
     ** form memory pointers from. */
 
-    tskp = &(rrpge_m_edat->st.stat[RRPGE_STA_KTASK + (i << 4)])
+    tskp = &(rrpge_m_edat->st.stat[RRPGE_STA_KTASK + (i << 4)]);
 
     switch (tskp[0]){
 
