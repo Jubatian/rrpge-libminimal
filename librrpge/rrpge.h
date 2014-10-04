@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.09.20
+**  \date      2014.10.04
 */
 
 
@@ -35,16 +35,32 @@
 **  further. It may be discarded any time later to terminate emulation: the
 **  library does not allocate any extra resource relating to instances.
 **
-**  Note that the application binary should be kept open to support the Start
-**  loading binary data kernel call.
+**  The function may return with RRPGE_ERR_WAIT which is not an error. This
+**  is returned if the host supports asynchronous application binary loads.
+**  This case the application binary load has to be serviced (notifying it's
+**  termination using rrpge_taskend()), and rrpge_init_run() has to be called
+**  until it either returns an error other than RRPGE_ERR_WAIT, or returns
+**  zero indicating a succesful init.
 **
 **  \param[in]   cb    Callback set filled with the callbacks.
-**  \param[in]   inid  Application initialization data.
 **  \param[out]  hnd   Emulation instance to initialize.
 **  \return            0 on success, failure code otherwise.
 */
-rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb, rrpge_appini_t const* inid,
-                        rrpge_object_t* hnd);
+rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb, rrpge_object_t* hnd);
+
+
+
+/**
+**  \brief     Runs initialization.
+**
+**  This function should be called if rrpge_init() returns RRPGE_ERR_WAIT,
+**  after servicing the application binary load. See rrpge_init() for further
+**  information.
+**
+**  \param[in]   hnd   Emulation instance populated by rrpge_init().
+**  \return            0 on success, failure code otherwise.
+*/
+rrpge_uint32 rrpge_init_run(rrpge_object_t* hnd);
 
 
 
@@ -54,7 +70,6 @@ rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb, rrpge_appini_t const* inid,
 **  Returns the given emulator instance to it's initial state, capable to
 **  restart the application from the beginning. The result of this is
 **  identical to the state obtained after an appropriate call to rrpge_init().
-**  The user specific data is left as-is.
 **
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
 */

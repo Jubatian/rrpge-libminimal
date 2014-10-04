@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.10.02
+**  \date      2014.10.04
 */
 
 
@@ -173,8 +173,10 @@ static auint rrpge_m_chk_str(uint16 const* d, auint s, auint e, uint8 const* c)
 
 
 
-/* Check application header - Implementation of RRPGE library function */
-rrpge_uint32 rrpge_checkapphead(rrpge_uint16 const* d)
+/* Check application header and return the offset of the application
+** descriptor. This is used to provide the rrpge_checkapphead() function, and
+** also for the initializer to load the app. descriptor after the check. */
+auint rgm_chk_checkapphead(rrpge_uint16 const* d, auint* dof)
 {
  auint f;
  uint8 c;
@@ -244,7 +246,7 @@ rrpge_uint32 rrpge_checkapphead(rrpge_uint16 const* d)
  f = rrpge_m_chk_str(d, 114U, 124U, (uint8 const*)("\nDescOff: "));
  if (f != 124U){ goto apph_fault; }
 
- f = rrpge_m_chk_uhex(d, 124U, 128U, &dum);
+ f = rrpge_m_chk_uhex(d, 124U, 128U, dof);
  if (f != 128U){ goto apph_fault; }
 
  return RRPGE_ERR_OK;
@@ -252,6 +254,15 @@ rrpge_uint32 rrpge_checkapphead(rrpge_uint16 const* d)
 apph_fault:
 
  return RRPGE_ERR_STA + (f >> 1);
+}
+
+
+
+/* Check application header - Implementation of RRPGE library function */
+rrpge_uint32 rrpge_checkapphead(rrpge_uint16 const* d)
+{
+ auint dum;
+ return (rrpge_uint32)(rgm_chk_checkapphead(d, &dum));
 }
 
 

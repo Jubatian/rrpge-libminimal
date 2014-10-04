@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.10.02
+**  \date      2014.10.04
 */
 
 
@@ -18,24 +18,8 @@
 
 
 /* Initialize emulator - implementation of RRPGE library function */
-rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb, rrpge_appini_t const* inid,
-                        rrpge_object_t* hnd)
+rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb, rrpge_object_t* hnd)
 {
- auint f;
- auint i;
-
- /* First check the application header, and return if it is problematic. */
-
- f = rrpge_checkapphead(inid->head);
- if (f != RRPGE_ERR_OK){ return f; }
-
- if (inid->ccnt > 0x10000U){ return RRPGE_ERR_INI; }
- if (inid->dcnt >  0xFFC0U){ return RRPGE_ERR_INI; }
-
- /* OK, if got here, the application header is fine. The emulation instance
- ** can be constructed. This only involves loading the application and calling
- ** reset. */
-
  /* Add callbacks */
 
  rrpge_m_cb_process(hnd, cb);
@@ -47,34 +31,121 @@ rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb, rrpge_appini_t const* inid,
 
  rrpge_m_ires_init(hnd);
 
- /* Code ROM */
+ /* Init halt cause and initialization state machine */
 
- for (i = 0U; i < inid->ccnt; i++){
-  hnd->crom[i] = inid->crom[i];
+ hnd->insm = 0x1U;
+ hnd->hlt  = RRPGE_HLT_WAIT;
+
+ /* Pass over to the run function */
+
+ return rrpge_init_run(hnd);
+}
+
+
+
+/* Run initialization - implementation of RRPGE library function */
+rrpge_uint32 rrpge_init_run(rrpge_object_t* hnd)
+{
+ auint f;
+ auint i;
+ uint16* p0;
+ uint16* p1;
+ rrpge_cbp_loadbin_t cbp_loadbin;
+
+ /* Initialization state machine. Note that hnd->insm might be incremented by
+ ** the callbacks if the host does not load the part asynchronously. */
+
+ if (hnd->insm == 0x1U){  /* Initialization start */
+  /* Load the application header */
+  cbp_loadbin.buf = &(hnd->apph[0]);
+  cbp_loadbin.scw = 64U;
+  cbp_loadbin.sow = 0U;
+  hnd->cb_tsk[RRPGE_CB_LOADBIN](hnd, 0U, &cbp_loadbin);
+  hnd->insm ++;
  }
- for (      ; i < 0x10000U;   i++){
-  hnd->crom[i] = 0U;
+
+ if (hnd->insm == 0x2U){  /* Wait for loading */
+  return RRPGE_ERR_WAIT;
  }
 
- /* CPU Data memory (initializer) */
-
- for (i = 0U; i < inid->dcnt; i++){
-  hnd->dini[i + 0x40U] = inid->data[i];
+ if (hnd->insm == 0x3U){  /* Check application header */
+  f = rgm_chk_checkapphead(&(hnd->apph[0]), &i);
+  if (f != RRPGE_ERR_OK){ return f; }
+  /* Load the application descriptor (12 words) */
+  cbp_loadbin.buf = &(hnd->appd[0]);
+  cbp_loadbin.scw = 12U;
+  cbp_loadbin.sow = i;
+  hnd->cb_tsk[RRPGE_CB_LOADBIN](hnd, 0U, &cbp_loadbin);
+  hnd->insm ++;
  }
 
- /* Also clear all breakpoints */
-
- for (i = 0U; i < 2048U; i++){
-  hnd->brkp[i] = 0U;
+ if (hnd->insm == 0x4U){  /* Wait for loading */
+  return RRPGE_ERR_WAIT;
  }
 
- /* Now do a reset to finish the initialization so emulation may start. */
+ if (hnd->insm == 0x5U){  /* Add and check application descriptor */
+  p0 = &(hnd->st.stat[0]);
+  p1 = &(hnd->appd[0]);
+  p0[RRPGE_STA_VARS + 0x18U] = p1[0x0U];
+  p0[RRPGE_STA_VARS + 0x19U] = p1[0x1U];
+  p0[RRPGE_STA_VARS + 0x1AU] = p1[0x8U];
+  p0[RRPGE_STA_VARS + 0x1BU] = p1[0x9U];
+  p0[RRPGE_STA_VARS + 0x1CU] = p1[0xAU];
+  p0[RRPGE_STA_VARS + 0x1DU] = p1[0xBU];
+  f = rrpge_checkappstate(&(hnd->st.stat[0]));
+  if (f != RRPGE_ERR_OK){ return f; }
+  /* Load code area */
+  cbp_loadbin.buf = &(hnd->crom[0]);
+  cbp_loadbin.scw = (((auint)(p1[0x6U]) - 1U) & 0xFFFFU) + 1U;
+  cbp_loadbin.sow = ((auint)(p1[0x2U]) << 16) + (auint)(p1[0x3U]);
+  if ( (cbp_loadbin.scw + cbp_loadbin.sow) >
+       (((auint)(p1[0x0U]) << 16) + (auint)(p1[0x1U])) ){
+   return (RRPGE_ERR_DSC + 0x2U); /* Code is out of app. binary */
+  }
+  hnd->cb_tsk[RRPGE_CB_LOADBIN](hnd, 0U, &cbp_loadbin);
+  hnd->insm ++;
+ }
 
- rrpge_reset(hnd);
+ if (hnd->insm == 0x6U){  /* Wait for loading */
+  return RRPGE_ERR_WAIT;
+ }
 
- /* Done, emulation can start */
+ if (hnd->insm == 0x7U){  /* Check and start loading data */
+  p1 = &(hnd->appd[0]);
+  if (p1[0x7U] > 0xFFC0U){
+   return (RRPGE_ERR_DSC + 0x7U); /* Data wraparound */
+  }
+  /* Load data area */
+  cbp_loadbin.buf = &(hnd->dini[0x40U]);
+  cbp_loadbin.scw = ((auint)(p1[0x7U]));
+  cbp_loadbin.sow = ((auint)(p1[0x4U]) << 16) + (auint)(p1[0x5U]);
+  if ( (cbp_loadbin.scw + cbp_loadbin.sow) >
+       (((auint)(p1[0x0U]) << 16) + (auint)(p1[0x1U])) ){
+   return (RRPGE_ERR_DSC + 0x4U); /* Data is out of app. binary */
+  }
+  hnd->cb_tsk[RRPGE_CB_LOADBIN](hnd, 0U, &cbp_loadbin);
+  hnd->insm ++;
+ }
 
- return RRPGE_ERR_OK;
+ if (hnd->insm == 0x8U){  /* Wait for loading */
+  return RRPGE_ERR_WAIT;
+ }
+
+ if (hnd->insm == 0x9U){  /* Finalize */
+  /* Clear all breakpoints */
+  for (i = 0U; i < 2048U; i++){ hnd->brkp[i] = 0U; }
+  /* Do a reset to finish the initialization so emulation may start. */
+  rrpge_reset(hnd);
+  /* Remove initialization markers */
+  hnd->hlt  = 0U;
+  hnd->insm = 0U;
+  /* Done, emulation can start */
+  return RRPGE_ERR_OK;
+ }
+
+ /* No hit in state machine, so not a valid initialization. */
+
+ return RRPGE_ERR_INI;
 }
 
 
@@ -137,6 +208,11 @@ rrpge_uint32 rrpge_attachstatecomp(rrpge_object_t* hnd)
 /* Submit task result - implementation of RRPGE library function */
 void rrpge_taskend(rrpge_object_t* hnd, rrpge_uint32 tsh, rrpge_uint32 res)
 {
+ if ((hnd->insm) != 0U){ /* Initializing - assume ending an app binary load */
+  hnd->insm ++;          /* Advance initialization state (this notifies that the part is loaded) */
+  return;
+ }
+
  res |= 0x8000U;
  tsh &= 0xFU;
 

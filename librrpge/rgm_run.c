@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.09.24
+**  \date      2014.10.04
 */
 
 
@@ -34,10 +34,12 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
 
  /* Check halt causes, break emulation if necessary. */
 
- if ( (rrpge_m_edat->hlt) & (
-      RRPGE_HLT_AUDIO |        /* Need servicing audio event first */
-      RRPGE_HLT_EXIT |         /* Can not continue */
-      RRPGE_HLT_FAULT) ){      /* Can not continue */
+ if ( ( (rrpge_m_edat->hlt) &
+        (RRPGE_HLT_WAIT |      /* Need to finish initialization first */
+         RRPGE_HLT_AUDIO |     /* Need servicing audio event first */
+         RRPGE_HLT_EXIT |      /* Can not continue */
+         RRPGE_HLT_FAULT) )    /* Can not continue */
+      != 0U){
   return 0U;
  }
  rrpge_m_info.hlt = 0U;        /* All other halt causes simply clear */

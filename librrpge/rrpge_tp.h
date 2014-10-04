@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.10.02
+**  \date      2014.10.04
 */
 
 
@@ -52,25 +52,6 @@ typedef struct{
  rrpge_uint16 dram[  98304U];  /**< CPU data & stack memory accessible to user (96K * 16 bits) */
  rrpge_uint16 stat[   1024U];  /**< Application state (and header) */
 }rrpge_state_t;
-
-
-
-/**
-**  \brief     Initialization data
-**
-**  Data extracted from an RRPGE Application file by which the RRPGE
-**  Application may be initialized for emulation using the rrpge_init()
-**  function. The data member must be filled with the appropriate contents of
-**  the application binary beginning with address 0.
-*/
-typedef struct{
- rrpge_uint16 head[64U];       /**< Application header (first 64 words) */
- rrpge_uint16 desc[12U];       /**< Application descriptor's first 12 words */
- rrpge_uint16 crom[65536U];    /**< Application code */
- rrpge_uint16 data[65536U];    /**< Initial data */
- rrpge_uint32 ccnt;            /**< Count of valid code words */
- rrpge_uint32 dcnt;            /**< Count of valid data words */
-}rrpge_appini_t;
 
 
 
@@ -123,20 +104,24 @@ typedef struct{
 **  \{ */
 /** Succesful return */
 #define RRPGE_ERR_OK   0U
+/** Initialization is waiting to be completed. This is returned by the
+**  initialization functions when they have to wait for the host to provide
+**  parts of the application binary. */
+#define RRPGE_ERR_WAIT 1U
 /** Unknown / unspecified error. Normally this should not be returned, but
 **  libraries which may fail for implementation related reasons may use this
 **  to indicate such a failure. */
-#define RRPGE_ERR_UNK  0x0001U
+#define RRPGE_ERR_UNK  0x0002U
 /** Initialization data error. Returned only by rrpge_init(). Normally for
 **  Application Header or Descriptor problems, the RRPGE_ERR_STA or the
 **  RRPGE_ERR_DSC constant should be returned, this code is reserved for other
 **  problems specific to the initialization data which hinder loading it. */
-#define RRPGE_ERR_INI  0x0002U
+#define RRPGE_ERR_INI  0x0003U
 /** Version mismatch. This can result when loading an application, indicating
 **  that it can not be ran since it was written according to a newer RRPGE
 **  specification. It also happens if a state is attempted to be loaded whose
 **  data does not match the application's. */
-#define RRPGE_ERR_VER  0x0003U
+#define RRPGE_ERR_VER  0x0004U
 /** Application State contains invalid value. In the low 10 bits the word
 **  location containing the erratic value is returned. */
 #define RRPGE_ERR_STA  0x1000U
@@ -196,10 +181,12 @@ typedef struct{
 /** Emulator state is detached. To continue emulation, rrpge_attachstate()
 **  needs to be called first. */
 #define RRPGE_HLT_DETACHED    0x0100U
+/** Initialization is not completed yet (still returns RRPGE_ERR_WAIT). */
+#define RRPGE_HLT_WAIT        0x0200U
 /** Application fault (other). The emulation can not continue. This normally
 **  should not happen, emulators may use this to signal internal errors where
 **  it is detected they can not continue running the emulation. */
-#define RRPGE_HLT_FAULT       0x0200U
+#define RRPGE_HLT_FAULT       0x0400U
 /** \} */
 
 
