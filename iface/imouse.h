@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.15
+**  \date      2014.10.04
 **
 **
 **  Provides the logic for interfacing a single mouse. It can service the
@@ -51,11 +51,6 @@ auint imouse_di(auint id, auint ing);
 ** Service routine for inputcom_ai. Returns mouse cursor coordinates.
 */
 auint imouse_ai(auint di, auint inp);
-
-/*
-** Service routine for inputcom_settouch.
-*/
-void  imouse_settouch(auint ari, auint x, auint y, auint w, auint h);
 
 
 /*

@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.06.29
+**  \date      2014.10.04
 */
 
 
@@ -27,22 +27,17 @@
 /* Prototype for binary load kernel task */
 static void main_loadbin(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par);
 
-/* Temporary pages */
-static uint8  main_tpg8 [8192U];
-static uint16 main_tpg16[4096U];
-static uint16 main_crom [4096U * 16U];
+/* Temporary areas */
+static uint8  main_tdata[128U * 1024U];
 
 /* File handle for the application (must be open while emulating) */
 static FILE*  main_app;
-/* Start of binary pages in app. */
-static auint  main_appbs;
 
 /* Subroutines */
 static const rrpge_cbd_sub_t main_cbsub[4] = {
  { RRPGE_CB_SETPAL,    &render_pal         },
  { RRPGE_CB_MODE,      &render_mode        },
- { RRPGE_CB_DROPDEV,   &inputcom_dropdev   },
- { RRPGE_CB_SETTOUCH,  &inputcom_settouch  }
+ { RRPGE_CB_DROPDEV,   &inputcom_dropdev   }
 };
 /* Tasks */
 static const rrpge_cbd_tsk_t main_cbtsk[1] = {
@@ -62,7 +57,7 @@ static const rrpge_cbpack_t main_cbpack={
  &render_line,
  1,                           /* Task callbacks */
  &main_cbtsk[0],
- 4,                           /* Subroutine callbacks */
+ 3,                           /* Subroutine callbacks */
  &main_cbsub[0],
  5,                           /* Function callbacks */
  &main_cbfun[0]
@@ -74,11 +69,12 @@ static const rrpge_cbpack_t main_cbpack={
 static void main_loadbin(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
 {
  const rrpge_cbp_loadbin_t* p = (const rrpge_cbp_loadbin_t*)(par);
- /* No async task loading, neither check stuff, just run it. Prototype... */
+ /* No async task loading, neither check stuff, just run it. Prototype...
+ ** Note that p->scw can be at most 65536. */
  if (main_app != NULL){
-  filels_readpage(main_app, main_appbs + (p->spg), &main_tpg8[0]);
+  filels_read(main_app, (p->sow) << 1, (p->scw) << 1,  &main_tdata[0]);
  }
- rrpge_convpg_b2w(&main_tpg8[0], (p->buf));
+ rrpge_conv_b2w(&main_tdata[0], (p->buf), (p->scw) << 1);
  rrpge_taskend(hnd, tsh, 0x8000U);
 }
 
@@ -91,18 +87,20 @@ static void main_printrerr(auint e)
 
  if       (e == 0){
   printf("No error\n");
- }else if (e == 0x0001U){
+ }else if (e == RRPGE_ERR_WAIT){
+  printf("RRPGE_ERR_WAIT\n");
+ }else if (e == RRPGE_ERR_UNK){
   printf("RRPGE_ERR_UNK\n");
- }else if (e == 0x0002U){
-  printf("RRPGE_ERR_LIC\n");
- }else if (e == 0x0003U){
-  printf("RRPGE_ERR_PG\n");
- }else if (e == 0x0004U){
+ }else if (e == RRPGE_ERR_INI){
+  printf("RRPGE_ERR_INI\n");
+ }else if (e == RRPGE_ERR_VER){
   printf("RRPGE_ERR_VER\n");
- }else if ((e & 0xF000U) == 0x1000U){
-  printf("RRPGE_ERR_INV, location: 0x%03X\n", e & 0xFFFU);
- }else if ((e & 0xF000U) == 0x2000U){
+ }else if ((e & 0xF000U) == RRPGE_ERR_STA){
+  printf("RRPGE_ERR_STA, location: 0x%03X\n", e & 0xFFFU);
+ }else if ((e & 0xF000U) == RRPGE_ERR_UNS){
   printf("RRPGE_ERR_UNS, location: 0x%03X\n", e & 0xFFFU);
+ }else if ((e & 0xF000U) == RRPGE_ERR_DSC){
+  printf("RRPGE_ERR_DSC, location: 0x%03X\n", e & 0xFFFU);
  }else{
   printf("Unknown, code: 0x%04X\n", e);
  }
@@ -123,9 +121,9 @@ static void main_printhalt(auint h)
  if (h & RRPGE_HLT_INVOP)   { printf(" INVOP"); }
  if (h & RRPGE_HLT_INVKCALL){ printf(" INVKCALL"); }
  if (h & RRPGE_HLT_STACK)   { printf(" STACK"); }
+ if (h & RRPGE_HLT_DETACHED){ printf(" DETACHED"); }
+ if (h & RRPGE_HLT_WAIT)    { printf(" WAIT"); }
  if (h & RRPGE_HLT_FAULT)   { printf(" FAULT"); }
- if (h & RRPGE_HLT_GRAPHICS){ printf(" GRAPHICS"); }
- if (h & RRPGE_HLT_DMA)     { printf(" DMA"); }
  if (h == 0)                { printf(" No halt"); }
 
  printf("\n");
@@ -133,34 +131,57 @@ static void main_printhalt(auint h)
 
 
 
+/* Prints some emulator state */
+static void main_printstats(rrpge_state_t const* sta)
+{
+ uint16 const* stat = &(sta->stat[0]);
+ uint16 const* sram = &(sta->dram[0]);
+ auint  bp;
+
+ /* CPU Registers */
+
+ printf("A...: %04X; B...: %04X; C...: %04X; D...: %04X\n",
+        stat[RRPGE_STA_VARS + 0x0U], stat[RRPGE_STA_VARS + 0x1U],
+        stat[RRPGE_STA_VARS + 0x2U], stat[RRPGE_STA_VARS + 0x3U]);
+ printf("X0..: %04X; X1..: %04X; X2..: %04X; X3..: %04X\n",
+        stat[RRPGE_STA_VARS + 0x4U], stat[RRPGE_STA_VARS + 0x5U],
+        stat[RRPGE_STA_VARS + 0x6U], stat[RRPGE_STA_VARS + 0x7U]);
+ printf("XM..: %04X; XH..: %04X\n",
+        stat[RRPGE_STA_VARS + 0x8U], stat[RRPGE_STA_VARS + 0x9U]);
+ printf("BP..: %04X; SP..: %04X\n",
+        stat[RRPGE_STA_VARS + 0xCU], stat[RRPGE_STA_VARS + 0xBU]);
+ printf("PC..: %04X\n",
+        stat[RRPGE_STA_VARS + 0xAU]);
+
+ /* Stack */
+
+ bp = (auint)(stat[RRPGE_STA_VARS + 0xCU]);
+ if (stat[RRPGE_STA_VARS + 0x1AU] == 0U){
+  bp += 0x10000U;
+ }
+
+ printf("BP+0: %04X; %04X; %04X; %04X; %04X; %04X; %04X; %04X\n",
+        sram[bp + 0x0U], sram[bp + 0x1U], sram[bp + 0x2U], sram[bp + 0x3U],
+        sram[bp + 0x4U], sram[bp + 0x5U], sram[bp + 0x6U], sram[bp + 0x7U]);
+ printf("BP+8: %04X; %04X; %04X; %04X; %04X; %04X; %04X; %04X\n",
+        sram[bp + 0x8U], sram[bp + 0x9U], sram[bp + 0xAU], sram[bp + 0xBU],
+        sram[bp + 0xCU], sram[bp + 0xDU], sram[bp + 0xEU], sram[bp + 0xFU]);
+}
+
+
+
 /* Prints exit error message */
 static void main_errexit(auint h, rrpge_state_t const* sta)
 {
- auint i;
-
  printf("Emulation halted because of error in source program!\n");
  main_printhalt(h);
- printf("Regs: %04X %04X %04X %04X %04X %04X %04X %04X\n",
-        sta->ropd[0xD40U], sta->ropd[0xD41U], sta->ropd[0xD42U], sta->ropd[0xD43U],
-        sta->ropd[0xD44U], sta->ropd[0xD45U], sta->ropd[0xD46U], sta->ropd[0xD47U]);
- printf("PC..: %04X\nXM..: %04X; XH: %04X\nBP..: %04X; SP: %04X\n",
-        sta->ropd[0xD4AU], sta->ropd[0xD48U], sta->ropd[0xD49U],
-        sta->ropd[0xD4CU], sta->ropd[0xD4BU]);
- i = sta->ropd[0xD4CU];
- printf("BP+0: %04X %04X %04X %04X %04X %04X %04X %04X\n",
-        sta->sram[i + 0U], sta->sram[i + 1U], sta->sram[i + 2U], sta->sram[i + 3U],
-        sta->sram[i + 4U], sta->sram[i + 5U], sta->sram[i + 6U], sta->sram[i + 7U]);
- i+= 8U;
- printf("BP+8: %04X %04X %04X %04X %04X %04X %04X %04X\n",
-        sta->sram[i + 0U], sta->sram[i + 1U], sta->sram[i + 2U], sta->sram[i + 3U],
-        sta->sram[i + 4U], sta->sram[i + 5U], sta->sram[i + 6U], sta->sram[i + 7U]);
+ main_printstats(sta);
 }
 
 
 
 int main(int argc, char** argv)
 {
- auint  i;
  auint  j;
  auint  t;
  auint  cdi = 0U;
@@ -168,8 +189,7 @@ int main(int argc, char** argv)
  uint8* lpt;
  uint8* rpt;
  SDL_Event event;      /* The event got from the queue */
- rrpge_object_t*      emu = NULL;
- rrpge_state_t const* sta = NULL;
+ rrpge_object_t* emu = NULL;
 
 
 
@@ -188,29 +208,6 @@ int main(int argc, char** argv)
 
 
 
- /* Try to load the application */
- j = filels_readpage(main_app, 0U, &(main_tpg8[0]));
- if (j < 8192U){
-  printf("Failed to load application header (loaded size: %i)\n", j);
-  goto loadfault;
- }
- rrpge_convpg_b2w(&(main_tpg8[0]), &(main_tpg16[0]));
-
- /* Load code pages */
- t = main_tpg16[0xBC2];             /* Extract number of code pages */
- t = (((t >> 8) - 1U) & 0xFU) + 1U; /* Code pages: 1-16 */
- for (i = 0; i < t; i++){
-  j = filels_readpage(main_app, i + 1U, &(main_tpg8[0]));
-  if (j < 8192U){
-   printf("Failed to load code page (page: %i, loaded size: %i)\n", i, j);
-   goto loadfault;
-  }
-  rrpge_convpg_b2w(&(main_tpg8[0]), &(main_crom[i << 12]));
- }
-
- /* Set binary data start */
- main_appbs = t + 1U;
-
  /* Allocate emulator state. This is temporary as is since the RRPGE library's
  ** rrpge_getdescription() is not implemented yet which would give the size of
  ** the emulator state. */
@@ -220,11 +217,10 @@ int main(int argc, char** argv)
   goto loadfault;
  }
 
- /* Attempt to initialize the emulator over this stuff. */
+ /* Attempt to initialize the emulator. Note that the app. binary load
+ ** callback is blocking, so no need to implement any waiting here using
+ ** rrpge_init_run(). */
  t = rrpge_init(&main_cbpack,         /* Callback set */
-                &(main_tpg16[0]),     /* Application header */
-                &(main_crom[0]),      /* Code memory */
-                t,                    /* Number of code pages */
                 emu);                 /* Emulator object to fill in */
  if (t != RRPGE_ERR_OK){
   printf("Failed to initialize emulator\n");
@@ -275,22 +271,7 @@ int main(int argc, char** argv)
        cdi = 0U;
        printf("Audio events: %08d\n", auc);
        printf("Cycles: %08d\n", j);
-       sta = rrpge_exportstate(emu);
-       printf("Regs: %04X %04X %04X %04X %04X %04X %04X %04X\n",
-              sta->ropd[0xD40U], sta->ropd[0xD41U], sta->ropd[0xD42U], sta->ropd[0xD43U],
-              sta->ropd[0xD44U], sta->ropd[0xD45U], sta->ropd[0xD46U], sta->ropd[0xD47U]);
-       printf("PC: %04X, XM: %04X, XH: %04X, BP: %04X, SP: %04X\n",
-              sta->ropd[0xD4AU], sta->ropd[0xD48U], sta->ropd[0xD49U],
-              sta->ropd[0xD4CU], sta->ropd[0xD4BU]);
-       printf("Data: %04X %04X %04X %04X %04X %04X %04X %04X\n",
-              sta->dram[0x000U], sta->dram[0x001U], sta->dram[0x002U], sta->dram[0x003U],
-              sta->dram[0x004U], sta->dram[0x005U], sta->dram[0x006U], sta->dram[0x007U]);
-       printf("      %04X %04X %04X %04X %04X %04X %04X %04X\n",
-              sta->dram[0x008U], sta->dram[0x009U], sta->dram[0x00AU], sta->dram[0x00BU],
-              sta->dram[0x00CU], sta->dram[0x00DU], sta->dram[0x00EU], sta->dram[0x00FU]);
-       printf("Stac: %04X %04X %04X %04X %04X %04X %04X %04X\n",
-              sta->sram[0x000U], sta->sram[0x001U], sta->sram[0x002U], sta->sram[0x003U],
-              sta->sram[0x004U], sta->sram[0x005U], sta->sram[0x006U], sta->sram[0x007U]);
+       main_printstats(rrpge_peekstate(emu));
        main_printhalt(t);
       }
       /* Need proper exit point... */
@@ -300,8 +281,8 @@ int main(int argc, char** argv)
                    RRPGE_HLT_INVKCALL |
                    RRPGE_HLT_INVOP |
                    RRPGE_HLT_FAULT |
-                   RRPGE_HLT_GRAPHICS |
-                   RRPGE_HLT_DMA)) == 0U);
+                   RRPGE_HLT_DETACHED |
+                   RRPGE_HLT_WAIT)) == 0U);
 
      if ((t & RRPGE_HLT_AUDIO) != 0U){ /* Audio data produced by emulator */
 
@@ -316,8 +297,8 @@ int main(int argc, char** argv)
                RRPGE_HLT_INVKCALL |
                RRPGE_HLT_INVOP |
                RRPGE_HLT_FAULT |
-               RRPGE_HLT_GRAPHICS |
-               RRPGE_HLT_DMA)) != 0U){ /* Errors & Exit */
+               RRPGE_HLT_DETACHED |
+               RRPGE_HLT_WAIT)) != 0U){ /* Errors & Exit */
       break;
      }
 
@@ -328,10 +309,9 @@ int main(int argc, char** argv)
               RRPGE_HLT_INVKCALL |
               RRPGE_HLT_INVOP |
               RRPGE_HLT_FAULT |
-              RRPGE_HLT_GRAPHICS |
-              RRPGE_HLT_DMA)) != 0U){
-     sta = rrpge_exportstate(emu);
-     main_errexit(t, sta);
+              RRPGE_HLT_DETACHED |
+              RRPGE_HLT_WAIT)) != 0U){
+     main_errexit(t, rrpge_peekstate(emu));
      break;                            /* Also exit, with error */
     }
 

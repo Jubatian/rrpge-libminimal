@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.15
+**  \date      2014.10.04
 */
 
 
@@ -116,19 +116,6 @@ auint imouse_ai(auint di, auint inp)
  if (inp == 0U){ return imouse_x; }
  if (inp == 1U){ return imouse_y; }
  return 0U;
-}
-
-
-
-/*
-** Service routine for inputcom_settouch.
-*/
-void  imouse_settouch(auint ari, auint x, auint y, auint w, auint h)
-{
- imouse_touch[ari & 0xFU].x = x;
- imouse_touch[ari & 0xFU].y = y;
- imouse_touch[ari & 0xFU].w = w;
- imouse_touch[ari & 0xFU].h = h;
 }
 
 

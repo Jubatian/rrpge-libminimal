@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.02
+**  \date      2014.10.04
 */
 
 
@@ -14,18 +14,22 @@
 
 
 
-/* Loads a page (8192 bytes) form the given file. The target is always filled,
-** if the file can not be read, then with zeroes. Returns the number of bytes
-** read from the file (0-8192), the rest of the page is zero filled. */
-auint  filels_readpage(FILE* f, auint pg, uint8* buf)
+/* Loads an area form the given file. The target is always filled, if the file
+** can not be read, then with zeroes. Returns the number of bytes read from
+** the file, the rest of the area is zero filled. */
+auint  filels_read(FILE* f, auint off, auint len, uint8* buf)
 {
  auint r;
 
- fseek(f, pg << 13, SEEK_SET);
+ /* No error handling yet, just attemt to read & forget it */
 
- r = fread(buf, 1U, 8192U, f);
+ fseek(f, off, SEEK_SET);
 
- if (r < 8192U) memset(buf + r, 0U, 8192U - r);
+ r = fread(buf, 1U, len, f);
+
+ if (r < len){
+  memset(buf + r, 0U, len - r);
+ }
 
  return r;
 }

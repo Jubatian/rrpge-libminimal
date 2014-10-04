@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.15
+**  \date      2014.10.04
 **
 **
 **  Common handler for input devices interfacing the RRPGE library. It
@@ -77,17 +77,6 @@ typedef auint inputcom_ai_t(auint id, auint inp);
 
 
 /*
-** Accepts the coordinate set for a touch sensitive area. Note that touch
-** sensitive areas are independent of the input sources, the source may use
-** them if necessary (such as if it is a mouse) to provide the appropriate
-** inputs. If the area is cleared (not defined), either width or height is set
-** to zero.
-*/
-typedef void  inputcom_settouch_t(auint ari, auint x, auint y, auint w, auint h);
-
-
-
-/*
 ** A module's callback package to send to this handler. Callbacks may be set
 ** NULL if the module need not use them except for newsrc and isexist.
 */
@@ -97,7 +86,6 @@ typedef struct{
  inputcom_freesrc_t*  freesrc;
  inputcom_di_t*       di;
  inputcom_ai_t*       ai;
- inputcom_settouch_t* settouch;
 }inputcom_cb_t;
 
 
@@ -147,11 +135,6 @@ rrpge_uint32 inputcom_getai(rrpge_object_t* hnd, const void* par);
 ** Pop text FIFO callback service routine.
 */
 rrpge_uint32 inputcom_popchar(rrpge_object_t* hnd, const void* par);
-
-/*
-** Set touch sensitive area callback service routine.
-*/
-void         inputcom_settouch(rrpge_object_t* hnd, const void* par);
 
 
 #endif

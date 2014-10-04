@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.05.15
+**  \date      2014.10.04
 */
 
 
@@ -49,7 +49,6 @@ void inputcom_register(inputcom_cb_t const* cb)
  inputcom_handlers[inputcom_handler_cnt].freesrc  = cb->freesrc;
  inputcom_handlers[inputcom_handler_cnt].di       = cb->di;
  inputcom_handlers[inputcom_handler_cnt].ai       = cb->ai;
- inputcom_handlers[inputcom_handler_cnt].settouch = cb->settouch;
  inputcom_handler_cnt++;
 }
 
@@ -65,7 +64,6 @@ void inputcom_reset(rrpge_object_t* hnd)
  auint i;
  auint j;
  auint t;
- rrpge_uint32 cor[4];
 
  /* If any controller is allocated, free them */
 
@@ -90,17 +88,6 @@ void inputcom_reset(rrpge_object_t* hnd)
      inputcom_dev_src[i] = inputcom_handlers[j].newsrc(t >> 12);
     }
     if (inputcom_dev_src[i] != INPUTCOM_NONE){ break; }
-   }
-  }
- }
-
- /* Set up touch sensitive areas */
-
- for (i = 0U; i < 16U; i++){
-  rrpge_gettoucharea(hnd, i, &cor[0]);
-  for (j = 0U; j < inputcom_handler_cnt; j++){
-   if (inputcom_handlers[j].settouch){
-    inputcom_handlers[j].settouch(i, cor[0], cor[1], cor[2], cor[3]);
    }
   }
  }
@@ -216,20 +203,4 @@ rrpge_uint32 inputcom_getai(rrpge_object_t* hnd, const void* par)
 rrpge_uint32 inputcom_popchar(rrpge_object_t* hnd, const void* par)
 {
  return 0U; /* Not implemented yet. Returns no character in the FIFO for now. */
-}
-
-
-
-/*
-** Set touch sensitive area callback service routine.
-*/
-void         inputcom_settouch(rrpge_object_t* hnd, const void* par)
-{
- rrpge_cbp_settouch_t const* p = (rrpge_cbp_settouch_t const*)(par);
- auint i;
-
- for (i = 0U; i < inputcom_handler_cnt; i++){
-  if (!(inputcom_handlers[i].settouch)){ return; }
-  inputcom_handlers[i].settouch(p->aid, p->x, p->y, p->w, p->h);
- }
 }
