@@ -86,13 +86,11 @@ void  rrpge_m_fifoproc(auint cy)
  /* Run emulation (truly this is the asynchronous Peripheral bus' emulation
  ** task, excluding the Graphics Display Generator) */
 
- do{
+ for (i = 0U; i < 2U; i++){
 
-  i = 0U;
+  if (rrpge_m_info.cyf[i] != 0U){ /* FIFO cycles are to be consumed */
 
-  for (i = 0U; i < 2U; i++){
-
-   if (rrpge_m_info.cyf[i] != 0U){ /* FIFO cycles are to be consumed */
+   while (cy != 0U){
 
     if (rrpge_m_info.cyf[i] < cy){ /* Can't consume all */
 
@@ -129,14 +127,9 @@ void  rrpge_m_fifoproc(auint cy)
 
    }
 
-   /* If the higher priority FIFO (Mixer) is operating, don't proceed with the
-   ** Graphics FIFO. */
-
-   if (rrpge_m_info.cyf[i] != 0U){ break; }
-
   }
 
- }while (cy != 0U);
+ }
 
 }
 

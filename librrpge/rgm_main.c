@@ -85,7 +85,9 @@ rrpge_uint32 rrpge_init_run(rrpge_object_t* hnd)
 
  if (hnd->insm == 0x5U){  /* Add and check application descriptor */
   p0 = &(hnd->st.stat[0]);
-  p1 = &(hnd->appd[0]);
+  p1 = &(hnd->apph[0]);   /* Copy application header */
+  for (i = 0U; i < 64U; i++){ p0[i] = p1[i]; }
+  p1 = &(hnd->appd[0]);   /* Copy app. descriptor elements */
   p0[RRPGE_STA_VARS + 0x18U] = p1[0x0U];
   p0[RRPGE_STA_VARS + 0x19U] = p1[0x1U];
   p0[RRPGE_STA_VARS + 0x1AU] = p1[0x8U];
