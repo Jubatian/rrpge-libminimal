@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.10.04
+**  \date      2014.10.23
 */
 
 
@@ -143,9 +143,9 @@ static auint rrpge_m_chk_uhex(uint16 const* d, auint s, auint e, auint* v)
  *v = 0U;
  for (i = s; i < e; i++){
   b = rrpge_m_chk_getb(d, i);
-  if       ( (b >= (uint8)('0')) || (b <= (uint8)('9')) ){
+  if       ( (b >= (uint8)('0')) && (b <= (uint8)('9')) ){
    *v = ((*v) << 4) + (auint)(b - (uint8)('0'));
-  }else if ( (b >= (uint8)('A')) || (b <= (uint8)('F')) ){
+  }else if ( (b >= (uint8)('A')) && (b <= (uint8)('F')) ){
    *v = ((*v) << 4) + (auint)(b - (uint8)('A') + 10U);
   }else{
    break;
