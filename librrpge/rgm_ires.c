@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.09.30
+**  \date      2014.10.24
 */
 
 
@@ -13,10 +13,11 @@
 
 
 /* State: Nonzero elements in the VARS area (address, data high, data low) */
-#define STANZ_CT 34U
+#define STANZ_CT 35U
 static const uint8  rrpge_m_ires_stanz[3U * STANZ_CT] = {
  0x48U, 0x66U, 0x66U, /* XM register */
  0x52U, 0x00U, 0x03U, /* Graphics mode */
+ 0x55U, 0x07U, 0xF8U, /* GDG display list definition latch */
  0x95U, 0x05U, 0x58U, /* Mixer partitioning */
  0x99U, 0x01U, 0x00U, /* Mixer amplitudo */
  0xA0U, 0xFFU, 0xFFU, /* Accelerator write mask high */
@@ -39,9 +40,9 @@ static const uint8  rrpge_m_ires_stanz[3U * STANZ_CT] = {
  0xDAU, 0x81U, 0x40U, /* GDG source A2 */
  0xDBU, 0xC1U, 0x40U, /* GDG source A3 */
  0xDCU, 0x02U, 0x60U, /* GDG source B0 */
- 0xDCU, 0x82U, 0x60U, /* GDG source B1 */
- 0xDCU, 0x03U, 0x60U, /* GDG source B2 */
- 0xDCU, 0x83U, 0x60U, /* GDG source B3 */
+ 0xDDU, 0x82U, 0x60U, /* GDG source B1 */
+ 0xDEU, 0x03U, 0x60U, /* GDG source B2 */
+ 0xDFU, 0x83U, 0x60U, /* GDG source B3 */
  0xE3U, 0x00U, 0x01U, /* Pointer 0 increment */
  0xEBU, 0x00U, 0x04U, /* Pointer 1 increment */
  0xECU, 0x00U, 0x02U, /* Pointer 1 size */

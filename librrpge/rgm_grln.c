@@ -5,7 +5,7 @@
 **  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEv2 (version 2 of the RRPGE License):
 **             see LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
-**  \date      2014.10.02
+**  \date      2014.10.24
 */
 
 
@@ -131,7 +131,7 @@ void rrpge_m_grln(void)
    soff = (csr & 0xF000U) | ((((cmd >> 16) & 0xFFFU) << ((csr >> 5) & 7U)) & 0xFFFFU);
    if       ((cmd & 0xBC00U) == 0U){ /* Render command inactive */
     scy = 0U;
-   }else if ((csr & 0x0080U) != 0U){ /* Shift source */
+   }else if ((csr & 0x0010U) != 0U){ /* Shift source */
     scy = opw[(cmd >> 30) & 1U];
    }else{                            /* Positioned source */
     scy = (((csr & 0xFU) << 1) + 1U) << ((csr >> 5) & 7U);
@@ -177,7 +177,7 @@ void rrpge_m_grln(void)
 
     /* Do the blit */
 
-    if ((csr & 0x0080U) != 0U){   /* Shift source */
+    if ((csr & 0x0010U) != 0U){   /* Shift source */
 
      /* Will shift to the left, based on low 3 bits of command. Initial source
      ** is always fetched. */
@@ -187,7 +187,7 @@ void rrpge_m_grln(void)
 
      /* Source position */
 
-     spms = (1U << ((csr >> 8) & 7U)) - 1U;
+     spms = (1U << ((csr >> 5) & 7U)) - 1U;
      spos = ((cmd >> 3) & 0x7FU) & spms;
 
      /* Fetch first source */
