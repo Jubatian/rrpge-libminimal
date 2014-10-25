@@ -145,9 +145,8 @@ static void rrpge_m_ires_setb(uint32* d, auint o, auint v)
 
 
 
-/* Initializes library specific portions of the emulation instance, also used
-** when loading state. */
-void rrpge_m_ires_initl(rrpge_object_t* obj)
+/* Initializes library specific portions of the emulation instance. */
+static void rrpge_m_ires_initl(rrpge_object_t* obj)
 {
  /* Note: breakpoints are not affected! */
 
@@ -177,36 +176,28 @@ void rrpge_m_ires_initl(rrpge_object_t* obj)
 
 
 
-/* Initializes starting resources for an RRPGE emulator object. This includes
-** areas of the application state and data memory areas. It does not depend on
-** the application loaded or to be loaded. */
-void rrpge_m_ires_init(rrpge_object_t* obj)
+/* Initializes the CPU data memory into the 'dini' member of the object. This
+** should be called before loading the application binary so data memory
+** portions not loaded from the binary are adequately initialized */
+void rrpge_m_ires_initdata(rrpge_object_t* obj)
 {
- auint i;
- auint j;
- auint t;
- auint r;
+ auint   i;
+ auint   j;
+ auint   t;
+ auint   r;
+ uint16* d = &(obj->dini[0]);
 
+ /* Reset data memory initializer */
 
- /* Reset Application State */
- for (i = 0U; i < (sizeof(obj->st.stat) / sizeof(obj->st.stat[0])); i++){
-  obj->st.stat[i] = 0U;
+ for (i = 0U; i < (sizeof(obj->dini) / sizeof(obj->dini[0])); i++){
+  d[i] = 0U;
  }
 
- /* Reset memories */
- for (i = 0U; i < (sizeof(obj->st.dram) / sizeof(obj->st.dram[0])); i++){
-  obj->st.dram[i] = 0U;
- }
- for (i = 0U; i < RRPGE_M_PRAMS; i++){
-  obj->st.pram[i] = 0U;
- }
-
-
- /* Populate CPU Data memory */
+ /* Populate it */
 
  /* Color palette */
  for (i = 0U; i < 256U; i++){
-  obj->st.dram[0xFB00U + i] = rrpge_m_ires_pal[i];
+  d[0xFB00U + i] = rrpge_m_ires_pal[i];
  }
 
  /* Musical logarithmic table */
@@ -217,8 +208,8 @@ void rrpge_m_ires_init(rrpge_object_t* obj)
   i--;
   j--;
   r = rrpge_m_ires_ft[j] >> t;
-  obj->st.dram[0xFC00U + (i << 1)] = (uint16)(r >> 16);
-  obj->st.dram[0xFC01U + (i << 1)] = (uint16)(r);
+  d[0xFC00U + (i << 1)] = (uint16)(r >> 16);
+  d[0xFC01U + (i << 1)] = (uint16)(r);
   if (j == 0U){
    t++;
    j = 12U;
@@ -226,94 +217,167 @@ void rrpge_m_ires_init(rrpge_object_t* obj)
  }while (i != 0U);
 
  /* Large sine table */
- obj->st.dram[0xFE00U] = 0x0000U;
- obj->st.dram[0xFE80U] = 0x4000U;
- obj->st.dram[0xFF00U] = 0x0000U;
- obj->st.dram[0xFF80U] = 0xC000U;
+ d[0xFE00U] = 0x0000U;
+ d[0xFE80U] = 0x4000U;
+ d[0xFF00U] = 0x0000U;
+ d[0xFF80U] = 0xC000U;
  for (i = 1U; i < 128U; i++){
-  obj->st.dram[0xFE00U + i] = rrpge_m_ires_sinq16[i];
+  d[0xFE00U + i] = rrpge_m_ires_sinq16[i];
  }
  for (i = 1U; i < 128U; i++){
-  obj->st.dram[0xFE80U + i] = rrpge_m_ires_sinq16[128U - i];
+  d[0xFE80U + i] = rrpge_m_ires_sinq16[128U - i];
  }
  for (i = 1U; i < 128U; i++){
-  obj->st.dram[0xFF00U + i] = 0x0000U - rrpge_m_ires_sinq16[i];
+  d[0xFF00U + i] = 0x0000U - rrpge_m_ires_sinq16[i];
  }
  for (i = 1U; i < 128U; i++){
-  obj->st.dram[0xFF80U + i] = 0x0000U - rrpge_m_ires_sinq16[128U - i];
+  d[0xFF80U + i] = 0x0000U - rrpge_m_ires_sinq16[128U - i];
  }
+
+}
+
+
+
+/* Initializes state after the application header and descriptor were loaded.
+** This should be used in initialization, so the complete header may be
+** checked at once. */
+void rrpge_m_ires_initstat(rrpge_object_t* obj)
+{
+ auint   i;
+ uint16 *s = &(obj->st.stat[0]);
+
+ /* Reset Application State */
+
+ for (i = 0U; i < (sizeof(obj->st.stat) / sizeof(obj->st.stat[0])); i++){
+  s[i] = 0U;
+ }
+
+ /* Populate nonzero members of Application State */
+
+ /* Stuff in the VARS area */
+ for (i = 0U; i < STANZ_CT; i++){
+  s[rrpge_m_ires_stanz[i * 3U]] = ((auint)(rrpge_m_ires_stanz[(i * 3U) + 1U]) << 8) +
+                                  ((auint)(rrpge_m_ires_stanz[(i * 3U) + 2U]));
+ }
+
+ /* Color palette */
+ for (i = 0U; i < 256U; i++){
+  s[RRPGE_STA_PAL + i] = rrpge_m_ires_pal[i];
+ }
+
+
+ /* Add application header and descriptor elements */
+
+ for (i = 0U; i < 64U; i++){
+  s[i] = obj->apph[i];
+ }
+ s[RRPGE_STA_VARS + 0x18U] = obj->appd[0x0U];
+ s[RRPGE_STA_VARS + 0x19U] = obj->appd[0x1U];
+ s[RRPGE_STA_VARS + 0x1AU] = obj->appd[0x8U];
+ s[RRPGE_STA_VARS + 0x1BU] = obj->appd[0x9U];
+ s[RRPGE_STA_VARS + 0x1CU] = obj->appd[0xAU];
+ s[RRPGE_STA_VARS + 0x1DU] = obj->appd[0xBU];
+}
+
+
+
+/* Initializes starting resources for an RRPGE emulator object after an
+** application was loaded. This should be used before starting emulation or
+** when resetting it. Does not depend on state correctness, so a state check
+** is not necessary before calling. */
+void rrpge_m_ires_init(rrpge_object_t* obj)
+{
+ auint   i;
+ auint   r;
+ uint32 *p = &(obj->st.pram[0]);
+
+
+ /* Reset memories */
+
+ for (i = 0U; i < (sizeof(obj->dini   ) / sizeof(obj->dini[0]   )); i++){
+  obj->st.dram[i] = obj->dini[i];
+ }
+ for (      ; i < (sizeof(obj->st.dram) / sizeof(obj->st.dram[0])); i++){
+  obj->st.dram[i] = 0U;
+ }
+
+ for (i = 0U; i < RRPGE_M_PRAMS; i++){
+  p[i] = 0U;
+ }
+
+ rrpge_m_ires_initstat(obj);
 
 
  /* Populate Peripheral RAM with initial data blocks */
 
  /* 0xFFE00 - 0xFFE3F: 50% square wave */
  for (i = 0U; i < 0x80U; i++){
-  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFE00U << 2) + i, 0xFFU);
+  rrpge_m_ires_setb(p, (0xFFE00U << 2) + i, 0xFFU);
  }
  for (i = 0U; i < 0x80U; i++){
-  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFE20U << 2) + i, 0x00U);
+  rrpge_m_ires_setb(p, (0xFFE20U << 2) + i, 0x00U);
  }
 
  /* 0xFFE40 - 0xFFE7F: Sine */
  for (i = 0U; i < 0x40U; i++){
-  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFE40U << 2) + i, rrpge_m_ires_sinq8[i]);
+  rrpge_m_ires_setb(p, (0xFFE40U << 2) + i, rrpge_m_ires_sinq8[i]);
  }
  for (i = 0U; i < 0x40U; i++){
-  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFE50U << 2) + i, rrpge_m_ires_sinq8[0x3FU - i]);
+  rrpge_m_ires_setb(p, (0xFFE50U << 2) + i, rrpge_m_ires_sinq8[0x3FU - i]);
  }
  for (i = 0U; i < 0x40U; i++){
-  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFE60U << 2) + i, 0xFFU - rrpge_m_ires_sinq8[i]);
+  rrpge_m_ires_setb(p, (0xFFE60U << 2) + i, 0xFFU - rrpge_m_ires_sinq8[i]);
  }
  for (i = 0U; i < 0x40U; i++){
-  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFE70U << 2) + i, 0xFFU - rrpge_m_ires_sinq8[0x3FU - i]);
+  rrpge_m_ires_setb(p, (0xFFE70U << 2) + i, 0xFFU - rrpge_m_ires_sinq8[0x3FU - i]);
  }
 
  /* 0xFFE80 - 0xFFEBF: Triangle */
  for (i = 0U; i < 0x40U; i++){
-  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFE80U << 2) + i, (i << 1) + 0x80U);
+  rrpge_m_ires_setb(p, (0xFFE80U << 2) + i, (i << 1) + 0x80U);
  }
  for (i = 0U; i < 0x80U; i++){
-  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFE90U << 2) + i, ((0x7FU - i) << 1) + 0x01U);
+  rrpge_m_ires_setb(p, (0xFFE90U << 2) + i, ((0x7FU - i) << 1) + 0x01U);
  }
  for (i = 0U; i < 0x40U; i++){
-  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFEB0U << 2) + i, (i << 1));
+  rrpge_m_ires_setb(p, (0xFFEB0U << 2) + i, (i << 1));
  }
 
  /* 0xFFEC0 - 0xFFEFF: Spikes */
  for (i = 0U; i < 0x40U; i++){
-  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFEC0U << 2) + i, 0x80U + (0xFFU - rrpge_m_ires_sinq8[0x3FU - i]));
+  rrpge_m_ires_setb(p, (0xFFEC0U << 2) + i, 0x80U + (0xFFU - rrpge_m_ires_sinq8[0x3FU - i]));
  }
  for (i = 0U; i < 0x40U; i++){
-  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFED0U << 2) + i, 0x80U + (0xFFU - rrpge_m_ires_sinq8[i]));
+  rrpge_m_ires_setb(p, (0xFFED0U << 2) + i, 0x80U + (0xFFU - rrpge_m_ires_sinq8[i]));
  }
  for (i = 0U; i < 0x40U; i++){
-  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFEE0U << 2) + i, rrpge_m_ires_sinq8[0x3FU - i] - 0x80U);
+  rrpge_m_ires_setb(p, (0xFFEE0U << 2) + i, rrpge_m_ires_sinq8[0x3FU - i] - 0x80U);
  }
  for (i = 0U; i < 0x40U; i++){
-  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFEF0U << 2) + i, rrpge_m_ires_sinq8[i] - 0x80U);
+  rrpge_m_ires_setb(p, (0xFFEF0U << 2) + i, rrpge_m_ires_sinq8[i] - 0x80U);
  }
 
  /* 0xFFF00 - 0xFFF3F: Sawtooth, incremental */
  for (i = 0U; i < 0x100U; i++){
-  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFF00U << 2) + i, i);
+  rrpge_m_ires_setb(p, (0xFFF00U << 2) + i, i);
  }
 
  /* 0xFFF40 - 0xFFF7F: Sawtooth, decremental */
  for (i = 0U; i < 0x100U; i++){
-  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFF40U << 2) + i, 0xFFU - i);
+  rrpge_m_ires_setb(p, (0xFFF40U << 2) + i, 0xFFU - i);
  }
 
  /* 0xFFF80 - 0xFFFBF: Noise 1 */
  r = 0U;
  for (i = 0U; i < 0x100U; i++){
-  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFF80U << 2) + i, r);
+  rrpge_m_ires_setb(p, (0xFFF80U << 2) + i, r);
   r = (((r >> 7) + (r + r) + 0xBBU) ^ 0x7FU) & 0xFFU;
  }
 
  /* 0xFFFC0 - 0xFFFFF: Noise 2 */
  r = 0U;
  for (i = 0U; i < 0x100U; i++){
-  rrpge_m_ires_setb(&(obj->st.pram[0]), (0xFFFC0U << 2) + i, r);
+  rrpge_m_ires_setb(p, (0xFFFC0U << 2) + i, r);
   r = (((r >> 7) + (r + r) + 0xA3U) ^ 0xB3U) & 0xFFU;
  }
 
@@ -322,26 +386,12 @@ void rrpge_m_ires_init(rrpge_object_t* obj)
 
  /* 0xFF000 - 0xFF7FF: Display list (only first 1600 entries used) */
  for (i = 0U; i < 200U; i++){
-  obj->st.pram[0xFF000U + (i * 8U) + 1U] = 0x0000C000U + (i * 0x50000U);
+  p[0xFF000U + (i * 8U) + 1U] = 0x0000C000U + (i * 0x50000U);
  }
 
  /* 0xFF800 - 0xFFBFF: Audio buffers (silence) */
  for (i = 0U; i < 1024U; i++){
-  obj->st.pram[0xFF800U + i] = 0x80808080U;
- }
-
-
- /* Populate nonzero members of Application State */
-
- /* Stuff in the VARS area */
- for (i = 0U; i < STANZ_CT; i++){
-  obj->st.stat[rrpge_m_ires_stanz[i * 3U]] = ((auint)(rrpge_m_ires_stanz[(i * 3U) + 1U]) << 8) +
-                                             ((auint)(rrpge_m_ires_stanz[(i * 3U) + 2U]));
- }
-
- /* Color palette */
- for (i = 0U; i < 256U; i++){
-  obj->st.stat[RRPGE_STA_PAL + i] = rrpge_m_ires_pal[i];
+  p[0xFF800U + i] = 0x80808080U;
  }
 
 

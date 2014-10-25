@@ -25,13 +25,6 @@ rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb, rrpge_object_t* hnd)
 
  rrpge_m_cb_process(hnd, cb);
 
- /* Do an init to get initial data RAM. This is not nice, and later should be
- ** re-organized, so init won't be necessary to be called twice (secondly in
- ** reset) by properly implementing handling the initial state of data memory
- ** as combined from the app. binary and the initial RRPGE data. */
-
- rrpge_m_ires_init(hnd);
-
  /* Init halt cause and initialization state machine */
 
  hnd->insm = 0x1U;
@@ -47,104 +40,122 @@ rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb, rrpge_object_t* hnd)
 /* Run initialization - implementation of RRPGE library function */
 rrpge_uint32 rrpge_init_run(rrpge_object_t* hnd)
 {
- auint f;
- auint i;
- uint16* p0;
- uint16* p1;
+ auint   f;
+ auint   i;
+ uint16* p;
  rrpge_cbp_loadbin_t cbp_loadbin;
 
  /* Initialization state machine. Note that hnd->insm might be incremented by
  ** the callbacks if the host does not load the part asynchronously. */
 
+
  if (hnd->insm == 0x1U){  /* Initialization start */
+
   /* Load the application header */
   cbp_loadbin.buf = &(hnd->apph[0]);
   cbp_loadbin.scw = 64U;
   cbp_loadbin.sow = 0U;
   hnd->cb_tsk[RRPGE_CB_LOADBIN](hnd, 0U, &cbp_loadbin);
   hnd->insm ++;
+
  }
+
 
  if (hnd->insm == 0x2U){  /* Wait for loading */
   return RRPGE_ERR_WAIT;
  }
 
- if (hnd->insm == 0x3U){  /* Check application header */
-  f = rgm_chk_checkapphead(&(hnd->apph[0]), &i);
+
+ if (hnd->insm == 0x3U){  /* Start loading application descriptor */
+
+  f = rgm_chk_checkapphead(&(hnd->apph[0]), &i); /* Needed to retrieve descriptor offset */
   if (f != RRPGE_ERR_OK){ return f; }
+
   /* Load the application descriptor (12 words) */
   cbp_loadbin.buf = &(hnd->appd[0]);
   cbp_loadbin.scw = 12U;
   cbp_loadbin.sow = i;
   hnd->cb_tsk[RRPGE_CB_LOADBIN](hnd, 0U, &cbp_loadbin);
   hnd->insm ++;
+
  }
+
 
  if (hnd->insm == 0x4U){  /* Wait for loading */
   return RRPGE_ERR_WAIT;
  }
 
- if (hnd->insm == 0x5U){  /* Add and check application descriptor */
-  p0 = &(hnd->st.stat[0]);
-  p1 = &(hnd->apph[0]);   /* Copy application header */
-  for (i = 0U; i < 64U; i++){ p0[i] = p1[i]; }
-  p1 = &(hnd->appd[0]);   /* Copy app. descriptor elements */
-  p0[RRPGE_STA_VARS + 0x18U] = p1[0x0U];
-  p0[RRPGE_STA_VARS + 0x19U] = p1[0x1U];
-  p0[RRPGE_STA_VARS + 0x1AU] = p1[0x8U];
-  p0[RRPGE_STA_VARS + 0x1BU] = p1[0x9U];
-  p0[RRPGE_STA_VARS + 0x1CU] = p1[0xAU];
-  p0[RRPGE_STA_VARS + 0x1DU] = p1[0xBU];
+
+ if (hnd->insm == 0x5U){  /* Merge and check application header and descriptor */
+
+  rrpge_m_ires_initstat(hnd);
   f = rrpge_checkappstate(&(hnd->st.stat[0]));
   if (f != RRPGE_ERR_OK){ return f; }
+
   /* Load code area */
+  p = &(hnd->appd[0]);
   cbp_loadbin.buf = &(hnd->crom[0]);
-  cbp_loadbin.scw = (((auint)(p1[0x6U]) - 1U) & 0xFFFFU) + 1U;
-  cbp_loadbin.sow = ((auint)(p1[0x2U]) << 16) + (auint)(p1[0x3U]);
+  cbp_loadbin.scw = (((auint)(p[0x6U]) - 1U) & 0xFFFFU) + 1U;
+  cbp_loadbin.sow = ((auint)(p[0x2U]) << 16) + (auint)(p[0x3U]);
   if ( (cbp_loadbin.scw + cbp_loadbin.sow) >
-       (((auint)(p1[0x0U]) << 16) + (auint)(p1[0x1U])) ){
+       (((auint)(p[0x0U]) << 16) + (auint)(p[0x1U])) ){
    return (RRPGE_ERR_DSC + 0x2U); /* Code is out of app. binary */
   }
   hnd->cb_tsk[RRPGE_CB_LOADBIN](hnd, 0U, &cbp_loadbin);
   hnd->insm ++;
+
  }
+
 
  if (hnd->insm == 0x6U){  /* Wait for loading */
   return RRPGE_ERR_WAIT;
  }
 
+
  if (hnd->insm == 0x7U){  /* Check and start loading data */
-  p1 = &(hnd->appd[0]);
-  if (p1[0x7U] > 0xFFC0U){
+
+  p = &(hnd->appd[0]);
+  if (p[0x7U] > 0xFFC0U){
    return (RRPGE_ERR_DSC + 0x7U); /* Data wraparound */
   }
+  rrpge_m_ires_initdata(hnd);     /* Reset data memory initializer */
+
   /* Load data area */
   cbp_loadbin.buf = &(hnd->dini[0x40U]);
-  cbp_loadbin.scw = ((auint)(p1[0x7U]));
-  cbp_loadbin.sow = ((auint)(p1[0x4U]) << 16) + (auint)(p1[0x5U]);
+  cbp_loadbin.scw = ((auint)(p[0x7U]));
+  cbp_loadbin.sow = ((auint)(p[0x4U]) << 16) + (auint)(p[0x5U]);
   if ( (cbp_loadbin.scw + cbp_loadbin.sow) >
-       (((auint)(p1[0x0U]) << 16) + (auint)(p1[0x1U])) ){
+       (((auint)(p[0x0U]) << 16) + (auint)(p[0x1U])) ){
    return (RRPGE_ERR_DSC + 0x4U); /* Data is out of app. binary */
   }
   hnd->cb_tsk[RRPGE_CB_LOADBIN](hnd, 0U, &cbp_loadbin);
   hnd->insm ++;
+
  }
+
 
  if (hnd->insm == 0x8U){  /* Wait for loading */
   return RRPGE_ERR_WAIT;
  }
 
+
  if (hnd->insm == 0x9U){  /* Finalize */
+
   /* Clear all breakpoints */
   for (i = 0U; i < 2048U; i++){ hnd->brkp[i] = 0U; }
+
   /* Do a reset to finish the initialization so emulation may start. */
   rrpge_reset(hnd);
-  /* Remove initialization markers */
-  hnd->hlt  = 0U;
+
+  /* State machine ends. Halt causes are clear due to rrpge_reset() at this
+  ** point. */
   hnd->insm = 0U;
+
   /* Done, emulation can start */
   return RRPGE_ERR_OK;
+
  }
+
 
  /* No hit in state machine, so not a valid initialization. */
 
@@ -156,13 +167,7 @@ rrpge_uint32 rrpge_init_run(rrpge_object_t* hnd)
 /* Reset emulator instance - implementation of RRPGE library function */
 void rrpge_reset(rrpge_object_t* hnd)
 {
- auint i;
-
  rrpge_m_ires_init(hnd);
-
- for (i = 0U; i < 65536U; i++){
-  hnd->st.dram[i] = hnd->dini[i];
- }
 }
 
 

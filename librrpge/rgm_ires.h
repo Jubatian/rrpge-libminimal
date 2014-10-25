@@ -16,14 +16,21 @@
 #include "rgm_info.h"
 
 
-/* Initializes library specific portions of the emulation instance, also used
-** when loading state. */
-void rrpge_m_ires_initl(rrpge_object_t* obj);
+/* Initializes the CPU data memory into the 'dini' member of the object. This
+** should be called before loading the application binary so data memory
+** portions not loaded from the binary are adequately initialized */
+void rrpge_m_ires_initdata(rrpge_object_t* obj);
 
 
-/* Initializes starting resources for an RRPGE emulator object. This includes
-** areas of the application state and data memory areas. It does not depend on
-** the application loaded or to be loaded. */
+/* Initializes state after the application header and descriptor were loaded.
+** This should be used in initialization, so the complete header may be
+** checked at once. */
+void rrpge_m_ires_initstat(rrpge_object_t* obj);
+
+
+/* Initializes starting resources for an RRPGE emulator object after an
+** application was loaded. This should be used before starting emulation or
+** when resetting it. */
 void rrpge_m_ires_init(rrpge_object_t* obj);
 
 
