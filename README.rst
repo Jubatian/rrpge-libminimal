@@ -4,8 +4,9 @@ RRPGE Minimal library & Host prototype
 
 :Author:    Sandor Zsuga (Jubatian)
 :Copyright: 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
-            License) extended as RRPGEv2 (version 2 of the RRPGE License): see
-            LICENSE.GPLv3 and LICENSE.RRPGEv2 in the project root.
+            License) extended as RRPGEvt (temporary version of the RRPGE
+            License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
+            root.
 
 
 
@@ -26,6 +27,17 @@ The basic features: graphics and audio should work reasonably well and
 according to the RRPGE specification meeting the minimal timing requirements.
 The program is largely untested though, and contains several locations of
 prototype patches.
+
+
+Temporary license notes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Currently the project is developed under a temporary GPL compatible license.
+The intention for later is to add some permissive exceptions to this license,
+allowing for creating derivative works (most importantly, applications) under
+other licenses than GPL.
+
+For more information, see http://www.rrpge.org/community/index.php?topic=30.0
 
 
 

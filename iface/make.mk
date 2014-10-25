@@ -1,8 +1,9 @@
 #
 # Author    Sandor Zsuga (Jubatian)
 # Copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
-#           License) extended as RRPGEv1 (version 1 of the RRPGE License): see
-#           LICENSE.GPLv3 and LICENSE.RRPGEv1 in the project root.
+#           License) extended as RRPGEvt (temporary version of the RRPGE
+#           License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
+#           root.
 #
 
 OBJECTS+= $(OBD)render.o   $(OBD)inputcom.o $(OBD)input.o    $(OBD)imouse.o
