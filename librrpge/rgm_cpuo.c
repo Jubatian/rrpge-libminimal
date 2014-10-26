@@ -133,7 +133,7 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_div_14(void)
  }
  rrpge_m_info.awf(t1);
  rrpge_m_info.pc += rrpge_m_info.oaw;
- return rrpge_m_info.ocy + 11U;
+ return rrpge_m_info.ocy + 21U;
 }
 /* 0001 011r rraa aaaa: DIV rx, adr */
 RRPGE_M_FASTCALL static auint rrpge_m_op_div_16(void)
@@ -146,7 +146,7 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_div_16(void)
  }
  rrpge_m_info.xr[ra] = t1;
  rrpge_m_info.pc += rrpge_m_info.oaw;
- return rrpge_m_info.ocy + 11U;
+ return rrpge_m_info.ocy + 21U;
 }
 
 
@@ -201,7 +201,7 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_mul_20(void)
  auint t0 = rrpge_m_addr_read_table[op & 0x3FU](1U);
  rrpge_m_info.awf(t0 * rrpge_m_info.xr[((op >> 6) & 0x7U)]);
  rrpge_m_info.pc += rrpge_m_info.oaw;
- return rrpge_m_info.ocy + 11U;
+ return rrpge_m_info.ocy + 13U;
 }
 /* 0010 001r rraa aaaa: MUL rx, adr */
 RRPGE_M_FASTCALL static auint rrpge_m_op_mul_22(void)
@@ -210,7 +210,7 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_mul_22(void)
  auint t0 = rrpge_m_addr_read_table[op & 0x3FU](0U);
  rrpge_m_info.xr[((op >> 6) & 0x7U)] *= t0;
  rrpge_m_info.pc += rrpge_m_info.oaw;
- return rrpge_m_info.ocy + 11U;
+ return rrpge_m_info.ocy + 13U;
 }
 
 
@@ -281,7 +281,7 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_mac_30(void)
  rrpge_m_info.awf( (t0 * rrpge_m_info.xr[((op >> 6) & 0x7U)]) +
                    rrpge_m_info.xr[REG_C]);
  rrpge_m_info.pc += rrpge_m_info.oaw;
- return rrpge_m_info.ocy + 12U;
+ return rrpge_m_info.ocy + 14U;
 }
 /* 0011 001r rraa aaaa: MAC rx, adr */
 RRPGE_M_FASTCALL static auint rrpge_m_op_mac_32(void)
@@ -291,7 +291,7 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_mac_32(void)
  rrpge_m_info.xr[ra] = (t0 * rrpge_m_info.xr[ra]) +
                        rrpge_m_info.xr[REG_C];
  rrpge_m_info.pc += rrpge_m_info.oaw;
- return rrpge_m_info.ocy + 12U;
+ return rrpge_m_info.ocy + 14U;
 }
 
 
