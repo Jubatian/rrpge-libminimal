@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.10.26
 */
 
 
@@ -33,6 +33,15 @@ static uint8  main_tdata[128U * 1024U];
 
 /* File handle for the application (must be open while emulating) */
 static FILE*  main_app;
+
+/* Application name string */
+static char const* main_appname = "RRPGE simple SDL emulator. Version: 00.012.000-00";
+static char const* main_appicon = "RRPGE";
+
+/* Other elements */
+static char const* main_appauth = "By: Sandor Zsuga (Jubatian)\n";
+static char const* main_copyrig = "Copyright: 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public\nLicense) extended as RRPGEvt (temporary version of the RRPGE License):\nsee LICENSE.GPLv3 and LICENSE.RRPGEvt in the project root.\n";
+
 
 /* Subroutines */
 static const rrpge_cbd_sub_t main_cbsub[4] = {
@@ -194,6 +203,16 @@ int main(int argc, char** argv)
 
 
 
+ /* Init message */
+ printf("\n");
+ printf("%s", main_appname);
+ printf("\n\n");
+ printf("%s", main_appauth);
+ printf("%s", main_copyrig);
+ printf("\n");
+
+
+
  /* Check arguments: need an application */
  if (argc <= 1){
   printf("Error: need an application to run as parameter!\n");
@@ -237,6 +256,7 @@ int main(int argc, char** argv)
 
  /* Try to set up the screen */
  if (screen_set()!=0) return -1;
+ SDL_WM_SetCaption(main_appname, main_appicon);
 
  /* Set up audio */
  if (audio_set(2048U) != 0U) return -1;
