@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.10.26
 */
 
 
@@ -73,6 +73,11 @@ static void rrpge_m_cb_mode(rrpge_object_t* hnd, const void* par)
  ** if not implemented. */
 }
 
+/* Subroutine: Set stereoscopic 3D */
+static void rrpge_m_cb_setst3d(rrpge_object_t* hnd, const void* par)
+{
+}
+
 /* Function: Get device properties */
 static rrpge_uint32 rrpge_m_cb_getprops(rrpge_object_t* hnd, const void* par)
 {
@@ -127,6 +132,12 @@ static rrpge_uint32 rrpge_m_cb_getlang(rrpge_object_t* hnd, const void* par)
 
 /* Function: Get user preferred colors */
 static rrpge_uint32 rrpge_m_cb_getcolors(rrpge_object_t* hnd, const void* par)
+{
+ return 0;
+}
+
+/* Function: Get user stereoscopic 3D preference */
+static rrpge_uint32 rrpge_m_cb_getst3d(rrpge_object_t* hnd, const void* par)
 {
  return 0;
 }
@@ -197,6 +208,7 @@ static auint rrpge_m_cbid_isvalid(auint id)
  if (id == RRPGE_CB_LISTUSERS){ return 1; }
  if (id == RRPGE_CB_SETPAL)   { return 1; }
  if (id == RRPGE_CB_MODE)     { return 1; }
+ if (id == RRPGE_CB_SETST3D)  { return 1; }
  if (id == RRPGE_CB_DROPDEV)  { return 1; }
  if (id == RRPGE_CB_CHECKAREA){ return 1; }
  if (id == RRPGE_CB_GETLOCAL) { return 1; }
@@ -207,6 +219,7 @@ static auint rrpge_m_cbid_isvalid(auint id)
  if (id == RRPGE_CB_POPCHAR)  { return 1; }
  if (id == RRPGE_CB_GETLANG)  { return 1; }
  if (id == RRPGE_CB_GETCOLORS){ return 1; }
+ if (id == RRPGE_CB_GETST3D)  { return 1; }
  return 0;
 }
 
@@ -231,6 +244,7 @@ void rrpge_m_cb_process(rrpge_object_t* obj, rrpge_cbpack_t const* cbp)
  obj->cb_tsk[RRPGE_CB_LISTUSERS] = &rrpge_m_cb_listusers;
  obj->cb_sub[RRPGE_CB_SETPAL]    = &rrpge_m_cb_setpal;
  obj->cb_sub[RRPGE_CB_MODE]      = &rrpge_m_cb_mode;
+ obj->cb_sub[RRPGE_CB_SETST3D]   = &rrpge_m_cb_setst3d;
  obj->cb_sub[RRPGE_CB_DROPDEV]   = &rrpge_m_cb_dropdev;
  obj->cb_sub[RRPGE_CB_GETLOCAL]  = &rrpge_m_cb_getlocal;
  obj->cb_fun[RRPGE_CB_GETPROPS]  = &rrpge_m_cb_getprops;
@@ -241,6 +255,7 @@ void rrpge_m_cb_process(rrpge_object_t* obj, rrpge_cbpack_t const* cbp)
  obj->cb_fun[RRPGE_CB_CHECKAREA] = &rrpge_m_cb_checkarea;
  obj->cb_fun[RRPGE_CB_GETLANG]   = &rrpge_m_cb_getlang;
  obj->cb_fun[RRPGE_CB_GETCOLORS] = &rrpge_m_cb_getcolors;
+ obj->cb_fun[RRPGE_CB_GETST3D]   = &rrpge_m_cb_getst3d;
 
  /* Use the input to fill in any defined function (if any) */
  if (cbp != RRPGE_M_NULL){

@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.10.26
 */
 
 
@@ -43,6 +43,14 @@ rrpge_uint32 rrpge_getalloweddevs(rrpge_object_t* hnd)
 rrpge_uint32 rrpge_getvidmode(rrpge_object_t* hnd)
 {
  return (hnd->st.stat[RRPGE_STA_VARS + 0x12U] & 1U);
+}
+
+
+
+/* Get stereoscopic 3D output properties - implementation of RRPGE library function */
+rrpge_uint32 rrpge_getst3dprops(rrpge_object_t* hnd)
+{
+ return (hnd->st.stat[RRPGE_STA_VARS + 0x17U] & 7U);
 }
 
 

@@ -55,6 +55,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
  auint  r;        /* Return: Cycles consumed */
  rrpge_cbp_setpal_t    cbp_setpal;
  rrpge_cbp_mode_t      cbp_mode;
+ rrpge_cbp_setst3d_t   cbp_setst3d;
  rrpge_cbp_getprops_t  cbp_getprops;
  rrpge_cbp_dropdev_t   cbp_dropdev;
  rrpge_cbp_getdidesc_t cbp_getdidesc;
@@ -156,6 +157,20 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    rrpge_m_edat->cb_sub[RRPGE_CB_MODE](rrpge_m_edat, &cbp_mode);
 
    r = 100000U;
+   goto ret_callback;
+
+
+  case 0x0340U:   /* Set stereoscopic 3D */
+
+   if (n != 2U){  /* Needs 1+1 parameters */
+    goto fault_inv;
+   }
+
+   cbp_setst3d.mod = par[1] & 0x7U;
+   rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x17U] = cbp_setst3d.mod;
+   rrpge_m_edat->cb_sub[RRPGE_CB_SETST3D](rrpge_m_edat, &cbp_setst3d);
+
+   r = 2400U;
    goto ret_callback;
 
 
@@ -362,6 +377,18 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETCOLORS](rrpge_m_edat, RRPGE_M_NULL);
    rrpge_m_info.xr[2] = rrpge_m_info.xr[7] >> 16;
+
+   r = 2400U;
+   goto ret_callback;
+
+
+  case 0x0612U:   /* Get user stereoscopic 3D preference */
+
+   if (n != 1U){  /* Needs 1+0 parameters */
+    goto fault_inv;
+   }
+
+   rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETST3D](rrpge_m_edat, RRPGE_M_NULL) & 1U;
 
    r = 2400U;
    goto ret_callback;
