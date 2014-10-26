@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.10.26
 */
 
 
@@ -73,6 +73,25 @@ rrpge_uint32 rrpge_getalloweddevs(rrpge_object_t* hnd);
 **  \return            Video mode.
 */
 rrpge_uint32 rrpge_getvidmode(rrpge_object_t* hnd);
+
+
+
+/**
+**  \brief     Get stereoscopic 3D output properties.
+**
+**  Returns current stereoscopic 3D output properties, indicating whether the
+**  application is generating such content, and if so, the content's
+**  dimensions. Bit 0 of the return value is set if the application is
+**  currently generating stereoscopic 3D. Bits 1-2 indicate the vertical used
+**  pixels for this content: 0: 400 pixels, 1: 320 pixels, 2: 240 pixels, 3:
+**  200 pixels. The stereoscopic 3D content is for cross-eye (left half of the
+**  output image for the right eye, right half of the output image for the
+**  left eye), vertically centered.
+**
+**  \param[in]   hnd   Emulation instance populated by rrpge_init().
+**  \return            Stereoscopic 3D output properties.
+*/
+rrpge_uint32 rrpge_getst3dprops(rrpge_object_t* hnd);
 
 
 

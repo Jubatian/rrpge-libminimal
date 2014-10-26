@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.10.26
 */
 
 
@@ -185,7 +185,7 @@ typedef struct{
 
 
 /** Maximal callback ID plus one (may be used to allocate related storage) */
-#define RRPGE_CB_IDRANGE       21U
+#define RRPGE_CB_IDRANGE       22U
 
 
 
@@ -326,6 +326,30 @@ typedef struct{
 typedef struct{
  rrpge_uint32        mod; /**< Requested video mode (0: 640x400; 4bit, 1: 320x400; 8bit). */
 }rrpge_cbp_mode_t;
+
+
+
+/**
+**  \brief     Subroutine: Set stereoscopic 3D.
+**
+**  Sets stereoscopic 3D output properties. The host, if supports some kind of
+**  3D device, may use this information to post-process the graphics output of
+**  the application for it. Bit 0 of the parameter if set, indicates that the
+**  application is outputting stereoscopic 3D. Bits 1-2 indicate the vertical
+**  used pixels: 0: 400 pixels, 1: 320 pixels, 2: 240 pixels, 3: 200 pixels.
+**  The stereoscopic content is output in cross-eyed format (image for right
+**  eye on the left half; image for left eye on the right half), vertically
+**  centered. On init, state load, reset, application state update or any
+**  other (such as context switching) action the host has to query this status
+**  on it's own using rrpge_getst3dprops().
+*/
+#define RRPGE_CB_SETST3D       7U
+/**
+**  \brief     Extra parameters for Set stereoscopic 3D.
+*/
+typedef struct{
+ rrpge_uint32        mod; /**< Stereoscopic 3D output parameters. */
+}rrpge_cbp_setst3d_t;
 
 
 
@@ -519,6 +543,17 @@ typedef struct{
 **  user.
 */
 #define RRPGE_CB_GETCOLORS     18U
+
+
+
+/**
+**  \brief     Function: Get user stereoscopic 3D preference.
+**
+**  Returns whether the user may accept stereoscopic 3D content or not. The
+**  return is either 0 or 1, the latter indicating that the application may
+**  output stereoscopic 3D content.
+*/
+#define RRPGE_CB_GETST3D       21U
 
 
 
