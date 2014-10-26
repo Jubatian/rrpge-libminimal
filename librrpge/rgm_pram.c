@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.10.26
 */
 
 
@@ -20,7 +20,7 @@
 
 
 /* Write masks for the PRAM interface registers */
-static const uint16 rrpge_m_pram_wms[6] = {0x01FFU, 0xFFFFU, 0x01FFU, 0xFFFFU, 0x0007U, 0x0000U};
+static const uint16 rrpge_m_pram_wms[6] = {0x01FFU, 0xFFFFU, 0x01FFU, 0xFFFFU, 0x000FU, 0x0000U};
 
 /* Data size dependent address low masks (1 bit, 2 bit, 4 bit, 8 bit, 16 bit ...) */
 static const uint8  rrpge_m_pram_ams[8] = {0x1FU, 0x1EU, 0x1CU, 0x18U, 0x10U, 0x10U, 0x10U, 0x10U};
@@ -33,7 +33,7 @@ static const uint16 rrpge_m_pram_dms[8] = {0x0001U, 0x0003U, 0x000FU, 0x00FFU, 0
 /* Operates the memory mapped Peripheral RAM interface for Reads. Only the
 ** low 5 bits of the address are used. Generates Peripheral bus stalls if
 ** necessary. */
-RRPGE_M_FASTCALL auint rrpge_m_pramread(auint adr)
+RRPGE_M_FASTCALL auint rrpge_m_pramread(auint adr, auint rmw)
 {
  auint   r;
  auint   a;
@@ -67,9 +67,11 @@ RRPGE_M_FASTCALL auint rrpge_m_pramread(auint adr)
  rrpge_m_info.ocy += 1U;      /* Add PRAM access stall to CPU stall */
 
  if ((adr & 0x7U) == 0x7U){   /* Post - increment */
-  a += ((auint)(stat[2]) << 16) + ((auint)(stat[3]));
-  stat[0] = (uint16)(a >> 16);
-  stat[1] = (uint16)(a);
+  if (((stat[4] & 0x8U) == 0U) || rmw){
+   a += ((auint)(stat[2]) << 16) + ((auint)(stat[3]));
+   stat[0] = (uint16)(a >> 16);
+   stat[1] = (uint16)(a);
+  }
  }
 
  return r;
@@ -80,8 +82,7 @@ RRPGE_M_FASTCALL auint rrpge_m_pramread(auint adr)
 /* Operates the memory mapped Peripheral RAM interface for Writes. Only the
 ** low 5 bits of the address are used. Generates Peripheral bus stalls if
 ** necessary. Note that it assumes a Read (rrpge_m_pramread() call) happened
-** before, rolling back it's assumed increment before writing in the PRAM (an
-** alternate way for emulating the R-M-W line of the CPU for this case) */
+** before. */
 RRPGE_M_FASTCALL void  rrpge_m_pramwrite(auint adr, auint val)
 {
  auint m;

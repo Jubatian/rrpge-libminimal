@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.10.26
 **
 **
 **  Realizes the Peripheral RAM interface: the 4 pointers.
@@ -23,14 +23,13 @@
 /* Operates the memory mapped Peripheral RAM interface for Reads. Only the
 ** low 5 bits of the address are used. Generates Peripheral bus stalls if
 ** necessary. */
-RRPGE_M_FASTCALL auint rrpge_m_pramread(auint adr);
+RRPGE_M_FASTCALL auint rrpge_m_pramread(auint adr, auint rmw);
 
 
 /* Operates the memory mapped Peripheral RAM interface for Writes. Only the
 ** low 5 bits of the address are used. Generates Peripheral bus stalls if
 ** necessary. Note that it assumes a Read (rrpge_m_pramread() call) happened
-** before, rolling back it's assumed increment before writing in the PRAM (an
-** alternate way for emulating the R-M-W line of the CPU for this case) */
+** before. */
 RRPGE_M_FASTCALL void  rrpge_m_pramwrite(auint adr, auint val);
 
 

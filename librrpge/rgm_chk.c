@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.10.26
 */
 
 
@@ -47,19 +47,19 @@ static const uint8  rrpge_m_chk_stazc[3U * STAZC_CT] = {
  0xD7U, 0x38U, 0x00U, /* UPA, GDG display list definition */
  0xE0U, 0xFEU, 0x00U, /* UPA, Pointer 0 address high */
  0xE2U, 0xFEU, 0x00U, /* UPA, Pointer 0 increment high */
- 0xE4U, 0xFFU, 0xF8U, /* UPA, Pointer 0 data unit size */
+ 0xE4U, 0xFFU, 0xF0U, /* UPA, Pointer 0 data unit size */
  0xE5U, 0xFFU, 0xFFU, /* UPA, 0x0000 */
  0xE8U, 0xFEU, 0x00U, /* UPA, Pointer 1 address high */
  0xEAU, 0xFEU, 0x00U, /* UPA, Pointer 1 increment high */
- 0xECU, 0xFFU, 0xF8U, /* UPA, Pointer 1 data unit size */
+ 0xECU, 0xFFU, 0xF0U, /* UPA, Pointer 1 data unit size */
  0xEDU, 0xFFU, 0xFFU, /* UPA, 0x0000 */
  0xF0U, 0xFEU, 0x00U, /* UPA, Pointer 2 address high */
  0xF2U, 0xFEU, 0x00U, /* UPA, Pointer 2 increment high */
- 0xF4U, 0xFFU, 0xF8U, /* UPA, Pointer 2 data unit size */
+ 0xF4U, 0xFFU, 0xF0U, /* UPA, Pointer 2 data unit size */
  0xF5U, 0xFFU, 0xFFU, /* UPA, 0x0000 */
  0xF8U, 0xFEU, 0x00U, /* UPA, Pointer 3 address high */
  0xFAU, 0xFEU, 0x00U, /* UPA, Pointer 3 increment high */
- 0xFCU, 0xFFU, 0xF8U, /* UPA, Pointer 3 data unit size */
+ 0xFCU, 0xFFU, 0xF0U, /* UPA, Pointer 3 data unit size */
  0xFDU, 0xFFU, 0xFFU, /* UPA, 0x0000 */
 };
 

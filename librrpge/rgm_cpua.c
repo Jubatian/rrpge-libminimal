@@ -42,7 +42,7 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_rd_data(auint rmw)
   if ((rrpge_m_info.ada & 0x20U) == 0U){
    rrpge_m_info.add = (auint)(rrpge_m_edat->st.stat[RRPGE_STA_UPA + rrpge_m_info.ada]);
   }else{
-   rrpge_m_info.add = rrpge_m_pramread(rrpge_m_info.ada);
+   rrpge_m_info.add = rrpge_m_pramread(rrpge_m_info.ada, rmw);
   }
 
  }
@@ -246,14 +246,13 @@ RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_dx16(auint rmw)
  t  = 16U - t;                                 /* 16, 12, 8 or 4, shift amount for xh */
  a  = (rrpge_m_info.xr[s + 4U] & 0xFFFFU) +    /* Address base */
       ((rrpge_m_info.xmh[1] << t) & 0xF0000U); /* Address high */
- u  = (0xF080U >> m) & 1U;                     /* 1 if pre-decrementing ptr. mode */
- a -= u;
- rrpge_m_info.ocy = u;
  u  = rrpge_m_addr_ads[m];
+ rrpge_m_info.ocy = 0U;
  rrpge_m_info.ads = ((~a) << (4U - u)) & ((0xFF0FU >> (m & 0xCU)) & 0xFU);
  rrpge_m_info.adm = rrpge_m_addr_dms[m] << rrpge_m_info.ads;
  rrpge_m_info.ada = (a >> u) & 0xFFFFU;
- a += (0x0F40U >> m) & 1U;                     /* 1 if post-incrementing ptr. mode */
+ a += ( ((0x0F40U >> m) & 1U) |                /* 1 if post-incrementing ptr. mode */
+        ((0xF080U >> m) & rmw) );              /* 1 if post-incrementing on write only mode & rmw set (it is 1) */
  rrpge_m_info.xr[s + 4U] = a;
  rrpge_m_info.xmh[1] = (rrpge_m_info.xmh[1] & (0xFFF0FFFFU >> t)) |
                        ((a & 0xF0000U) >> t);  /* Address write-back */
@@ -277,14 +276,13 @@ RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_sx16(auint rmw)
  t  = 16U - t;                                 /* 16, 12, 8 or 4, shift amount for xh */
  a  = (rrpge_m_info.xr[s + 4U] & 0xFFFFU) +    /* Address base */
       ((rrpge_m_info.xmh[1] << t) & 0xF0000U); /* Address high */
- u  = (0xF080U >> m) & 1U;                     /* 1 if pre-decrementing ptr. mode */
- a -= u;
- rrpge_m_info.ocy = u;
  u  = rrpge_m_addr_ads[m];
+ rrpge_m_info.ocy = 0U;
  rrpge_m_info.ads = ((~a) << (4U - u)) & ((0xFF0FU >> (m & 0xCU)) & 0xFU);
  rrpge_m_info.adm = rrpge_m_addr_dms[m] << rrpge_m_info.ads;
  rrpge_m_info.ada = a >> u;
- a += (0x0F40U >> m) & 1U;                     /* 1 if post-incrementing ptr. mode */
+ a += ( ((0x0F40U >> m) & 1U) |                /* 1 if post-incrementing ptr. mode */
+        ((0xF080U >> m) & rmw) );              /* 1 if post-incrementing on write only mode & rmw set (it is 1) */
  rrpge_m_info.xr[s + 4U] = a;
  rrpge_m_info.xmh[1] = (rrpge_m_info.xmh[1] & (0xFFF0FFFFU >> t)) |
                        ((a & 0xF0000U) >> t);  /* Address write-back */
