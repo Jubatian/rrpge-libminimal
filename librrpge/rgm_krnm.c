@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.10.26
 */
 
 
@@ -154,10 +154,6 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    else{             cbp_mode.mod = par[1]; }
    rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x12U] = cbp_mode.mod;
    rrpge_m_edat->cb_sub[RRPGE_CB_MODE](rrpge_m_edat, &cbp_mode);
-
-   /* Note: rrpge_m_info.vbm is purposefully not updated here. The emulator
-   ** will return to the host (by the RRPGE_HLT_CALLBACK cause), so no new
-   ** operations will start with the old video mode. */
 
    r = 100000U;
    goto ret_callback;

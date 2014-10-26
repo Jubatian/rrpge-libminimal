@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.10.26
 */
 
 
@@ -42,6 +42,7 @@ void rrpge_m_grln(void)
  auint  dbl;                   /* Double scan flag */
  auint  cyr;                   /* Cycles remaining */
  auint  cmd;                   /* Current display list command */
+ auint  dmd;                   /* Current display mode (4 bit: 0; 8 bit: 1) */
  auint  csr;                   /* Current source */
  auint  scy;                   /* Number of output cycles to produce */
  uint32 msk;                   /* Mask / colorkey value extended */
@@ -102,7 +103,8 @@ void rrpge_m_grln(void)
   /* Prepare shift count & mask for expanding 4 / 8 bit masks and calculating
   ** colorkey */
 
-  if ((rrpge_m_info.vbm & 0x80U) != 0U){ /* 8 bit mode */
+  dmd = rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x12U] & 1U; /* 0: 4 bit; 1: 8 bit mode */
+  if (dmd != 0U){                 /* 8 bit mode */
    bc = 0x7F7F7F7FU;              /* Colorkey calculation mask */
    bm = 0x80808080U;              /* Mask to select the effective mask bit */
    bs = 7U;                       /* Shift count in the expansion */
@@ -143,11 +145,6 @@ void rrpge_m_grln(void)
 
    if ((cmd & 0xBC00U) != 0U){    /* Render command not inactive */
 
-    /* Source line select in cmd is no longer used. Substitute with the
-    ** current graphics mode for accessing the latter faster later on */
-
-    cmd  = (cmd & 0xF000FFFFU) | ((rrpge_m_info.vbm & 0x80U) << 9); /* bit 16 set in 8bit mode */
-
     /* Calculate mask / colorkey */
 
     i    = (cmd >> 10) & 0xFU;    /* Colorkey / Mask selector */
@@ -157,7 +154,7 @@ void rrpge_m_grln(void)
     }else{                        /* Load one of the pre-defined masks */
      msk = rrpge_m_grln_msk[i];
     }
-    if ((cmd & 0x10000) == 0U){   /* 4 bit mode */
+    if (dmd == 0U){               /* 4 bit mode */
      msk &= 0x0FU;
      msk |= msk << 4;
     }
@@ -174,7 +171,7 @@ void rrpge_m_grln(void)
 
     /* Drop lowest bit (position / shift) of command in 8 bit mode */
 
-    cmd &= ~((cmd >> 16) & 1U);
+    cmd &= ~dmd;
 
     /* Do the blit */
 
@@ -214,7 +211,7 @@ void rrpge_m_grln(void)
 
       t32  = psd ^ msk;                    /* Prepare for colorkey */
       t32  = (((t32 & bc) + bc) | t32);    /* Colorkey mask on the highest bit of pixel */
-      u32  = ~(d32 << ((cmd >> 15) & 2U)); /* Priority mask on the highest bit of pixel */
+      u32  = ~(d32 << (dmd << 1));         /* Priority mask on the highest bit of pixel */
       t32 |= dcm;                          /* Drop colorkey unless enabled */
       u32 |= dpm;                          /* Drop priority selector unless enabled */
       t32 &= u32;                          /* Combine the two masks */
@@ -277,7 +274,7 @@ void rrpge_m_grln(void)
 
       t32  = psd ^ msk;                    /* Prepare for colorkey */
       t32  = (((t32 & bc) + bc) | t32);    /* Colorkey mask on the highest bit of pixel */
-      u32  = ~(d32 << ((cmd >> 15) & 2U)); /* Priority mask on the highest bit of pixel */
+      u32  = ~(d32 << (dmd << 1));         /* Priority mask on the highest bit of pixel */
       t32 |= dcm;                          /* Drop colorkey unless enabled */
       u32 |= dpm;                          /* Drop priority selector unless enabled */
       t32 &= u32;                          /* Combine the two masks */

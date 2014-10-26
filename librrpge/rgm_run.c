@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.10.26
 */
 
 
@@ -56,11 +56,6 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
                        ((auint)(stat[RRPGE_STA_VARS + 0x2BU]));
  rrpge_m_info.cys = 0U;   /* Stall cycles are always consumed right away (no carry-over between runs) */
  rrpge_m_info.grr = 1U;   /* Reload recolor banks */
- if ((stat[RRPGE_STA_VARS + 0x12U] & 0x1U) != 1U){ /* 4bit mode */
-  rrpge_m_info.vbm = 0x0FU;
- }else{                   /* 8bit mode */
-  rrpge_m_info.vbm = 0xFFU;
- }
  for (i = 0U; i < 8U; i++){
   rrpge_m_info.xr[i] = stat[RRPGE_STA_VARS + 0x00U + i];
  }

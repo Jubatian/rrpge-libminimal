@@ -148,9 +148,6 @@ typedef struct{
                      ** 1: Cycles remaining from video acc. op. (State: 0x06A-0x06B) */
  auint  cys;         /* PRAM Stall cycles collected during a run of CPU emulation */
 
- auint  vbm;         /* Video mode bitmask. 0xF for 4bit mode, 0xFF for 8bit
-                     ** mode. (From State: 0x052) */
-
  auint  hlt;         /* Collects halt cause if any. */
 
  auint  ocy;         /* Opcode address extra cycles. This is used by the
