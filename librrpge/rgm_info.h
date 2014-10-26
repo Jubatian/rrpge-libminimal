@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.10.26
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -124,8 +124,9 @@ struct rrpge_object_s{
 
 
 
-/* Addressing unit's function types. */
-typedef RRPGE_M_FASTCALL auint (rrpge_m_addr_read_t)(void);
+/* Addressing unit's function types. The read function's parameter is the
+** R-M-W signal: nonzero for the read of a R-M-W access. */
+typedef RRPGE_M_FASTCALL auint (rrpge_m_addr_read_t)(auint);
 typedef RRPGE_M_FASTCALL void (rrpge_m_addr_write_t)(auint);
 
 
