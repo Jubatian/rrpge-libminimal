@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.10.26
 */
 
 
@@ -40,8 +40,8 @@ static void rrpge_m_grop_recbinit(void)
   i = 256U;
   do{
    i--;
-   rrpge_m_info.grb[(i << 1)     ] = (rrpge_m_edat->st.stat[RRPGE_STA_REIND + i] >> 8) & rrpge_m_info.vbm;
-   rrpge_m_info.grb[(i << 1) + 1U] = (rrpge_m_edat->st.stat[RRPGE_STA_REIND + i]     ) & rrpge_m_info.vbm;
+   rrpge_m_info.grb[(i << 1)     ] = (rrpge_m_edat->st.stat[RRPGE_STA_REIND + i] >> 8) & 0xFFU;
+   rrpge_m_info.grb[(i << 1) + 1U] = (rrpge_m_edat->st.stat[RRPGE_STA_REIND + i]     ) & 0xFFU;
   }while(i);
 
  }
@@ -62,14 +62,14 @@ RRPGE_M_FASTCALL static uint32 rrpge_m_grop_rec4(uint32 ps, uint32 pd)
 {
  uint32 t0 = (ps & 0x0F0F0F0FU) | ((pd << 4) & 0xF0F0F0F0U);
  uint32 t1 = ((ps >> 4) & 0x0F0F0F0FU) | (pd & 0xF0F0F0F0U);
- return ((uint32)(rrpge_m_grop_reb[(t0      ) & 0xFFU])      ) |
-        ((uint32)(rrpge_m_grop_reb[(t1      ) & 0xFFU]) <<  4) |
-        ((uint32)(rrpge_m_grop_reb[(t0 >>  8) & 0xFFU]) <<  8) |
-        ((uint32)(rrpge_m_grop_reb[(t1 >>  8) & 0xFFU]) << 12) |
-        ((uint32)(rrpge_m_grop_reb[(t0 >> 16) & 0xFFU]) << 16) |
-        ((uint32)(rrpge_m_grop_reb[(t1 >> 16) & 0xFFU]) << 20) |
-        ((uint32)(rrpge_m_grop_reb[(t0 >> 24)        ]) << 24) |
-        ((uint32)(rrpge_m_grop_reb[(t1 >> 24)        ]) << 28);
+ return (( ((uint32)(rrpge_m_grop_reb[(t0      ) & 0xFFU])      ) |
+           ((uint32)(rrpge_m_grop_reb[(t0 >>  8) & 0xFFU]) <<  8) |
+           ((uint32)(rrpge_m_grop_reb[(t0 >> 16) & 0xFFU]) << 16) |
+           ((uint32)(rrpge_m_grop_reb[(t0 >> 24)        ]) << 24) ) & 0x0F0F0F0FU) |
+        (( ((uint32)(rrpge_m_grop_reb[(t1      ) & 0xFFU]) <<  4) |
+           ((uint32)(rrpge_m_grop_reb[(t1 >>  8) & 0xFFU]) << 12) |
+           ((uint32)(rrpge_m_grop_reb[(t1 >> 16) & 0xFFU]) << 20) |
+           ((uint32)(rrpge_m_grop_reb[(t1 >> 24)        ]) << 28) ) & 0xF0F0F0F0U);
 }
 
 
@@ -182,11 +182,10 @@ auint rrpge_m_grop_accel(void)
 
  mskor = flags & 0xFFU;
 
- /* Add graphics mode and substitutions to flags, so they are more accessible
- ** (increases locality accessing these). Also add colorkey enable flag. */
+ /* Add substitutions to flags, so they are more accessible (increases
+ ** locality accessing these). Also add colorkey enable flag. */
 
- flags &= 0x7C00U;                         /* Mask unused bits and OR mask */
- flags |= (rrpge_m_info.vbm & 0x80U) << 9; /* bit 16 set if in 8bit mode */
+ flags &= 0x7E00U;                         /* Mask unused bits and OR mask */
  flags |= (rotr & 0xE000U) << 4;           /* bit 17-19 are the substitutions */
  flags |= (rotr & 0x8U) >> 3;              /* bit 0: VCK (Colorkey enabled) */
 
@@ -202,7 +201,7 @@ auint rrpge_m_grop_accel(void)
 
  /* Mode specific calculations for all rows */
 
- if ((flags & 0x10000U) == 0U){       /* 4bit mode specific calculations */
+ if ((flags & 0x0200U) == 0U){        /* 4bit mode specific calculations */
 
   /* Prepare colorkey */
   ckey   = mandr & 0xFU;
@@ -262,7 +261,7 @@ auint rrpge_m_grop_accel(void)
  ** destination, bit 5: display mode. The accelerated combine starts set since
  ** it is easier to clear it with a xor at the combine. */
 
- cyf   = ((flags & 0x3C00U) >> 9) | ((flags & 0x10000) >> 11) | 1U;
+ cyf   = ((flags & 0x3C00U) >> 9) | ((flags & 0x0200) >> 4) | 1U;
  cyr   = 20U + ((flags & 0x1000U) >> 9); /* Initial cycles: 20 or 28 depending on reindexing */
 
  /* Prepare row count */
@@ -294,7 +293,7 @@ auint rrpge_m_grop_accel(void)
 
   /* Row specific mode specific calculations */
 
-  if ((flags & 0x10000U) == 0U){      /* 4bit mode specific calculations */
+  if ((flags & 0x0200U) == 0U){       /* 4bit mode specific calculations */
 
    /* Calculate count */
    count = ((count - 1U) & 0x3FFU) + 1U;
@@ -340,11 +339,11 @@ auint rrpge_m_grop_accel(void)
    dswhol = sxwhol;
    dspart = ssplit | srpart;          /* Source pointers take the role of dest. */
    codst  = count;                    /* Destination counter - pixel count */
-   cyr   += (count >> ((flags >> 16) & 1U)) << 2; /* 4 cycles for every pixel */
+   cyr   += (count >> ((flags >> 9) & 1U)) << 2; /* 4 cycles for every pixel */
 
   }else if (bmode == 2U){             /* Scaled Blitter */
 
-   cyr   += (count >> ((flags >> 16) & 1U)) << 1; /* 2 cycles for every pixel */
+   cyr   += (count >> ((flags >> 9) & 1U)) << 1; /* 2 cycles for every pixel */
 
   }else{                              /* Filler */
 
@@ -404,7 +403,7 @@ auint rrpge_m_grop_accel(void)
 
      sdata = 0U;
 
-     if ((flags & 0x10000U) == 0U){   /* 4bit mode */
+     if ((flags & 0x0200U) == 0U){    /* 4bit mode */
 
       i = 8U;
       while ((count != 0U) && (i != 0U)){
@@ -441,7 +440,7 @@ auint rrpge_m_grop_accel(void)
     sdata = ((sdata >> rotr) & mandr) |  /* Source read transform */
             ((sdata << rotl) & mandl);   /* (Rotate + AND mask) */
     if ((flags & 0x4000U) != 0U){        /* Pixel order swap (VMR) */
-     if ((flags & 0x10000U) == 0U){      /* 4 bit mode */
+     if ((flags & 0x0200U) == 0U){       /* 4 bit mode */
       sdata = ((sdata & 0xF0F0F0F0U) >> 4) | ((sdata & 0x0F0F0F0FU) << 4);
      }
      sdata = ((sdata & 0xFF00FF00U) >> 8) | ((sdata & 0x00FF00FFU) << 8);
@@ -455,7 +454,7 @@ auint rrpge_m_grop_accel(void)
 
     /* Rotate source pattern & create begin / mid / end mask */
 
-    if ((flags & 0x10000U) == 0U){    /* 4bit mode */
+    if ((flags & 0x0200U) == 0U){     /* 4bit mode */
 
      lpat >>= (lflp << 2);
      sdata  = lpat & 0xFU;
@@ -499,7 +498,7 @@ auint rrpge_m_grop_accel(void)
    t32 = sdata ^ ckey;                   /* Prepare for colorkey calculation */
    sdata = sdata | mskor;                /* Apply OR mask after colorkey */
 
-   if ((flags & 0x10000U) == 0U){        /* 4 bit mode */
+   if ((flags & 0x0200U) == 0U){         /* 4 bit mode */
     t32 = (((t32 & 0x77777777U) + 0x77777777U) | t32) & 0x88888888U;
     t32 = (t32 - (t32 >> 3)) + t32;      /* Colorkey mask (0: background) */
     if ((flags & 0x1000U) != 0U){        /* Reindexing is required */
@@ -541,7 +540,7 @@ auint rrpge_m_grop_accel(void)
   dsfrap += dspadd;
   sxfrap += sxpadd;
   syfrap += sypadd;
-  if ((flags & 0x10000U) == 0U){      /* 4 bit mode */
+  if ((flags & 0x0200U) == 0U){       /* 4 bit mode */
    sbase   = (sbase >> 4) | (sbase << 28);
   }else{
    sbase   = (sbase >> 8) | (sbase << 24);
