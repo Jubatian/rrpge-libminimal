@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.10.29
 **
 **
 **  Contains the Graphics & Mixer FIFO's logic. The FIFOs operate detached
@@ -89,38 +89,35 @@ void  rrpge_m_fifoproc(auint cy)
 
  for (i = 0U; i < 2U; i++){
 
-  if (rrpge_m_info.cyf[i] != 0U){ /* FIFO cycles are to be consumed */
+  while ( (cy != 0U) &&           /* There are cycles to work from */
+          (rrpge_m_info.cyf[i] != 0U) ){ /* There are FIFO cycles are to be consumed */
 
-   while (cy != 0U){
+   if (rrpge_m_info.cyf[i] > cy){ /* Can't consume all */
 
-    if (rrpge_m_info.cyf[i] < cy){ /* Can't consume all */
+    rrpge_m_info.cyf[i] -= cy;
+    cy = 0U;
 
-     rrpge_m_info.cyf[0] -= cy;
-     cy = 0U;
+   }else{                         /* Consumes all: attempt to step emulation */
 
-    }else{                        /* Consumes all: attempt to step emulation */
+    cy -= rrpge_m_info.cyf[i];
+    rrpge_m_info.cyf[i] = 0U;
 
-     cy -= rrpge_m_info.cyf[i];
-     rrpge_m_info.cyf[i] = 0U;
+    if ( rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x20U + (i << 3)] ==
+         rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x21U + (i << 3)] ){ /* FIFO drained */
 
-     if ( rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x20U + (i << 3)] ==
-          rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x21U + (i << 3)] ){ /* FIFO drained */
+     rrpge_m_edat->st.stat[RRPGE_STA_UPA_MF + 1U + (i << 2)] &= ~1U; /* Empty, peripheral idle */
 
-      rrpge_m_edat->st.stat[RRPGE_STA_UPA_MF + 1U + (i << 2)] &= ~1U; /* Empty, peripheral idle */
+    }else{                       /* There is data in the FIFO */
 
-     }else{                       /* There is data in the FIFO */
+     if ((rrpge_m_edat->st.stat[RRPGE_STA_UPA_MF + 1U + (i << 2)] & 2U) == 0U){ /* Not suspended */
 
-      if ((rrpge_m_edat->st.stat[RRPGE_STA_UPA_MF + 1U + (i << 2)] & 2U) == 0U){ /* Not suspended */
-
-       t = rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x21U + (i << 3)];
-       v = rrpge_m_edat->st.pram[rrpge_m_fifoadr(t, rrpge_m_edat->st.stat[RRPGE_STA_UPA_MF + 0x0U + (i << 2)])];
-       t ++;
-       rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x21U + (i << 3)] = t;
-       rrpge_m_info.cyf[i] = 2U;   /* Cycles consumed by FIFO access */
-       if (i == 0U){ rrpge_m_fifomix(v >> 16, v); }
-       else        { rrpge_m_fifoacc(v >> 16, v); }
-
-      }
+      t = rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x21U + (i << 3)];
+      v = rrpge_m_edat->st.pram[rrpge_m_fifoadr(t, rrpge_m_edat->st.stat[RRPGE_STA_UPA_MF + 0x0U + (i << 2)])];
+      t ++;
+      rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x21U + (i << 3)] = t;
+      rrpge_m_info.cyf[i] = 2U;   /* Cycles consumed by FIFO access */
+      if (i == 0U){ rrpge_m_fifomix(v >> 16, v); }
+      else        { rrpge_m_fifoacc(v >> 16, v); }
 
      }
 
@@ -158,7 +155,7 @@ void  rrpge_m_fifowrite(auint adr, auint val)
 
   case 2U:                    /* FIFO address latch */
 
-   t = RRPGE_STA_VARS + 24U + ((adr & 4U) << 1);
+   t = RRPGE_STA_VARS + 0x24U + ((adr & 4U) << 1);
    if ((val & 0x8000U) == 0U){
     rrpge_m_edat->st.stat[t] ++;
    }else{
@@ -169,26 +166,29 @@ void  rrpge_m_fifowrite(auint adr, auint val)
 
   default:                    /* Store trigger */
 
+   t = RRPGE_STA_VARS + 0x24U + ((adr & 4U) << 1); /* Address latch's address in state */
+
    if ( (rrpge_m_info.cyf[(adr >> 2)] |
          rrpge_m_edat->st.stat[RRPGE_STA_UPA_MF + adr - 2U]) == 0U){ /* Bypass */
 
-    t = rrpge_m_edat->st.stat[RRPGE_STA_VARS + 24U + ((adr & 4U) << 1)]; /* Address latch */
-    if ((adr & 4U) == 0U){ rrpge_m_fifomix(t, val); }
-    else                 { rrpge_m_fifoacc(t, val); }
+    u = rrpge_m_edat->st.stat[t];                  /* Read the address latch */
+    if ((adr & 4U) == 0U){ rrpge_m_fifomix(u, val); }
+    else                 { rrpge_m_fifoacc(u, val); }
 
    }else{                     /* No bypass */
 
-    t = RRPGE_STA_VARS + 20U + ((adr & 4U) << 1);  /* Write pointer address */
-    u = rrpge_m_edat->st.stat[t];                  /* Write pointer value */
+    u = rrpge_m_edat->st.stat[t - 4U];             /* Write pointer value */
     p = rrpge_m_edat->st.stat[RRPGE_STA_UPA_MF + adr - 3U]; /* FIFO position & size */
     rrpge_m_edat->st.pram[rrpge_m_fifoadr(u, p)] =
-     ((auint)(rrpge_m_edat->st.stat[t + 4U]) << 16) +
+     ((auint)(rrpge_m_edat->st.stat[t]) << 16) +
      (val & 0xFFFFU);
     u ++;
-    rrpge_m_edat->st.stat[t] = u;                  /* Write ptr. increment */
+    rrpge_m_edat->st.stat[t - 4U] = u;             /* Write ptr. increment */
     rrpge_m_info.cys += 2U;                        /* 2 stall cycles on the Peripheral bus */
 
    }
+
+   rrpge_m_edat->st.stat[t] = (rrpge_m_edat->st.stat[t] + 1U) & 0x7FFFU;
    break;
 
  }
