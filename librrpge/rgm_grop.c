@@ -206,7 +206,7 @@ auint rrpge_m_grop_accel(void)
   /* Prepare colorkey */
   ckey   = mandr & 0xFU;
   ckey  |= ckey << 4;
-  mandr >>= 8;
+  mandr  = (mandr >> 8) & 0x0FU;
 
   /* Source read mask & barrel rotate calculation. In C a right and a left
   ** shift has to be combined for the effect (no rotate operation). Used in
@@ -224,7 +224,7 @@ auint rrpge_m_grop_accel(void)
 
   /* Prepare colorkey */
   ckey   = mandr & 0xFFU;
-  mandr >>= 8;
+  mandr  = (mandr >> 8) & 0xFFU;
 
   /* Source read mask & barrel rotate calculation. In C a right and a left
   ** shift has to be combined for the effect (no rotate operation). Used in
