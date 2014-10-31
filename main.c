@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.30
+**  \date      2014.10.31
 */
 
 
@@ -35,7 +35,7 @@ static uint8  main_tdata[128U * 1024U];
 static FILE*  main_app;
 
 /* Application name string */
-static char const* main_appname = "RRPGE simple SDL emulator. Version: 00.012.000-01";
+static char const* main_appname = "RRPGE simple SDL emulator. Version: 00.012.000-02";
 static char const* main_appicon = "RRPGE";
 
 /* Other elements */
