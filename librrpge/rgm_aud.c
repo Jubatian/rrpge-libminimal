@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.10.31
 */
 
 
@@ -49,7 +49,7 @@ void rrpge_m_audproc(auint cy)
 
   /* Load samples from data memory into the internal double buffer */
 
-  t = rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 0x2U];
+  t = rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 2U];
   rrpge_m_edat->audl[(rrpge_m_edat->audp) & 0x3FFU] =
     (uint8)( rrpge_m_edat->st.pram[lof | ((t >> 2) & msk)] >> (((t & 3U) ^ 3U) << 3) );
   rrpge_m_edat->audr[(rrpge_m_edat->audp) & 0x3FFU] =
@@ -58,9 +58,9 @@ void rrpge_m_audproc(auint cy)
   /* Increment pointers */
 
   rrpge_m_edat->audp ++;
-  rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 0x3U] ++;
-  if (rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 0x3U] ==
-      rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 0x7U]){
+  rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 3U] ++;
+  if (rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 3U] ==
+      rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 7U]){
    rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 3U] = 0U;
    rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 2U] ++;
   }
@@ -71,7 +71,7 @@ void rrpge_m_audproc(auint cy)
   if ((rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x14U] & 0xFFU) == 0U){
    rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 1U] =
        ((rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 1U] + 0x1) & 0xFF00U) +
-       (rrpge_m_edat->st.stat[RRPGE_STA_VARS + 14U] >> 8);
+       (rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x14U] >> 8);
   }
 
   /* Generate an event every 512 output (48KHz) samples */
