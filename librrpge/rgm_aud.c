@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.31
+**  \date      2014.11.02
 */
 
 
@@ -24,9 +24,10 @@
 ** audio buffer, flagging the 512 sample passed event as required. */
 void rrpge_m_audproc(auint cy)
 {
- auint lof = (auint)(rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 0x4U]) << 4;
- auint rof = (auint)(rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 0x5U]) << 4;
- auint msk = (auint)(rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 0x6U]) << 4;
+ uint16* stat = &(rrpge_m_edat->st.stat[0]);
+ auint lof = (auint)(stat[RRPGE_STA_UPA_A + 0x4U]) << 4;
+ auint rof = (auint)(stat[RRPGE_STA_UPA_A + 0x5U]) << 4;
+ auint msk = (auint)(stat[RRPGE_STA_UPA_A + 0x6U]) << 4;
  auint t;
 
  lof &= msk;        /* Part to fetch from the start offset */
@@ -49,7 +50,7 @@ void rrpge_m_audproc(auint cy)
 
   /* Load samples from data memory into the internal double buffer */
 
-  t = rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 2U];
+  t = stat[RRPGE_STA_UPA_A + 2U];
   rrpge_m_edat->audl[(rrpge_m_edat->audp) & 0x3FFU] =
     (uint8)( rrpge_m_edat->st.pram[lof | ((t >> 2) & msk)] >> (((t & 3U) ^ 3U) << 3) );
   rrpge_m_edat->audr[(rrpge_m_edat->audp) & 0x3FFU] =
@@ -58,20 +59,20 @@ void rrpge_m_audproc(auint cy)
   /* Increment pointers */
 
   rrpge_m_edat->audp ++;
-  rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 3U] ++;
-  if (rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 3U] ==
-      rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 7U]){
-   rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 3U] = 0U;
-   rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 2U] ++;
+  stat[RRPGE_STA_UPA_A + 3U] ++;
+  if (stat[RRPGE_STA_UPA_A + 3U] ==
+      stat[RRPGE_STA_UPA_A + 7U]){
+   stat[RRPGE_STA_UPA_A + 3U] = 0U;
+   stat[RRPGE_STA_UPA_A + 2U] ++;
   }
 
   /* Increment 187.5Hz clock */
 
-  rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x14U] ++;
-  if ((rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x14U] & 0xFFU) == 0U){
-   rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 1U] =
-       ((rrpge_m_edat->st.stat[RRPGE_STA_UPA_A + 1U] + 0x1) & 0xFF00U) +
-       (rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x14U] >> 8);
+  stat[RRPGE_STA_VARS + 0x14U] ++;
+  if ((stat[RRPGE_STA_VARS + 0x14U] & 0xFFU) == 0U){
+   stat[RRPGE_STA_UPA_A + 1U] =
+       ((stat[RRPGE_STA_UPA_A + 1U] + 0x1) & 0xFF00U) +
+       (stat[RRPGE_STA_VARS + 0x14U] >> 8);
   }
 
   /* Generate an event every 512 output (48KHz) samples */

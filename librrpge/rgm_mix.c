@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.11.02
 */
 
 
@@ -18,30 +18,31 @@
 ** takes. */
 auint rrpge_m_mixerop(void)
 {
- uint32* pram = &(rrpge_m_edat->st.pram[0]); /* Address of RW data RAM */
- auint ssoh = rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0xAU]; /* Sample source, whole */
- auint ssol = ((auint)(rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0xBU]) << 16) + (auint)(rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0xCU]); /* Sample source, fraction */
- auint asoh = rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0x0U]; /* Amplitude source, whole */
- auint asol = ((auint)(rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0x1U]) << 16) + (auint)(rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0x2U]); /* Amplitude source, fraction */
- auint sdoh = rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0x7U]; /* Sample destination, high part */
- auint sdol = rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0x8U]; /* Sample destination, low part */
- auint sfrq = ((auint)(rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0xDU]) << 16) + (auint)(rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0xEU]); /* Sample frequency */
- auint afrq = ((auint)(rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0x3U]) << 16) + (auint)(rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0x4U]); /* Amplitudo read (AM) frequency */
- auint ampl = rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0x9U]; /* Amplitudo multiplier */
- auint clno = ((rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0xFU] - 1U) & 0xFFFU) + 1U; /* Number of cells to process */
+ uint32* pram = &(rrpge_m_edat->st.pram[0]);     /* Address of RW data RAM */
+ uint16* stat = &(rrpge_m_edat->st.stat[RRPGE_STA_MIXER]);
+ auint ssoh = stat[0xAU]; /* Sample source, whole */
+ auint ssol = ((auint)(stat[0xBU]) << 16) + (auint)(stat[0xCU]); /* Sample source, fraction */
+ auint asoh = stat[0x0U]; /* Amplitude source, whole */
+ auint asol = ((auint)(stat[0x1U]) << 16) + (auint)(stat[0x2U]); /* Amplitude source, fraction */
+ auint sdoh = stat[0x7U]; /* Sample destination, high part */
+ auint sdol = stat[0x8U]; /* Sample destination, low part */
+ auint sfrq = ((auint)(stat[0xDU]) << 16) + (auint)(stat[0xEU]); /* Sample frequency */
+ auint afrq = ((auint)(stat[0x3U]) << 16) + (auint)(stat[0x4U]); /* Amplitudo read (AM) frequency */
+ auint ampl = stat[0x9U]; /* Amplitudo multiplier */
+ auint clno = ((stat[0xFU] - 1U) & 0xFFFU) + 1U; /* Number of cells to process */
  auint sdpr;
  auint sspr;
  auint aspr;
  auint i;
  auint m0;
  auint m1;
- auint flgs = rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0xFU]; /* Processing mode flags */
+ auint flgs = stat[0xFU]; /* Processing mode flags */
  auint s0;
  auint s1;
  auint ret;
 
  /* Apply partitioning */
- i = rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0x5U];          /* Partitioning bits */
+ i = stat[0x5U];          /* Partitioning bits */
  sdpr  = (2U <<  (i & 0x000FU)       ) - 1U;
  sdoh &= ~sdpr;
  sspr  = (2U << ((i & 0x00F0U) >>  4)) - 1U;
@@ -50,7 +51,7 @@ auint rrpge_m_mixerop(void)
  asoh &= ~aspr;
 
  /* Apply bank selection on whole parts */
- i = rrpge_m_edat->st.stat[RRPGE_STA_MIXER + 0x6U];          /* Bank select bits */
+ i = stat[0x6U];          /* Bank select bits */
  sdoh |= (i & 0x000FU) << 16;
  ssoh |= (i & 0x00F0U) << 12;
  asoh |= (i & 0x0F00U) <<  8;

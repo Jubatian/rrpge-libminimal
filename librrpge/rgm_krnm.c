@@ -50,9 +50,10 @@ static auint rrpge_m_ktsalloc(uint16 const* par, auint n)
 ** necessary for performing the call. */
 auint rrpge_m_kcall(uint16 const* par, auint n)
 {
- auint  i;
- auint  o;
- auint  r;        /* Return: Cycles consumed */
+ auint   i;
+ auint   o;
+ auint   r;       /* Return: Cycles consumed */
+ uint16* stat = &(rrpge_m_edat->st.stat[0]);
  rrpge_cbp_setpal_t    cbp_setpal;
  rrpge_cbp_mode_t      cbp_mode;
  rrpge_cbp_setst3d_t   cbp_setst3d;
@@ -138,7 +139,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    cbp_setpal.id  = par[1] & 0xFFU;
    cbp_setpal.col = par[2] & 0xFFFU;
-   rrpge_m_edat->st.stat[RRPGE_STA_PAL + cbp_setpal.id] = cbp_setpal.col;
+   stat[RRPGE_STA_PAL + cbp_setpal.id] = cbp_setpal.col;
    rrpge_m_edat->cb_sub[RRPGE_CB_SETPAL](rrpge_m_edat, &cbp_setpal);
 
    r = 100U;
@@ -153,9 +154,9 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    if (par[1] > 3U){ cbp_mode.mod = 0U; }
    else{             cbp_mode.mod = par[1]; }
-   rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x12U] = cbp_mode.mod;
-   rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x7U] = (rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x7U] & 0xCFFFU) |
-                                                   (cbp_mode.mod << 12);
+   stat[RRPGE_STA_VARS + 0x12U] = cbp_mode.mod;
+   stat[RRPGE_STA_UPA_G + 0x7U] = (stat[RRPGE_STA_UPA_G + 0x7U] & 0xCFFFU) |
+                                  (cbp_mode.mod << 12);
    rrpge_m_edat->cb_sub[RRPGE_CB_MODE](rrpge_m_edat, &cbp_mode);
 
    r = 100000U;
@@ -169,7 +170,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    }
 
    cbp_setst3d.mod = par[1] & 0x7U;
-   rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x17U] = cbp_setst3d.mod;
+   stat[RRPGE_STA_VARS + 0x17U] = cbp_setst3d.mod;
    rrpge_m_edat->cb_sub[RRPGE_CB_SETST3D](rrpge_m_edat, &cbp_setst3d);
 
    r = 2400U;
@@ -184,7 +185,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    cbp_getprops.dev = par[1] & 0xFU; /* Device to query */
    rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETPROPS](rrpge_m_edat, &cbp_getprops);
-   rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x30U + (par[1] & 0xFU)] = rrpge_m_info.xr[7];
+   stat[RRPGE_STA_VARS + 0x30U + (par[1] & 0xFU)] = rrpge_m_info.xr[7];
 
    r = 800U;
    goto ret_callback;
@@ -198,7 +199,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    cbp_dropdev.dev = par[1] & 0xFU; /* Device to drop */
    rrpge_m_edat->cb_sub[RRPGE_CB_DROPDEV](rrpge_m_edat, &cbp_dropdev);
-   rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x30U + (par[1] & 0xFU)] = 0U;
+   stat[RRPGE_STA_VARS + 0x30U + (par[1] & 0xFU)] = 0U;
 
    r = 800U;
    goto ret_callback;
@@ -211,7 +212,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    }
 
    cbp_getdidesc.dev = par[1] & 0xFU; /* Device to query */
-   if (rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x30U + cbp_getdidesc.dev] != 0U){
+   if (stat[RRPGE_STA_VARS + 0x30U + cbp_getdidesc.dev] != 0U){
     cbp_getdidesc.inp = (par[2] << 4) + (par[3] & 0xFU); /* Input to query */
     rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETDIDESC](rrpge_m_edat, &cbp_getdidesc);
    }else{
@@ -230,7 +231,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    }
 
    cbp_getdi.dev = par[1] & 0xFU; /* Device to query */
-   if (rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x30U + cbp_getdi.dev] != 0U){
+   if (stat[RRPGE_STA_VARS + 0x30U + cbp_getdi.dev] != 0U){
     cbp_getdi.ing = par[2];       /* Input group to query */
     rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETDI](rrpge_m_edat, &cbp_getdi);
    }else{
@@ -248,7 +249,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    }
 
    cbp_getai.dev = par[1] & 0xFU; /* Device to query */
-   if (rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x30U + cbp_getai.dev] != 0U){
+   if (stat[RRPGE_STA_VARS + 0x30U + cbp_getai.dev] != 0U){
     cbp_getai.inp = par[2];       /* Input to query */
     rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETAI](rrpge_m_edat, &cbp_getai);
    }else{
@@ -266,7 +267,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    }
 
    cbp_popchar.dev = par[1] & 0xFU; /* Device to query */
-   if (rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x30U + cbp_popchar.dev] != 0U){
+   if (stat[RRPGE_STA_VARS + 0x30U + cbp_popchar.dev] != 0U){
     rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_POPCHAR](rrpge_m_edat, &cbp_popchar);
    }else{
     rrpge_m_info.xr[7] = 0U;
@@ -476,8 +477,8 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   if (par[1] != 0U){ rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x1FU] = 1U; }
-   else             { rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x1FU] = 0U; }
+   if (par[1] != 0U){ stat[RRPGE_STA_VARS + 0x1FU] = 1U; }
+   else             { stat[RRPGE_STA_VARS + 0x1FU] = 0U; }
 
    r = 400U;
    break;
@@ -489,7 +490,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   rrpge_m_info.xr[7] = rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x1FU] = 1U;
+   rrpge_m_info.xr[7] = stat[RRPGE_STA_VARS + 0x1FU] = 1U;
 
    r = 400U;
    break;
@@ -502,7 +503,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    }
 
    if (par[1] >= 0x10U){ rrpge_m_info.xr[7] = 0xFFFFU; }
-   else                { rrpge_m_info.xr[7] = rrpge_m_edat->st.stat[RRPGE_STA_KTASK + 0xFU + (par[1] << 4)]; }
+   else                { rrpge_m_info.xr[7] = stat[RRPGE_STA_KTASK + 0xFU + (par[1] << 4)]; }
 
    r = 400U;
    break;
@@ -517,8 +518,8 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    if (par[1] < 0x10U){
     o = RRPGE_STA_KTASK + (par[1] << 4);
     /* Only discards completed tasks */
-    if ((rrpge_m_edat->st.stat[o] & 0x8000U) != 0U){
-     rrpge_m_edat->st.stat[o] = 0U;
+    if ((stat[o] & 0x8000U) != 0U){
+     stat[o] = 0U;
     }
    }
 

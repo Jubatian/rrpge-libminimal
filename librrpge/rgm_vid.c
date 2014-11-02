@@ -33,6 +33,7 @@ void  rrpge_m_vidproc(auint cy)
  auint c;
  auint s;
  auint t;
+ uint16* stat = &(rrpge_m_edat->st.stat[0]);
 
  /* Consume the provided number of cycles */
 
@@ -70,20 +71,20 @@ void  rrpge_m_vidproc(auint cy)
   ** assistance. */
 
   if ( (rrpge_m_info.vln == 0U) &&
-       ((rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x7U] & 0x8000U) != 0U) ){
+       ((stat[RRPGE_STA_UPA_G + 0x7U] & 0x8000U) != 0U) ){
 
    /* Prepare for clear */
 
    i  = 9600U;
-   a  = rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x15U] & ((PRAMS - 1U) >> 9);
+   a  = stat[RRPGE_STA_VARS + 0x15U] & ((PRAMS - 1U) >> 9);
    a  = a & (~(((auint)(4U) << (a & 3U)) - 4U)); /* Clear low bits of address part */
    j  = 1600U << (a & 3U);                       /* Clear limit, also guarantees no overrun */
    a  = (a & (~(auint)(3U))) << 9;
-   s  = rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x6U] >> 11; /* Initial skip */
+   s  = stat[RRPGE_STA_UPA_G + 0x6U] >> 11; /* Initial skip */
    j -= s;
    a += s;
-   s  = (rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x6U] >> 6) & 0x1FU; /* Skip amount / streak */
-   c  = (rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x6U]     ) & 0x3FU; /* Clear amount / streak */
+   s  = (stat[RRPGE_STA_UPA_G + 0x6U] >> 6) & 0x1FU; /* Skip amount / streak */
+   c  = (stat[RRPGE_STA_UPA_G + 0x6U]     ) & 0x3FU; /* Clear amount / streak */
 
    /* Clear */
 
@@ -107,8 +108,8 @@ void  rrpge_m_vidproc(auint cy)
 
    /* Update latch, and clear flags (both flags together) */
 
-   rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x7U] &= ((PRAMS - 1U) >> 9); /* Clear flags */
-   rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x15U]  = rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x7U];
+   stat[RRPGE_STA_UPA_G + 0x7U] &= ((PRAMS - 1U) >> 9); /* Clear flags */
+   stat[RRPGE_STA_VARS + 0x15U]  = stat[RRPGE_STA_UPA_G + 0x7U];
 
   }
 
@@ -123,32 +124,34 @@ void  rrpge_m_vidproc(auint cy)
 ** used. */
 void  rrpge_m_vidwrite(auint adr, auint val)
 {
+ uint16* stat = &(rrpge_m_edat->st.stat[0]);
+
  adr = adr & 0xFU;
 
  switch (adr & 0xCU){
 
   case 0x0U:                  /* Mask / Colorkey definitions */
 
-   rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + adr] = (uint16)(val);
+   stat[RRPGE_STA_UPA_G + adr] = (uint16)(val);
    break;
 
   case 0x4U:                  /* Shift mode region & Controls & Flags */
 
    if ((adr & 0x2U) == 0U){   /* Shift mode region */
-    rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + adr] = (uint16)(val & 0x7F7FU);
+    stat[RRPGE_STA_UPA_G + adr] = (uint16)(val & 0x7F7FU);
    }else{                     /* Controls & Flags */
     if (adr == 0x6U){         /* Display list clear */
-     rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x6U] = (uint16)(val);
+     stat[RRPGE_STA_UPA_G + 0x6U] = (uint16)(val);
     }else{                    /* Display list definition & process flags (Flags become set) */
-     rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x7U] = (rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x7U] & 0x3000U) |
-                                                     ((val & ((PRAMS - 1U) >> 9)) | 0xC000U);
+     stat[RRPGE_STA_UPA_G + 0x7U] = (stat[RRPGE_STA_UPA_G + 0x7U] & 0x3000U) |
+                                    ((val & ((PRAMS - 1U) >> 9)) | 0xC000U);
     }
    }
    break;
 
   default:                    /* Source definitions */
 
-   rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + adr] = (uint16)(val);
+   stat[RRPGE_STA_UPA_G + adr] = (uint16)(val);
    break;
 
  }
