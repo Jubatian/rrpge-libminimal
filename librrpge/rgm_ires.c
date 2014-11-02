@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.11.02
 */
 
 
@@ -35,7 +35,7 @@ static const uint8  rrpge_m_ires_stanz[3U * STANZ_CT] = {
  0xD3U, 0x40U, 0x80U, /* GDG mask / ckey 3 */
  0xD4U, 0x50U, 0x00U, /* GDG shift mode region A */
  0xD5U, 0x50U, 0x00U, /* GDG shift mode region B */
- 0xD7U, 0x07U, 0xF8U, /* GDG display list definition */
+ 0xD7U, 0x37U, 0xF8U, /* GDG display list definition */
  0xD8U, 0x00U, 0x82U, /* GDG source A0 */
  0xD9U, 0x41U, 0x40U, /* GDG source A1 */
  0xDAU, 0x81U, 0x40U, /* GDG source A2 */

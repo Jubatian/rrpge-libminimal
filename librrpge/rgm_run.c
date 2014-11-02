@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.26
+**  \date      2014.11.02
 */
 
 
@@ -72,6 +72,11 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
   rrpge_m_info.stp = stat[RRPGE_STA_VARS + 0x1AU] + rrpge_m_info.sbt;
  }
 
+ /* Force consistency between the Current Video Mode register and the Display List
+ ** Definition register */
+
+ stat[RRPGE_STA_UPA_G + 0x7U] = (stat[RRPGE_STA_UPA_G + 0x7U] & 0xCFFFU) |
+                                ((stat[RRPGE_STA_VARS + 0x12] & 0x3U) << 12);
 
  /* Enter main loop */
 

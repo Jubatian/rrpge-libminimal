@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.26
+**  \date      2014.11.02
 */
 
 
@@ -44,7 +44,7 @@ static const uint8  rrpge_m_chk_stazc[3U * STAZC_CT] = {
  0xCFU, 0xFFU, 0xFFU, /* UPA, FIFO data word (read) */
  0xD4U, 0x80U, 0x80U, /* UPA, GDG shift mode region A */
  0xD5U, 0x80U, 0x80U, /* UPA, GDG shift mode region B */
- 0xD7U, 0x38U, 0x00U, /* UPA, GDG display list definition */
+ 0xD7U, 0x08U, 0x00U, /* UPA, GDG display list definition */
  0xE0U, 0xFEU, 0x00U, /* UPA, Pointer 0 address high */
  0xE2U, 0xFEU, 0x00U, /* UPA, Pointer 0 increment high */
  0xE4U, 0xFFU, 0xF0U, /* UPA, Pointer 0 data unit size */

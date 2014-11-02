@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.11.02
 */
 
 
@@ -140,7 +140,8 @@ void  rrpge_m_vidwrite(auint adr, auint val)
     if (adr == 0x6U){         /* Display list clear */
      rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x6U] = (uint16)(val);
     }else{                    /* Display list definition & process flags (Flags become set) */
-     rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x7U] = (val & ((PRAMS - 1U) >> 9)) | 0xC000U;
+     rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x7U] = (rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x7U] & 0x3000U) |
+                                                     ((val & ((PRAMS - 1U) >> 9)) | 0xC000U);
     }
    }
    break;
