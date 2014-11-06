@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.11.06
 */
 
 
@@ -93,6 +93,7 @@ rrpge_uint32 rrpge_init_run(rrpge_object_t* hnd)
   if (f != RRPGE_ERR_OK){ return f; }
 
   /* Load code area */
+  rrpge_m_ires_initcode(hnd);
   p = &(hnd->appd[0]);
   cbp_loadbin.buf = &(hnd->crom[0]);
   cbp_loadbin.scw = (((auint)(p[0x6U]) - 1U) & 0xFFFFU) + 1U;

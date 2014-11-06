@@ -11,6 +11,7 @@
 
 
 #include "rgm_ires.h"
+#include "rgm_ulib.h"
 
 
 /* State: Nonzero elements in the VARS area (address, data high, data low) */
@@ -233,6 +234,28 @@ void rrpge_m_ires_initdata(rrpge_object_t* obj)
   d[0xFF80U + i] = 0x0000U - rrpge_m_ires_sinq16[128U - i];
  }
 
+}
+
+
+
+/* Initializes the Code memory, filling it with zero and the User Library from
+** 0xF000. This should be called before loading the Application's code. */
+void rrpge_m_ires_initcode(rrpge_object_t* obj)
+{
+ auint   i;
+ uint16* c = &(obj->crom[0]);
+
+ /* Reset code memory */
+
+ for (i = 0U; i < (sizeof(obj->crom) / sizeof(obj->crom[0])); i++){
+  c[i] = 0U;
+ }
+
+ /* Fill in User Library */
+
+ for (i = 0U; i < RRPGE_M_ULIB_SIZE; i++){
+  c[0xF000U + i] = rrpge_m_ulib[i];
+ }
 }
 
 

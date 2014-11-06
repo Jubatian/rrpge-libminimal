@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.11.06
 */
 
 
@@ -20,6 +20,11 @@
 ** should be called before loading the application binary so data memory
 ** portions not loaded from the binary are adequately initialized */
 void rrpge_m_ires_initdata(rrpge_object_t* obj);
+
+
+/* Initializes the Code memory, filling it with zero and the User Library from
+** 0xF000. This should be called before loading the Application's code. */
+void rrpge_m_ires_initcode(rrpge_object_t* obj);
 
 
 /* Initializes state after the application header and descriptor were loaded.
