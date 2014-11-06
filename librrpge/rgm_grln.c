@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.26
+**  \date      2014.11.06
 */
 
 
@@ -86,7 +86,7 @@ void rrpge_m_grln(void)
 
  /* Double scan: Bus access cycle count available & display list size adjust */
 
- dbl  = (rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x12U] >> 1) & 1U;
+ dbl  = (rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x7U] >> 13) & 1U;
  cyr  = 192U;
  if (dbl != 0U){ /* Double scan */
   dsiz ++;
@@ -103,7 +103,7 @@ void rrpge_m_grln(void)
   /* Prepare shift count & mask for expanding 4 / 8 bit masks and calculating
   ** colorkey */
 
-  dmd = rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x12U] & 1U; /* 0: 4 bit; 1: 8 bit mode */
+  dmd = (rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x7U] >> 12) & 1U; /* 0: 4 bit; 1: 8 bit mode */
   if (dmd != 0U){                 /* 8 bit mode */
    bc = 0x7F7F7F7FU;              /* Colorkey calculation mask */
    bm = 0x80808080U;              /* Mask to select the effective mask bit */

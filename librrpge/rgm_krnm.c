@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.11.02
+**  \date      2014.11.06
 */
 
 
@@ -154,7 +154,6 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    if (par[1] > 3U){ cbp_mode.mod = 0U; }
    else{             cbp_mode.mod = par[1]; }
-   stat[RRPGE_STA_VARS + 0x12U] = cbp_mode.mod;
    stat[RRPGE_STA_UPA_G + 0x7U] = (stat[RRPGE_STA_UPA_G + 0x7U] & 0xCFFFU) |
                                   (cbp_mode.mod << 12);
    rrpge_m_edat->cb_sub[RRPGE_CB_MODE](rrpge_m_edat, &cbp_mode);

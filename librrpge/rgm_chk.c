@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.11.02
+**  \date      2014.11.06
 */
 
 
@@ -22,7 +22,7 @@ static const uint8  rrpge_m_chk_stazc[3U * STAZC_CT] = {
  0x4DU, 0xFFU, 0xFFU, /* Reserved */
  0x4EU, 0xFFU, 0xFFU, /* Reserved */
  0x4FU, 0xFFU, 0xFFU, /* Reserved */
- 0x52U, 0xFFU, 0xFCU, /* Video mode */
+ 0x52U, 0xFFU, 0xFFU, /* Reserved */
  0x56U, 0xFFU, 0xFFU, /* Reserved */
  0x57U, 0xFFU, 0xF8U, /* Stereoscopic 3D */
  0x5EU, 0xFFU, 0xFFU, /* Reserved */

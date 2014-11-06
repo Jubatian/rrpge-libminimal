@@ -1,6 +1,4 @@
-Working on implementing specification 00.010.000.
-
-Need to fix initial data memory problem (see rrpge_init in rgm_main()).
+Working on implementing specification 00.010.000 and upwards.
 
 For now, the state attach and detach features are left in a not quite
 functional state. This part of the interface needs some additional tought

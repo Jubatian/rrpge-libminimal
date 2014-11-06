@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.11.02
+**  \date      2014.11.06
 */
 
 
@@ -17,7 +17,6 @@
 #define STANZ_CT 35U
 static const uint8  rrpge_m_ires_stanz[3U * STANZ_CT] = {
  0x48U, 0x66U, 0x66U, /* XM register */
- 0x52U, 0x00U, 0x03U, /* Graphics mode */
  0x55U, 0x07U, 0xF8U, /* GDG display list definition latch */
  0x95U, 0x05U, 0x58U, /* Mixer partitioning */
  0x99U, 0x01U, 0x00U, /* Mixer amplitudo */

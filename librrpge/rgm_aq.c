@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.26
+**  \date      2014.11.06
 */
 
 
@@ -42,7 +42,7 @@ rrpge_uint32 rrpge_getalloweddevs(rrpge_object_t* hnd)
 /* Get video mode - implementation of RRPGE library function */
 rrpge_uint32 rrpge_getvidmode(rrpge_object_t* hnd)
 {
- return (hnd->st.stat[RRPGE_STA_VARS + 0x12U] & 1U);
+ return ((hnd->st.stat[RRPGE_STA_UPA_G + 0x7U] >> 12) & 1U);
 }
 
 
