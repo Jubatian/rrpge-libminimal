@@ -35,7 +35,7 @@ static uint8  main_tdata[128U * 1024U];
 static FILE*  main_app;
 
 /* Application name string */
-static char const* main_appname = "RRPGE simple SDL emulator. Version: 00.013.001-00 (WIP)";
+static char const* main_appname = "RRPGE simple SDL emulator. Version: 00.013.001-00";
 static char const* main_appicon = "RRPGE";
 
 /* Other elements */
