@@ -26,8 +26,8 @@ $(OBD)rgm_cb.o: librrpge/rgm_cb.c librrpge/rgm_cb.h
 	$(CC) -S librrpge/rgm_cb.c -o $(OBD)rgm_cb.asm $(CFSPD)
 
 $(OBD)rgm_chk.o: librrpge/rgm_chk.c librrpge/rgm_chk.h
-	$(CC) -c librrpge/rgm_chk.c -o $(OBD)rgm_chk.o $(CFSPD)
-	$(CC) -S librrpge/rgm_chk.c -o $(OBD)rgm_chk.asm $(CFSPD)
+	$(CC) -c librrpge/rgm_chk.c -o $(OBD)rgm_chk.o $(CFSIZ)
+	$(CC) -S librrpge/rgm_chk.c -o $(OBD)rgm_chk.asm $(CFSIZ)
 
 $(OBD)rgm_cpua.o: librrpge/rgm_cpua.c librrpge/rgm_cpua.h
 	$(CC) -c librrpge/rgm_cpua.c -o $(OBD)rgm_cpua.o -fomit-frame-pointer $(CFSPD)
@@ -54,8 +54,8 @@ $(OBD)rgm_info.o: librrpge/rgm_info.c librrpge/rgm_info.h
 	$(CC) -S librrpge/rgm_info.c -o $(OBD)rgm_info.asm $(CFSPD)
 
 $(OBD)rgm_ires.o: librrpge/rgm_ires.c librrpge/rgm_ires.h
-	$(CC) -c librrpge/rgm_ires.c -o $(OBD)rgm_ires.o $(CFSPD)
-	$(CC) -S librrpge/rgm_ires.c -o $(OBD)rgm_ires.asm $(CFSPD)
+	$(CC) -c librrpge/rgm_ires.c -o $(OBD)rgm_ires.o $(CFSIZ)
+	$(CC) -S librrpge/rgm_ires.c -o $(OBD)rgm_ires.asm $(CFSIZ)
 
 $(OBD)rgm_krnm.o: librrpge/rgm_krnm.c librrpge/rgm_krnm.h
 	$(CC) -c librrpge/rgm_krnm.c -o $(OBD)rgm_krnm.o $(CFSPD)
@@ -90,8 +90,8 @@ $(OBD)rgm_task.o: librrpge/rgm_task.c librrpge/rgm_task.h
 	$(CC) -S librrpge/rgm_task.c -o $(OBD)rgm_task.asm $(CFSPD)
 
 $(OBD)rgm_ulib.o: librrpge/rgm_ulib.c librrpge/rgm_ulib.h
-	$(CC) -c librrpge/rgm_ulib.c -o $(OBD)rgm_ulib.o $(CFSPD)
-	$(CC) -S librrpge/rgm_ulib.c -o $(OBD)rgm_ulib.asm $(CFSPD)
+	$(CC) -c librrpge/rgm_ulib.c -o $(OBD)rgm_ulib.o $(CFSIZ)
+	$(CC) -S librrpge/rgm_ulib.c -o $(OBD)rgm_ulib.asm $(CFSIZ)
 
 $(OBD)rgm_vid.o: librrpge/rgm_vid.c librrpge/rgm_vid.h
 	$(CC) -c librrpge/rgm_vid.c -o $(OBD)rgm_vid.o $(CFSPD)

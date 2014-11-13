@@ -12,10 +12,10 @@ $(OBD)render.o: iface/render.c iface/render.h
 	$(CC) -c iface/render.c -o $(OBD)render.o $(CFSPD)
 
 $(OBD)inputcom.o: iface/inputcom.c iface/inputcom.h
-	$(CC) -c iface/inputcom.c -o $(OBD)inputcom.o $(CFSPD)
+	$(CC) -c iface/inputcom.c -o $(OBD)inputcom.o $(CFSIZ)
 
 $(OBD)input.o: iface/input.c iface/input.h
-	$(CC) -c iface/input.c -o $(OBD)input.o $(CFSPD)
+	$(CC) -c iface/input.c -o $(OBD)input.o $(CFSIZ)
 
 $(OBD)imouse.o: iface/imouse.c iface/imouse.h
-	$(CC) -c iface/imouse.c -o $(OBD)imouse.o $(CFSPD)
+	$(CC) -c iface/imouse.c -o $(OBD)imouse.o $(CFSIZ)

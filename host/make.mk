@@ -9,10 +9,10 @@
 OBJECTS+= $(OBD)screen.o   $(OBD)audio.o    $(OBD)filels.o
 
 $(OBD)screen.o: host/screen.c host/screen.h
-	$(CC) -c host/screen.c -o $(OBD)screen.o $(CFSPD)
+	$(CC) -c host/screen.c -o $(OBD)screen.o $(CFSIZ)
 
 $(OBD)audio.o: host/audio.c host/audio.h
-	$(CC) -c host/audio.c -o $(OBD)audio.o $(CFSPD)
+	$(CC) -c host/audio.c -o $(OBD)audio.o $(CFSIZ)
 
 $(OBD)filels.o: host/filels.c host/filels.h
-	$(CC) -c host/filels.c -o $(OBD)filels.o $(CFSPD)
+	$(CC) -c host/filels.c -o $(OBD)filels.o $(CFSIZ)

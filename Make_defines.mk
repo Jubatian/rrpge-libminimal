@@ -59,7 +59,7 @@ CFSIZ?=-Os -s
 
 SHRM?=rm -r -f
 SHMKDIR?=mkdir
-DIRSP=/
+DIRSP?=/
 
 LINKB?=
 LINK= $(LINKB) -lSDLmain -lSDL
