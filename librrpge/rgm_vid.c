@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.11.02
+**  \date      2014.11.16
 */
 
 
@@ -111,6 +111,10 @@ void  rrpge_m_vidproc(auint cy)
    stat[RRPGE_STA_UPA_G + 0x7U] &= ((PRAMS - 1U) >> 9); /* Clear flags */
    stat[RRPGE_STA_VARS + 0x15U]  = stat[RRPGE_STA_UPA_G + 0x7U];
 
+   /* Clear FIFO suspend, so it may continue processing */
+
+   stat[RRPGE_STA_UPA_GF + 0x1U] &= ~2U; /* Graphics FIFO suspend ends */
+
   }
 
  }
@@ -145,6 +149,7 @@ void  rrpge_m_vidwrite(auint adr, auint val)
     }else{                    /* Display list definition & process flags (Flags become set) */
      stat[RRPGE_STA_UPA_G + 0x7U] = (stat[RRPGE_STA_UPA_G + 0x7U] & 0x3000U) |
                                     ((val & ((PRAMS - 1U) >> 9)) | 0xC000U);
+     stat[RRPGE_STA_UPA_GF + 0x1U] |= 2U; /* Graphics FIFO suspended */
     }
    }
    break;
