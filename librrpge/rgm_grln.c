@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.11.06
+**  \date      2014.11.19
 */
 
 
@@ -45,24 +45,24 @@ void rrpge_m_grln(void)
  auint  dmd;                   /* Current display mode (4 bit: 0; 8 bit: 1) */
  auint  csr;                   /* Current source */
  auint  scy;                   /* Number of output cycles to produce */
- uint32 msk;                   /* Mask / colorkey value extended */
- uint32 msb;                   /* Mask base value (0xFFFFFFFF or msk value) */
- uint32 csd;                   /* Current source read */
- uint32 psd;                   /* Previous source in the alignment shift register */
+ auint  msk;                   /* Mask / colorkey value extended */
+ auint  msb;                   /* Mask base value (0x...FFFFFFFF or msk value) */
+ auint  csd;                   /* Current source read */
+ auint  psd;                   /* Previous source in the alignment shift register */
  auint  dshr;                  /* Destination alignment shift */
  auint  dshl;
  auint  spos;                  /* Position in source during blit */
  auint  spms;                  /* Position mask in shift mode */
  auint  i;
- uint32 t32;
- uint32 u32;
- uint32 d32;
- uint32 m32;
+ auint  t;
+ auint  u;
+ auint  d;
+ auint  m;
  auint  bs;
  auint  bm;
  auint  bc;
- uint32 dcm;
- uint32 dpm;
+ auint  dcm;
+ auint  dpm;
 
  /* Only draw line if within display area */
 
@@ -116,9 +116,9 @@ void rrpge_m_grln(void)
 
   /* Reset line buffer */
 
-  t32 = dlin[0];
+  t    = dlin[0];
   for (i = 0U; i < 80U; i++){
-   rrpge_m_grln_buf[i] = t32;
+   rrpge_m_grln_buf[i] = (uint32)(t);
   }
   doff = 1U;
 
@@ -161,13 +161,13 @@ void rrpge_m_grln(void)
     msk |= msk << 8;
     msk |= msk << 16;
 
-    msb = msk | ((uint32)(0U) - ((cmd >> 15) & 1U)); /* Mask base is either 0xFFFFFFFF or the mask */
+    msb = msk | ((auint)(0U) - ((cmd >> 15) & 1U)); /* Mask base is either 0x...FFFFFFFF or the mask */
 
-    /* Precalculate colorkey & priority selector mask drops (0xFFFFFFFFU if
-    ** the mask is to be dropped, 0x00000000U otherwise). */
+    /* Precalculate colorkey & priority selector mask drops (0x...FFFFFFFFU if
+    ** the mask is to be dropped, 0U otherwise). */
 
-    dcm = ((uint32)(0U) - ((cmd >> 14) & 1U)); /* Drop colorkey unless enabled */
-    dpm = (0xFFFFFFFFU  + ((cmd >> 31) & 1U)); /* Drop priority selector unless enabled */
+    dcm = (0U - ( (cmd >> 14) & 1U)      ); /* Drop colorkey unless enabled */
+    dpm = (0U - (((cmd >> 31) & 1U) ^ 1U)); /* Drop priority selector unless enabled */
 
     /* Drop lowest bit (position / shift) of command in 8 bit mode */
 
@@ -203,26 +203,26 @@ void rrpge_m_grln(void)
       spos = (spos + 1U) & spms;
       psd  |= (csd >> dshr) >> dshr; /* Now 'psd' contains the destination aligned source */
 
-      d32  = rrpge_m_grln_buf[i];
+      d    = rrpge_m_grln_buf[i];
 
       /* Create masks */
 
-      m32  = msb;                    /* Combined mask */
+      m    = msb;                    /* Combined mask */
 
-      t32  = psd ^ msk;                    /* Prepare for colorkey */
-      t32  = (((t32 & bc) + bc) | t32);    /* Colorkey mask on the highest bit of pixel */
-      u32  = ~(d32 << (dmd << 1));         /* Priority mask on the highest bit of pixel */
-      t32 |= dcm;                          /* Drop colorkey unless enabled */
-      u32 |= dpm;                          /* Drop priority selector unless enabled */
-      t32 &= u32;                          /* Combine the two masks */
-      t32 &= bm;                           /* Mask out lower pixel bits */
-      t32  = (t32 - (t32 >> bs)) + t32;    /* Expand to lower pixels */
+      t    = psd ^ msk;              /* Prepare for colorkey */
+      t    = (((t & bc) + bc) | t);  /* Colorkey mask on the highest bit of pixel */
+      u    = ~(d << (dmd << 1));     /* Priority mask on the highest bit of pixel */
+      t   |= dcm;                    /* Drop colorkey unless enabled */
+      u   |= dpm;                    /* Drop priority selector unless enabled */
+      t   &= u;                      /* Combine the two masks */
+      t   &= bm;                     /* Mask out lower pixel bits */
+      t    = (t - (t >> bs)) + t;    /* Expand to lower pixels */
 
-      m32 &= t32;                    /* Add to combined mask */
+      m   &= t;                      /* Add to combined mask */
 
       /* Combine destination */
 
-      rrpge_m_grln_buf[i] = (psd & m32) | (d32 & (~m32));
+      rrpge_m_grln_buf[i] = (uint32)((psd & m) | (d & (~m)));
       i    = (i + 1U) & 0x7FU;
 
       /* Done, finalize */
@@ -243,7 +243,7 @@ void rrpge_m_grln(void)
 
      /* Initial (begin) mask */
 
-     m32  = msb >> dshr;
+     m    = msb >> dshr;
 
      /* Do the blitting loop */
 
@@ -256,7 +256,7 @@ void rrpge_m_grln(void)
 
       if (scy == 0U){ /* End cell */
        csd  = 0U;
-       m32 &= (0xFFFFFFFFU << dshl) << dshl; /* End mask */
+       m   &= (0xFFFFFFFFU << dshl) << dshl; /* End mask */
       }else{          /* Not an end cell */
        csd  = sbnk[(soff + spos) & 0xFFFFU];
        spos ++;
@@ -268,30 +268,30 @@ void rrpge_m_grln(void)
 
       /* Load destination for masks */
 
-      d32  = rrpge_m_grln_buf[i];
+      d    = rrpge_m_grln_buf[i];
 
       /* Create masks */
 
-      t32  = psd ^ msk;                    /* Prepare for colorkey */
-      t32  = (((t32 & bc) + bc) | t32);    /* Colorkey mask on the highest bit of pixel */
-      u32  = ~(d32 << (dmd << 1));         /* Priority mask on the highest bit of pixel */
-      t32 |= dcm;                          /* Drop colorkey unless enabled */
-      u32 |= dpm;                          /* Drop priority selector unless enabled */
-      t32 &= u32;                          /* Combine the two masks */
-      t32 &= bm;                           /* Mask out lower pixel bits */
-      t32  = (t32 - (t32 >> bs)) + t32;    /* Expand to lower pixels */
+      t    = psd ^ msk;              /* Prepare for colorkey */
+      t    = (((t & bc) + bc) | t);  /* Colorkey mask on the highest bit of pixel */
+      u    = ~(d << (dmd << 1));     /* Priority mask on the highest bit of pixel */
+      t   |= dcm;                    /* Drop colorkey unless enabled */
+      u   |= dpm;                    /* Drop priority selector unless enabled */
+      t   &= u;                      /* Combine the two masks */
+      t   &= bm;                     /* Mask out lower pixel bits */
+      t    = (t - (t >> bs)) + t;    /* Expand to lower pixels */
 
-      m32 &= t32;                    /* Add to combined mask */
+      m   &= t;                      /* Add to combined mask */
 
       /* Combine destination */
 
-      rrpge_m_grln_buf[i] = (psd & m32) | (d32 & (~m32));
+      rrpge_m_grln_buf[i] = (uint32)((psd & m) | (d & (~m)));
       i    = (i + 1U) & 0x7FU;
 
       /* Done, finalize */
 
       if (scy == 0U){ break; }    /* End of render */
-      m32  = msb;                 /* Reinit mask */
+      m    = msb;                 /* Reinit mask */
       psd  = (csd << dshl) << dshl;
       scy --;
 

@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.26
+**  \date      2014.11.19
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -35,8 +35,13 @@
 #define uint16 rrpge_uint16
 #define uint32 rrpge_uint32
 
-/* Architecture optimal unsigned integer, at least 32 bits. */
-typedef unsigned int  auint;
+/* Architecture optimal unsigned integer, at least 32 bits. This definition
+** should be right for it, the program is not even guaranteed to work if the
+** size of "int" is less than 32 bits due to integer promotion quirks. This
+** may also cause auint to be 32 bits on a 64 bit machine if the compiler is
+** designed with a 32 bit integer size, however this case using the compiler's
+** native integer size is usually the best. */
+typedef unsigned int auint;
 
 
 

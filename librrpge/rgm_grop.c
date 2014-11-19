@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.11.02
+**  \date      2014.11.19
 */
 
 
@@ -58,30 +58,30 @@ static uint8 const* rrpge_m_grop_reb;
 
 
 /* Internal: Calculates reindex 32bit chunk for 4bit */
-RRPGE_M_FASTCALL static uint32 rrpge_m_grop_rec4(uint32 ps, uint32 pd)
+RRPGE_M_FASTCALL static auint rrpge_m_grop_rec4(auint ps, auint pd)
 {
- uint32 t0 = (ps & 0x0F0F0F0FU) | ((pd << 4) & 0xF0F0F0F0U);
- uint32 t1 = ((ps >> 4) & 0x0F0F0F0FU) | (pd & 0xF0F0F0F0U);
- return (( ((uint32)(rrpge_m_grop_reb[(t0      ) & 0xFFU])      ) |
-           ((uint32)(rrpge_m_grop_reb[(t0 >>  8) & 0xFFU]) <<  8) |
-           ((uint32)(rrpge_m_grop_reb[(t0 >> 16) & 0xFFU]) << 16) |
-           ((uint32)(rrpge_m_grop_reb[(t0 >> 24)        ]) << 24) ) & 0x0F0F0F0FU) |
-        (( ((uint32)(rrpge_m_grop_reb[(t1      ) & 0xFFU]) <<  4) |
-           ((uint32)(rrpge_m_grop_reb[(t1 >>  8) & 0xFFU]) << 12) |
-           ((uint32)(rrpge_m_grop_reb[(t1 >> 16) & 0xFFU]) << 20) |
-           ((uint32)(rrpge_m_grop_reb[(t1 >> 24)        ]) << 28) ) & 0xF0F0F0F0U);
+ auint t0 = (ps & 0x0F0F0F0FU) | ((pd << 4) & 0xF0F0F0F0U);
+ auint t1 = ((ps >> 4) & 0x0F0F0F0FU) | (pd & 0xF0F0F0F0U);
+ return (( ((auint)(rrpge_m_grop_reb[(t0      ) & 0xFFU])      ) |
+           ((auint)(rrpge_m_grop_reb[(t0 >>  8) & 0xFFU]) <<  8) |
+           ((auint)(rrpge_m_grop_reb[(t0 >> 16) & 0xFFU]) << 16) |
+           ((auint)(rrpge_m_grop_reb[(t0 >> 24)        ]) << 24) ) & 0x0F0F0F0FU) |
+        (( ((auint)(rrpge_m_grop_reb[(t1      ) & 0xFFU]) <<  4) |
+           ((auint)(rrpge_m_grop_reb[(t1 >>  8) & 0xFFU]) << 12) |
+           ((auint)(rrpge_m_grop_reb[(t1 >> 16) & 0xFFU]) << 20) |
+           ((auint)(rrpge_m_grop_reb[(t1 >> 24)        ]) << 28) ) & 0xF0F0F0F0U);
 }
 
 
 /* Internal: Calculates reindex 32bit chunk for 8bit */
-RRPGE_M_FASTCALL static uint32 rrpge_m_grop_rec8(uint32 ps, uint32 pd)
+RRPGE_M_FASTCALL static auint rrpge_m_grop_rec8(auint ps, auint pd)
 {
- uint32 t0 = ( ps       & 0x000F000FU) | ((pd << 4) & 0x01F001F0U);
- uint32 t1 = ((ps >> 8) & 0x000F000FU) | ((pd >> 4) & 0x01F001F0U);
- return ((uint32)(rrpge_m_grop_reb[t0 & 0xFFFFU])      ) |
-        ((uint32)(rrpge_m_grop_reb[t1 & 0xFFFFU]) <<  8) |
-        ((uint32)(rrpge_m_grop_reb[t0   >>   16]) << 16) |
-        ((uint32)(rrpge_m_grop_reb[t1   >>   16]) << 24);
+ auint t0 = ( ps       & 0x000F000FU) | ((pd << 4) & 0x01F001F0U);
+ auint t1 = ((ps >> 8) & 0x000F000FU) | ((pd >> 4) & 0x01F001F0U);
+ return ((auint)(rrpge_m_grop_reb[t0 & 0xFFFFU])      ) |
+        ((auint)(rrpge_m_grop_reb[t1 & 0xFFFFU]) <<  8) |
+        ((auint)(rrpge_m_grop_reb[t0   >>   16]) << 16) |
+        ((auint)(rrpge_m_grop_reb[t1   >>   16]) << 24);
 }
 
 
@@ -121,34 +121,34 @@ auint rrpge_m_grop_accel(void)
  auint  srpart;      /* Partition mask for source - controls the sxwhol - sx/yfrac split */
  auint  dspart;      /* Partition mask for destination - controls the dswhol - dsfrac split */
 
- uint32 wrmask = ((uint32)(stat[0x00U]) << 16) + (uint32)(stat[0x01U]);
+ auint  wrmask = ((auint)(stat[0x00U]) << 16) + (auint)(stat[0x01U]);
 
  auint  counb  = ((auint)(stat[0x0EU])); /* Count of 4bit px units to copy */
  auint  count;
  auint  counr  = ((auint)(stat[0x0DU])); /* Count of rows to copy */
  auint  codst;       /* Destination oriented (bit) count */
- uint32 ckey;
+ auint  ckey;
  auint  flags  = stat[0x0CU]; /* Read OR mask is also here */
- uint32 mandr  = stat[0x0AU]; /* Read AND mask, and colorkey exported later */
- uint32 mandl;
- uint32 mskor;       /* Read OR mask */
+ auint  mandr  = stat[0x0AU]; /* Read AND mask, and colorkey exported later */
+ auint  mandl;
+ auint  mskor;       /* Read OR mask */
  auint  rotr   = stat[0x09U]; /* Read rotation & colorkey flag */
  auint  rotl;
  auint  dshfr;       /* Destination alignment shifts (Block Blitter) */
  auint  dshfl;
- uint32 prevs  = 0U; /* Source -> destination aligning shifter memory */
- uint32 bmems;       /* Begin / Mid / End mask */
- uint32 reinm;       /* Reindex mask */
- uint32 sbase  = stat[0x0FU]; /* Source data preparation - line mode pattern */
- uint32 sdata  = 0U; /* !!! Only eliminates a bogus GCC warning, see line 320 !!! */
+ auint  prevs  = 0U; /* Source -> destination aligning shifter memory */
+ auint  bmems;       /* Begin / Mid / End mask */
+ auint  reinm;       /* Reindex mask */
+ auint  sbase  = stat[0x0FU]; /* Source data preparation - line mode pattern */
+ auint  sdata  = 0U; /* !!! Only eliminates a bogus GCC warning, see line 329 !!! */
  auint  bmode;       /* Blit mode (BB / FL / SC / LI) */
  auint  cyr;         /* Return cycle count */
  auint  cyf;         /* Flags affecting the cycle count */
  auint  i;
- auint  lflp   = 0U; /* !!! Only eliminates a bogus GCC warning, see line 320 !!! */
- auint  lpat   = 0U; /* !!! Only eliminates a bogus GCC warning, see line 320 !!! */
- uint32 t32;
- uint32 u32;
+ auint  lflp   = 0U; /* !!! Only eliminates a bogus GCC warning, see line 329 !!! */
+ auint  lpat   = 0U; /* !!! Only eliminates a bogus GCC warning, see line 329 !!! */
+ auint  t;
+ auint  u;
 
  /* If necessary inicialize the reindex bank cache */
 
@@ -395,7 +395,7 @@ auint rrpge_m_grop_accel(void)
      sxfrac += sxincr;
      syfrac += syincr;
      count -= 8U;
-     count &= ((~(auint)(0U)) + ((count & 0x80000000U) >> 31)); /* Zero saturate */
+     count &= ~(0U - ((count >> 31) & 1U)); /* Zero saturate */
 
     }else{                            /* Scaled blitter */
 
@@ -447,9 +447,9 @@ auint rrpge_m_grop_accel(void)
      sdata = ((sdata & 0xFF00FF00U) >> 8) | ((sdata & 0x00FF00FFU) << 8);
      sdata = (sdata >> 16) | (sdata << 16);   /* Mirror source (BSWAP would be good here) */
     }
-    t32   = sdata;                       /* Align to destination */
+    t     = sdata;                       /* Align to destination */
     sdata = prevs | (sdata >> dshfr);
-    prevs = (t32 << dshfl) << dshfl;
+    prevs = (t << dshfl) << dshfl;
 
    }else if (bmode == 3U){            /* Line mode */
 
@@ -495,36 +495,35 @@ auint rrpge_m_grop_accel(void)
    ** cycle count, and in typical blits it is necessary anyway. */
 
    i   = dswhol | ((dsfrac >> 16) & dspart); /* Destination offset */
-   u32 = pram[i];                        /* Load current destination */
-   t32 = sdata ^ ckey;                   /* Prepare for colorkey calculation */
+   u   = pram[i];                        /* Load current destination */
+   t   = sdata ^ ckey;                   /* Prepare for colorkey calculation */
    sdata = sdata | mskor;                /* Apply OR mask after colorkey */
 
    if ((flags & 0x0200U) == 0U){         /* 4 bit mode */
-    t32 = (((t32 & 0x77777777U) + 0x77777777U) | t32) & 0x88888888U;
-    t32 = (t32 - (t32 >> 3)) + t32;      /* Colorkey mask (0: background) */
+    t = (((t & 0x77777777U) + 0x77777777U) | t) & 0x88888888U;
+    t = (t - (t >> 3)) + t;              /* Colorkey mask (0: background) */
     if ((flags & 0x1000U) != 0U){        /* Reindexing is required */
-     sdata = rrpge_m_grop_rec4(sdata, u32 & reinm);
+     sdata = rrpge_m_grop_rec4(sdata, u & reinm);
     }
    }else{                                /* 8 bit mode */
-    t32 = (((t32 & 0x7F7F7F7FU) + 0x7F7F7F7FU) | t32) & 0x80808080U;
-    t32 = (t32 - (t32 >> 7)) + t32;      /* Colorkey mask (0: background) */
+    t = (((t & 0x7F7F7F7FU) + 0x7F7F7F7FU) | t) & 0x80808080U;
+    t = (t - (t >> 7)) + t;              /* Colorkey mask (0: background) */
     if ((flags & 0x1000U) != 0U){        /* Reindexing is required */
-     sdata = rrpge_m_grop_rec8(sdata, u32 & reinm);
+     sdata = rrpge_m_grop_rec8(sdata, u & reinm);
     }
    }
-   bmems &= t32 | (0xFFFFFFFFU + (flags & 1U)); /* Add colorkey to write mask if enabled */
+   bmems &= t | (~(0U - (flags & 1U)));  /* Add colorkey to write mask if enabled */
 
    /* Combine source over destination */
 
    bmems = ~bmems;                       /* Leave zero in mask where destination was dropped */
-   pram[i] = (u32   &   bmems ) |
-             (sdata & (~bmems));
+   pram[i] = (uint32)( (u & bmems ) | (sdata & (~bmems)) );
    dsfrac += dsincr;
 
    /* Calculate combine cycle count. If bmems is zero, then may accelerate */
 
-   bmems = (uint32)((bmems + 0x7FFFFFFFU) | bmems); /* bit 31 becomes set if nonzero (bmems is uint32, but just make sure no higher bits are set) */
-   cyr  += rrpge_m_grop_tc[cyf ^ (bmems >> 31)];    /* Clears "accelerated" if it was nonzero */
+   bmems = (((bmems + 0x7FFFFFFFU) | bmems) >> 31) & 1U; /* becomes set if (low 32 bits) nonzero */
+   cyr  += rrpge_m_grop_tc[cyf ^ bmems]; /* Clears "accelerated" if it was nonzero */
 
    /* The rendering loop ends when it ran out of destination to render. */
 
