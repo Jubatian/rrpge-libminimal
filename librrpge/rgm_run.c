@@ -85,7 +85,7 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
 
   if       (rmod == RRPGE_RUN_SINGLE){ /* Single step: Process only one operation */
 
-   rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc];
+   rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc & 0xFFFFU];
    cy += rrpge_m_optable[rrpge_m_info.opc >> 9]();  /* Run opcode */
 
   }else if (rmod == RRPGE_RUN_BREAK){  /* Breakpoint mode: after 1st op, halt on any breakpoints */
@@ -98,7 +98,7 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
       break;
      }
     }
-    rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc];
+    rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc & 0xFFFFU];
     cy += rrpge_m_optable[rrpge_m_info.opc >> 9](); /* Run opcode */
     fo = 0U;
     if (rrpge_m_info.hlt != 0U){ break; }           /* Some halt event happened */
@@ -107,7 +107,7 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
   }else{                               /* Normal mode: just run until halt */
 
    do{
-    rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc];
+    rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc & 0xFFFFU];
     cy += rrpge_m_optable[rrpge_m_info.opc >> 9](); /* Run opcode */
     if (rrpge_m_info.hlt != 0U){ break; }           /* Some halt event happened */
    }while (cy <= rrpge_m_info.vlc);
@@ -174,21 +174,21 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
 
  /* Write-back Application state data from info structure */
 
- stat[RRPGE_STA_VARS + 0x10U] = rrpge_m_info.vln;
- stat[RRPGE_STA_VARS + 0x11U] = rrpge_m_info.vlc;
- stat[RRPGE_STA_VARS + 0x13U] = rrpge_m_info.atc;
+ stat[RRPGE_STA_VARS + 0x10U] = (uint16)(rrpge_m_info.vln);
+ stat[RRPGE_STA_VARS + 0x11U] = (uint16)(rrpge_m_info.vlc);
+ stat[RRPGE_STA_VARS + 0x13U] = (uint16)(rrpge_m_info.atc);
  stat[RRPGE_STA_VARS + 0x22U] = (uint16)(rrpge_m_info.cyf[0] >> 16);
  stat[RRPGE_STA_VARS + 0x23U] = (uint16)(rrpge_m_info.cyf[0]);
  stat[RRPGE_STA_VARS + 0x2AU] = (uint16)(rrpge_m_info.cyf[1] >> 16);
  stat[RRPGE_STA_VARS + 0x2BU] = (uint16)(rrpge_m_info.cyf[1]);
  for (i = 0U; i < 8U; i++){
-  stat[RRPGE_STA_VARS + 0x00U + i] = rrpge_m_info.xr[i];
+  stat[RRPGE_STA_VARS + 0x00U + i] = (uint16)(rrpge_m_info.xr[i]);
  }
- stat[RRPGE_STA_VARS + 0x08U] = rrpge_m_info.xmh[0];
- stat[RRPGE_STA_VARS + 0x09U] = rrpge_m_info.xmh[1];
- stat[RRPGE_STA_VARS + 0x0AU] = rrpge_m_info.pc;
- stat[RRPGE_STA_VARS + 0x0BU] = rrpge_m_info.sp;
- stat[RRPGE_STA_VARS + 0x0CU] = rrpge_m_info.bp;
+ stat[RRPGE_STA_VARS + 0x08U] = (uint16)(rrpge_m_info.xmh[0]);
+ stat[RRPGE_STA_VARS + 0x09U] = (uint16)(rrpge_m_info.xmh[1]);
+ stat[RRPGE_STA_VARS + 0x0AU] = (uint16)(rrpge_m_info.pc);
+ stat[RRPGE_STA_VARS + 0x0BU] = (uint16)(rrpge_m_info.sp);
+ stat[RRPGE_STA_VARS + 0x0CU] = (uint16)(rrpge_m_info.bp);
 
  rrpge_m_edat->hlt = rrpge_m_info.hlt; /* Update halt cause */
 
