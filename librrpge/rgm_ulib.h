@@ -20,7 +20,7 @@
 
 
 /* Size of the RRPGE User Library */
-#define RRPGE_M_ULIB_SIZE (3130U / 2U)
+#define RRPGE_M_ULIB_SIZE (4108U / 2U)
 
 /* The RRPGE User Library */
 extern const uint16 rrpge_m_ulib[RRPGE_M_ULIB_SIZE];
