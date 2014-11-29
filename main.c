@@ -20,6 +20,8 @@
 
 #include "librrpge/rrpge.h"
 
+#include "version.h"
+
 #include <SDL/SDL.h>
 #include <errno.h>
 
@@ -35,7 +37,7 @@ static uint8  main_tdata[128U * 1024U];
 static FILE*  main_app;
 
 /* Application name string */
-static char const* main_appname = "RRPGE simple SDL emulator. Version: 00.013.006-00 (WIP)";
+static char const* main_appname = "RRPGE simple SDL emulator. Version: " EMULATOR_VERSION;
 static char const* main_appicon = "RRPGE";
 
 /* Other elements */
