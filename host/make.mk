@@ -8,11 +8,11 @@
 
 OBJECTS+= $(OBD)screen.o   $(OBD)audio.o    $(OBD)filels.o
 
-$(OBD)screen.o: host/screen.c host/screen.h
+$(OBD)screen.o: host/screen.c host/*.h
 	$(CC) -c host/screen.c -o $(OBD)screen.o $(CFSIZ)
 
-$(OBD)audio.o: host/audio.c host/audio.h
+$(OBD)audio.o: host/audio.c host/*.h
 	$(CC) -c host/audio.c -o $(OBD)audio.o $(CFSIZ)
 
-$(OBD)filels.o: host/filels.c host/filels.h
+$(OBD)filels.o: host/filels.c host/*.h
 	$(CC) -c host/filels.c -o $(OBD)filels.o $(CFSIZ)

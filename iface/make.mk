@@ -8,14 +8,14 @@
 
 OBJECTS+= $(OBD)render.o   $(OBD)inputcom.o $(OBD)input.o    $(OBD)imouse.o
 
-$(OBD)render.o: iface/render.c iface/render.h
+$(OBD)render.o: iface/render.c iface/*.h host/*.h librrpge/rrpge*.h
 	$(CC) -c iface/render.c -o $(OBD)render.o $(CFSPD)
 
-$(OBD)inputcom.o: iface/inputcom.c iface/inputcom.h
+$(OBD)inputcom.o: iface/inputcom.c iface/*.h host/*.h librrpge/rrpge*.h
 	$(CC) -c iface/inputcom.c -o $(OBD)inputcom.o $(CFSIZ)
 
-$(OBD)input.o: iface/input.c iface/input.h
+$(OBD)input.o: iface/input.c iface/*.h host/*.h librrpge/rrpge*.h
 	$(CC) -c iface/input.c -o $(OBD)input.o $(CFSIZ)
 
-$(OBD)imouse.o: iface/imouse.c iface/imouse.h
+$(OBD)imouse.o: iface/imouse.c iface/*.h host/*.h librrpge/rrpge*.h
 	$(CC) -c iface/imouse.c -o $(OBD)imouse.o $(CFSIZ)

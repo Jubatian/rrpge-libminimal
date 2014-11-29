@@ -43,7 +43,7 @@ $(OUT): $(OBB) $(OBJECTS)
 $(OBB):
 	$(SHMKDIR) $(OBB)
 
-$(OBD)main.o: main.c
+$(OBD)main.o: main.c librrpge/rrpge*.h iface/*.h host/*.h
 	$(CC) -c main.c -o $(OBD)main.o $(CFSIZ)
 
 .PHONY: all clean
