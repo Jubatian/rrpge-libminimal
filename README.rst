@@ -2,6 +2,10 @@
 RRPGE Minimal library & Host prototype
 ==============================================================================
 
+.. image:: https://cdn.rawgit.com/Jubatian/rrpge-spec/00.013.002/logo_txt.svg
+   :align: center
+   :width: 100%
+
 :Author:    Sandor Zsuga (Jubatian)
 :Copyright: 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
             License) extended as RRPGEvt (temporary version of the RRPGE
