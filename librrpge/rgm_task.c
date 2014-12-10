@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.12.10
 */
 
 
@@ -35,51 +35,51 @@ auint rrpge_m_taskcheck(uint16 const* d, auint n)
 {
  uint16 const* p = &(d[RRPGE_STA_KTASK + (n<<4)]);
 
- if (p[0xFU] == 0x0000U){ return 0; } /* Empty task is OK */
- if (p[0xFU] >= 0x8000U){ return 0; } /* Finished task is OK */
+ if ((p[0xFU] & 0xFFFFU) == 0x0000U){ return 0; } /* Empty task is OK */
+ if ((p[0xFU] & 0xFFFFU) >= 0x8000U){ return 0; } /* Finished task is OK */
 
  switch (p[0]){ /* Process by kernel function */
 
   case 0x0100U: /* Kernel task: Start loading binary data page */
-   if (rrpge_m_task_chkdata(p[1], p[2])){ return 1; } /* Not in Data area */
-   if ( (((auint)(p[3]) << 16) + (auint)(p[4]) + (auint)(p[2])) >
-        ( ((auint)(d[RRPGE_STA_VARS + 0x18U]) << 16) +
-          ((auint)(d[RRPGE_STA_VARS + 0x19U])) ) ){ return 1; } /* Out of data area */
+   if (rrpge_m_task_chkdata(p[1] & 0xFFFFU, p[2] & 0xFFFFU)){ return 1; } /* Not in Data area */
+   if ( (((p[3] & 0xFFFFU) << 16) + (p[4] & 0xFFFFU) + (p[2] & 0xFFFFU)) >
+        ( ((d[RRPGE_STA_VARS + 0x18U] & 0xFFFFU) << 16) +
+          ((d[RRPGE_STA_VARS + 0x19U] & 0xFFFFU)) ) ){ return 1; } /* Out of data area */
    return 0;
 
   case 0x0110U: /* Kernel task: Start loading page from file */
-   if (rrpge_m_task_chkdata(p[1], (((auint)(p[2]) + 1U) >> 1))){ return 1; } /* Target not in Data area */
-   if (rrpge_m_task_chkdata(p[5], p[6])){ return 1; } /* Name not in Data area */
+   if (rrpge_m_task_chkdata(p[1] & 0xFFFFU, (((p[2] & 0xFFFFU) + 1U) >> 1))){ return 1; } /* Target not in Data area */
+   if (rrpge_m_task_chkdata(p[5] & 0xFFFFU, p[6] & 0xFFFFU)){ return 1; } /* Name not in Data area */
    return 0;
 
   case 0x0111U: /* Kernel task: Start saving page into file */
-   if (rrpge_m_task_chkdata(p[1], (((auint)(p[2]) + 1U) >> 1))){ return 1; } /* Source not in Data area */
-   if (rrpge_m_task_chkdata(p[5], p[6])){ return 1; } /* Name not in Data area */
+   if (rrpge_m_task_chkdata(p[1] & 0xFFFFU, (((p[2] & 0xFFFFU) + 1U) >> 1))){ return 1; } /* Source not in Data area */
+   if (rrpge_m_task_chkdata(p[5] & 0xFFFFU, p[6] & 0xFFFFU)){ return 1; } /* Name not in Data area */
    return 0;
 
   case 0x0112U: /* Kernel task: Find next file */
-   if (rrpge_m_task_chkdata(p[1], p[2])){ return 1; } /* Name not in Data area */
+   if (rrpge_m_task_chkdata(p[1] & 0xFFFFU, p[2] & 0xFFFFU)){ return 1; } /* Name not in Data area */
    return 0;
 
   case 0x0113U: /* Kernel task: Move a file */
-   if (rrpge_m_task_chkdata(p[1], p[2])){ return 1; } /* Name not in Data area */
-   if (rrpge_m_task_chkdata(p[3], p[4])){ return 1; } /* Name not in Data area */
+   if (rrpge_m_task_chkdata(p[1] & 0xFFFFU, p[2] & 0xFFFFU)){ return 1; } /* Name not in Data area */
+   if (rrpge_m_task_chkdata(p[3] & 0xFFFFU, p[4] & 0xFFFFU)){ return 1; } /* Name not in Data area */
    return 0;
 
   case 0x0601U: /* Kernel task: Read UTF-8 representation of user */
-   if (rrpge_m_task_chkdata(p[1], p[2])){ return 1; } /* Main part not in Data area */
-   if (rrpge_m_task_chkdata(p[3], p[4])){ return 1; } /* Extended part not in Data area */
-   if (rrpge_m_task_chkdata(p[5],   8U)){ return 1; } /* User ID not in Data area */
+   if (rrpge_m_task_chkdata(p[1] & 0xFFFFU, p[2] & 0xFFFFU)){ return 1; } /* Main part not in Data area */
+   if (rrpge_m_task_chkdata(p[3] & 0xFFFFU, p[4] & 0xFFFFU)){ return 1; } /* Extended part not in Data area */
+   if (rrpge_m_task_chkdata(p[5] & 0xFFFFU,   8U          )){ return 1; } /* User ID not in Data area */
    return 0;
 
   case 0x0700U: /* Kernel task: Send data to user */
-   if (rrpge_m_task_chkdata(p[1], p[2])){ return 1; } /* Source not in Data area */
-   if (rrpge_m_task_chkdata(p[3],   8U)){ return 1; } /* User ID not in Data area */
+   if (rrpge_m_task_chkdata(p[1] & 0xFFFFU, p[2] & 0xFFFFU)){ return 1; } /* Source not in Data area */
+   if (rrpge_m_task_chkdata(p[3] & 0xFFFFU,   8U          )){ return 1; } /* User ID not in Data area */
    return 0;
 
   case 0x0710U: /* Kernel task: List accessible users */
-   if (rrpge_m_task_chkdata(p[1], (auint)(p[2]) << 3)){ return 1; } /* Target not in Data area */
-   if (rrpge_m_task_chkdata(p[3],   8U)){ return 1; } /* User ID not in Data area */
+   if (rrpge_m_task_chkdata(p[1] & 0xFFFFU, (p[2] & 0xFFFFU) << 3)){ return 1; } /* Target not in Data area */
+   if (rrpge_m_task_chkdata(p[3] & 0xFFFFU,   8U          )){ return 1; } /* User ID not in Data area */
    return 0;
 
   default:      /* Not a valid kernel function for tasks - invalid! */
@@ -112,7 +112,7 @@ void rrpge_m_tasksched(void)
 
 
  for (i = 0U; i < 16U; i++){
-  if ( ((rrpge_m_edat->st.stat[RRPGE_STA_KTASK + 0xFU + (i << 4)]) == 0x0001U) &&
+  if ( ((rrpge_m_edat->st.stat[RRPGE_STA_KTASK + 0xFU + (i << 4)] & 0xFFFFU) == 0x0001U) &&
        ((rrpge_m_edat->tsfl & (1U << i)) == 0) ){
 
    /* Kernel task is waiting to be dispatched, so do it! It's parameter 0
@@ -137,9 +137,9 @@ void rrpge_m_tasksched(void)
 
      case 0x0100U: /* Start loading binary data page */
 
-      cbp_loadbin.buf = &rrpge_m_edat->st.dram[tskp[1]];
-      cbp_loadbin.scw = tskp[2];
-      cbp_loadbin.sow = ((auint)(tskp[3]) << 16) + (auint)(tskp[4]);
+      cbp_loadbin.buf = &rrpge_m_edat->st.dram[tskp[1] & 0xFFFFU];
+      cbp_loadbin.scw = tskp[2] & 0xFFFFU;
+      cbp_loadbin.sow = ((tskp[3] & 0xFFFFU) << 16) + (tskp[4] & 0xFFFFU);
       rrpge_m_edat->cb_tsk[RRPGE_CB_LOADBIN](rrpge_m_edat, i, &cbp_loadbin);
 
       break;
@@ -147,11 +147,11 @@ void rrpge_m_tasksched(void)
 
      case 0x0110U: /* Start loaing page from file */
 
-      cbp_load.buf = &rrpge_m_edat->st.dram[tskp[1]];
-      cbp_load.scb = tskp[2];
-      cbp_load.sob = ((auint)(tskp[3]) << 16) + (auint)(tskp[4]);
-      cbp_load.nam = &rrpge_m_edat->st.dram[tskp[5]];
-      cbp_load.ncw = tskp[6];
+      cbp_load.buf = &rrpge_m_edat->st.dram[tskp[1] & 0xFFFFU];
+      cbp_load.scb = tskp[2] & 0xFFFFU;
+      cbp_load.sob = ((tskp[3] & 0xFFFFU) << 16) + (tskp[4] & 0xFFFFU);
+      cbp_load.nam = &rrpge_m_edat->st.dram[tskp[5] & 0xFFFFU];
+      cbp_load.ncw = tskp[6] & 0xFFFFU;
       rrpge_m_edat->cb_tsk[RRPGE_CB_LOAD](rrpge_m_edat, i, &cbp_load);
 
       break;
@@ -159,11 +159,11 @@ void rrpge_m_tasksched(void)
 
      case 0x0111U: /* Start saving page into file */
 
-      cbp_save.buf = &rrpge_m_edat->st.dram[tskp[1]];
-      cbp_save.tcb = tskp[2];
-      cbp_save.tob = ((auint)(tskp[3]) << 16) + (auint)(tskp[4]);
-      cbp_save.nam = &rrpge_m_edat->st.dram[tskp[5]];
-      cbp_save.ncw = tskp[6];
+      cbp_save.buf = &rrpge_m_edat->st.dram[tskp[1] & 0xFFFFU];
+      cbp_save.tcb = tskp[2] & 0xFFFFU;
+      cbp_save.tob = ((tskp[3] & 0xFFFFU) << 16) + (tskp[4] & 0xFFFFU);
+      cbp_save.nam = &rrpge_m_edat->st.dram[tskp[5] & 0xFFFFU];
+      cbp_save.ncw = tskp[6] & 0xFFFFU;
       rrpge_m_edat->cb_tsk[RRPGE_CB_SAVE](rrpge_m_edat, i, &cbp_save);
 
       break;
@@ -171,8 +171,8 @@ void rrpge_m_tasksched(void)
 
      case 0x0112U: /* Find next file */
 
-      cbp_next.nam = &rrpge_m_edat->st.dram[tskp[1]];
-      cbp_next.ncw = tskp[2];
+      cbp_next.nam = &rrpge_m_edat->st.dram[tskp[1] & 0xFFFFU];
+      cbp_next.ncw = tskp[2] & 0xFFFFU;
       rrpge_m_edat->cb_tsk[RRPGE_CB_NEXT](rrpge_m_edat, i, &cbp_next);
 
       break;
@@ -180,10 +180,10 @@ void rrpge_m_tasksched(void)
 
      case 0x0113U: /* Move a file */
 
-      cbp_move.tnm = &rrpge_m_edat->st.dram[tskp[1]];
-      cbp_move.tcw = tskp[2];
-      cbp_move.snm = &rrpge_m_edat->st.dram[tskp[3]];
-      cbp_move.scw = tskp[4];
+      cbp_move.tnm = &rrpge_m_edat->st.dram[tskp[1] & 0xFFFFU];
+      cbp_move.tcw = tskp[2] & 0xFFFFU;
+      cbp_move.snm = &rrpge_m_edat->st.dram[tskp[3] & 0xFFFFU];
+      cbp_move.scw = tskp[4] & 0xFFFFU;
       rrpge_m_edat->cb_tsk[RRPGE_CB_MOVE](rrpge_m_edat, i, &cbp_move);
 
       break;
@@ -191,11 +191,11 @@ void rrpge_m_tasksched(void)
 
      case 0x0601U: /* Get UTF-8 representation of User ID */
 
-      cbp_getutf.nam = &rrpge_m_edat->st.dram[tskp[1]];
-      cbp_getutf.ncw = tskp[2];
-      cbp_getutf.ext = &rrpge_m_edat->st.dram[tskp[3]];
-      cbp_getutf.ecw = tskp[4];
-      cbp_getutf.id  = &rrpge_m_edat->st.dram[tskp[5]];
+      cbp_getutf.nam = &rrpge_m_edat->st.dram[tskp[1] & 0xFFFFU];
+      cbp_getutf.ncw = tskp[2] & 0xFFFFU;
+      cbp_getutf.ext = &rrpge_m_edat->st.dram[tskp[3] & 0xFFFFU];
+      cbp_getutf.ecw = tskp[4] & 0xFFFFU;
+      cbp_getutf.id  = &rrpge_m_edat->st.dram[tskp[5] & 0xFFFFU];
       rrpge_m_edat->cb_tsk[RRPGE_CB_GETUTF](rrpge_m_edat, i, &cbp_getutf);
 
       break;
@@ -203,9 +203,9 @@ void rrpge_m_tasksched(void)
 
      case 0x0700U: /* Send data to user */
 
-      cbp_send.buf = &rrpge_m_edat->st.dram[tskp[1]];
-      cbp_send.bcw = tskp[2];
-      cbp_send.id  = &rrpge_m_edat->st.dram[tskp[3]];
+      cbp_send.buf = &rrpge_m_edat->st.dram[tskp[1] & 0xFFFFU];
+      cbp_send.bcw = tskp[2] & 0xFFFFU;
+      cbp_send.id  = &rrpge_m_edat->st.dram[tskp[3] & 0xFFFFU];
       rrpge_m_edat->cb_tsk[RRPGE_CB_SEND](rrpge_m_edat, i, &cbp_send);
 
       break;
@@ -213,9 +213,9 @@ void rrpge_m_tasksched(void)
 
      case 0x0710U: /* List accessible users */
 
-      cbp_listusers.buf = &rrpge_m_edat->st.dram[tskp[1]];
-      cbp_listusers.bcu = tskp[2];
-      cbp_listusers.id  = &rrpge_m_edat->st.dram[tskp[3]];
+      cbp_listusers.buf = &rrpge_m_edat->st.dram[tskp[1] & 0xFFFFU];
+      cbp_listusers.bcu = tskp[2] & 0xFFFFU;
+      cbp_listusers.id  = &rrpge_m_edat->st.dram[tskp[3] & 0xFFFFU];
       rrpge_m_edat->cb_tsk[RRPGE_CB_LISTUSERS](rrpge_m_edat, i, &cbp_listusers);
 
       break;

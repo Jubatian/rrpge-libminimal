@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.11.02
+**  \date      2014.12.10
 */
 
 
@@ -25,9 +25,9 @@
 void rrpge_m_audproc(auint cy)
 {
  uint16* stat = &(rrpge_m_edat->st.stat[0]);
- auint lof = (auint)(stat[RRPGE_STA_UPA_A + 0x4U]) << 4;
- auint rof = (auint)(stat[RRPGE_STA_UPA_A + 0x5U]) << 4;
- auint msk = (auint)(stat[RRPGE_STA_UPA_A + 0x6U]) << 4;
+ auint lof = (stat[RRPGE_STA_UPA_A + 0x4U] & 0xFFFFU) << 4;
+ auint rof = (stat[RRPGE_STA_UPA_A + 0x5U] & 0xFFFFU) << 4;
+ auint msk = (stat[RRPGE_STA_UPA_A + 0x6U] & 0xFFFFU) << 4;
  auint t;
 
  lof &= msk;        /* Part to fetch from the start offset */
@@ -50,29 +50,29 @@ void rrpge_m_audproc(auint cy)
 
   /* Load samples from data memory into the internal double buffer */
 
-  t = stat[RRPGE_STA_UPA_A + 2U];
+  t = stat[RRPGE_STA_UPA_A + 2U] & 0xFFFFU;
   rrpge_m_edat->audl[(rrpge_m_edat->audp) & 0x3FFU] =
-    (uint8)( rrpge_m_edat->st.pram[lof | ((t >> 2) & msk)] >> (((t & 3U) ^ 3U) << 3) );
+    ( rrpge_m_edat->st.pram[lof | ((t >> 2) & msk)] >> (((t & 3U) ^ 3U) << 3) ) & 0xFFU;
   rrpge_m_edat->audr[(rrpge_m_edat->audp) & 0x3FFU] =
-    (uint8)( rrpge_m_edat->st.pram[rof | ((t >> 2) & msk)] >> (((t & 3U) ^ 3U) << 3) );
+    ( rrpge_m_edat->st.pram[rof | ((t >> 2) & msk)] >> (((t & 3U) ^ 3U) << 3) ) & 0xFFU;
 
   /* Increment pointers */
 
   rrpge_m_edat->audp ++;
-  stat[RRPGE_STA_UPA_A + 3U] ++;
-  if (stat[RRPGE_STA_UPA_A + 3U] ==
-      stat[RRPGE_STA_UPA_A + 7U]){
+  stat[RRPGE_STA_UPA_A + 3U] = (stat[RRPGE_STA_UPA_A + 3U] + 1U) & 0xFFFFU;
+  if ( (stat[RRPGE_STA_UPA_A + 3U] & 0xFFFFU) ==
+       (stat[RRPGE_STA_UPA_A + 7U] & 0xFFFFU) ){
    stat[RRPGE_STA_UPA_A + 3U] = 0U;
-   stat[RRPGE_STA_UPA_A + 2U] ++;
+   stat[RRPGE_STA_UPA_A + 2U] = (stat[RRPGE_STA_UPA_A + 2U] + 1U) & 0xFFFFU;
   }
 
   /* Increment 187.5Hz clock */
 
-  stat[RRPGE_STA_VARS + 0x14U] ++;
+  stat[RRPGE_STA_VARS + 0x14U] = (stat[RRPGE_STA_VARS + 0x14U] + 1U) & 0xFFFFU;
   if ((stat[RRPGE_STA_VARS + 0x14U] & 0xFFU) == 0U){
    stat[RRPGE_STA_UPA_A + 1U] =
-       ((stat[RRPGE_STA_UPA_A + 1U] + 0x1) & 0xFF00U) +
-       (stat[RRPGE_STA_VARS + 0x14U] >> 8);
+       ((stat[RRPGE_STA_UPA_A + 1U] + 0x1U) & 0xFF00U) +
+       ((stat[RRPGE_STA_VARS + 0x14U] >> 8) & 0xFFU);
   }
 
   /* Generate an event every 512 output (48KHz) samples */
@@ -109,8 +109,8 @@ rrpge_uint32 rrpge_getaudio(rrpge_object_t* hnd, rrpge_uint8* lbuf, rrpge_uint8*
  pr = &(hnd->audr[i]);
 
  for (i = 0; i < 512U; i++){
-  lbuf[i] = pl[i];
-  rbuf[i] = pr[i];
+  lbuf[i] = pl[i] & 0xFFU;
+  rbuf[i] = pr[i] & 0xFFU;
  }
 
  /* OK, all done */

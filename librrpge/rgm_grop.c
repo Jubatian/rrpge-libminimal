@@ -97,58 +97,58 @@ auint rrpge_m_grop_accel(void)
  uint16* stat = &(rrpge_m_edat->st.stat[RRPGE_STA_ACC]);
 
  /* Destination fraction (incrementing), whole (stationary) and post-add */
- auint  dsfrap = ((auint)(stat[0x1CU]) << 16) + (auint)(stat[0x1DU]);
- auint  dswhol = ((auint)(stat[0x02U]) << 16) + (auint)(stat[0x03U]);
- auint  dspadd = ((auint)(stat[0x04U]) << 16) + (auint)(stat[0x05U]);
+ auint  dsfrap = ((stat[0x1CU] & 0xFFFFU) << 16) + (stat[0x1DU] & 0xFFFFU);
+ auint  dswhol = ((stat[0x02U] & 0xFFFFU) << 16) + (stat[0x03U] & 0xFFFFU);
+ auint  dspadd = ((stat[0x04U] & 0xFFFFU) << 16) + (stat[0x05U] & 0xFFFFU);
  auint  dsfrac;
 
  /* Source (Pointer) X fraction (incrementing), whole (stationary), increment and post-add */
- auint  sxfrap = ((auint)(stat[0x1AU]) << 16) + (auint)(stat[0x1BU]);
- auint  sxwhol = ((auint)(stat[0x12U]) << 16) + (auint)(stat[0x13U]);
- auint  sxincr = ((auint)(stat[0x0EU]) << 16) + (auint)(stat[0x0FU]);
- auint  sxpadd = ((auint)(stat[0x0AU]) << 16) + (auint)(stat[0x0BU]);
+ auint  sxfrap = ((stat[0x1AU] & 0xFFFFU) << 16) + (stat[0x1BU] & 0xFFFFU);
+ auint  sxwhol = ((stat[0x12U] & 0xFFFFU) << 16) + (stat[0x13U] & 0xFFFFU);
+ auint  sxincr = ((stat[0x0EU] & 0xFFFFU) << 16) + (stat[0x0FU] & 0xFFFFU);
+ auint  sxpadd = ((stat[0x0AU] & 0xFFFFU) << 16) + (stat[0x0BU] & 0xFFFFU);
  auint  sxfrac;
 
  /* Source (Pointer) Y fraction (incrementing), increment and post-add */
- auint  syfrap = ((auint)(stat[0x10U]) << 16) + (auint)(stat[0x11U]);
- auint  syincr = ((auint)(stat[0x0CU]) << 16) + (auint)(stat[0x0DU]);
- auint  sypadd = ((auint)(stat[0x08U]) << 16) + (auint)(stat[0x09U]);
+ auint  syfrap = ((stat[0x10U] & 0xFFFFU) << 16) + (stat[0x11U] & 0xFFFFU);
+ auint  syincr = ((stat[0x0CU] & 0xFFFFU) << 16) + (stat[0x0DU] & 0xFFFFU);
+ auint  sypadd = ((stat[0x08U] & 0xFFFFU) << 16) + (stat[0x09U] & 0xFFFFU);
  auint  syfrac;
 
  /* Count, and it's post-add */
- auint  counb  = ((auint)(stat[0x18U]) << 16) + (auint)(stat[0x19U]);
- auint  copadd = ((auint)(stat[0x06U]) << 16) + (auint)(stat[0x07U]);
+ auint  counb  = ((stat[0x18U] & 0xFFFFU) << 16) + (stat[0x19U] & 0xFFFFU);
+ auint  copadd = ((stat[0x06U] & 0xFFFFU) << 16) + (stat[0x07U] & 0xFFFFU);
  auint  count;
 
  /* Partitioning & X/Y split */
- auint  ssplit = ((auint)(stat[0x14U]));
+ auint  ssplit = stat[0x14U] & 0xFFFFU;
  auint  srpart;      /* Partition mask for source - controls the sxwhol - sx/yfrac split */
  auint  dspart;      /* Partition mask for destination - controls the dswhol - dsfrac split */
 
- auint  wrmask = ((auint)(stat[0x00U]) << 16) + (auint)(stat[0x01U]);
+ auint  wrmask = ((stat[0x00U] & 0xFFFFU) << 16) + (stat[0x01U] & 0xFFFFU);
 
- auint  counr  = ((auint)(stat[0x17U])); /* Count of rows to copy */
+ auint  counr  = stat[0x17U] & 0xFFFFU; /* Count of rows to copy */
  auint  codst;       /* Destination oriented (bit) count */
  auint  ckey;
- auint  flags  = stat[0x1EU]; /* VMR, Reindex & Read OR mask */
- auint  mandr  = stat[0x16U]; /* Read AND mask, and colorkey exported later */
+ auint  flags  = stat[0x1EU] & 0xFFFFU; /* VMR, Reindex & Read OR mask */
+ auint  mandr  = stat[0x16U] & 0xFFFFU; /* Read AND mask, and colorkey exported later */
  auint  mandl;
  auint  mskor;       /* Read OR mask */
- auint  rotr   = stat[0x15U]; /* Read rotation & some flags */
+ auint  rotr   = stat[0x15U] & 0xFFFFU; /* Read rotation & some flags */
  auint  rotl;
  auint  dshfr;       /* Destination alignment shifts (Block Blitter) */
  auint  dshfl;
  auint  prevs  = 0U; /* Source -> destination aligning shifter memory */
  auint  bmems;       /* Begin / Mid / End mask */
  auint  reinm;       /* Reindex mask */
- auint  sbase  = stat[0x1FU]; /* Source data preparation - line mode pattern */
- auint  sdata  = 0U; /* !!! Only eliminates a bogus GCC warning, see line 329 !!! */
+ auint  sbase  = stat[0x1FU] & 0xFFFFU; /* Source data preparation - line mode pattern */
+ auint  sdata  = 0U; /* !!! Only eliminates a bogus GCC warning, see line 353 !!! */
  auint  bmode;       /* Blit mode (BB / FL / SC / LI) */
  auint  cyr;         /* Return cycle count */
  auint  cyf;         /* Flags affecting the cycle count */
  auint  i;
- auint  lflp   = 0U; /* !!! Only eliminates a bogus GCC warning, see line 329 !!! */
- auint  lpat   = 0U; /* !!! Only eliminates a bogus GCC warning, see line 329 !!! */
+ auint  lflp   = 0U; /* !!! Only eliminates a bogus GCC warning, see line 353 !!! */
+ auint  lpat   = 0U; /* !!! Only eliminates a bogus GCC warning, see line 353 !!! */
  auint  t;
  auint  u;
 
@@ -551,7 +551,7 @@ auint rrpge_m_grop_accel(void)
     /* Combine source over destination */
 
     bmems = ~bmems;                      /* Leave zero in mask where destination was dropped */
-    pram[i] = (uint32)( (u & bmems ) | (sdata & (~bmems)) );
+    pram[i] = ( (u & bmems ) | (sdata & (~bmems)) ) & 0xFFFFFFFFU;
     dsfrac += 0x10000U;
 
     /* Calculate combine cycle count. If bmems is zero, then may accelerate */

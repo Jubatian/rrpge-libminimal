@@ -6,40 +6,40 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.12.10
 */
 
 
 #include "rgm_ser.h"
 
 
-/* Byte -> Word page conversion - Implementation of RRPGE library function. */
+/* Byte -> Word conversion - Implementation of RRPGE library function. */
 void rrpge_conv_b2w(rrpge_uint8 const* src, rrpge_uint16* dst, rrpge_uint32 bct)
 {
  if ((bct & 1U) != 0U){
   bct -= 1U;
-  dst[bct >> 1] = (uint16)(src[bct]) << 8;
+  dst[bct >> 1] = (src[bct] & 0xFFU) << 8;
  }
  while (bct != 0U){
   bct -= 2U;
-  dst[bct >> 1] = ((uint16)(src[bct + 1U])) |
-                  ((uint16)(src[bct     ]) << 8);
+  dst[bct >> 1] = ((src[bct + 1U] & 0xFFU)) |
+                  ((src[bct     ] & 0xFFU) << 8);
  }
 }
 
 
 
-/* Word -> Byte page conversion - Implementation of RRPGE library function. */
+/* Word -> Byte conversion - Implementation of RRPGE library function. */
 void rrpge_conv_w2b(rrpge_uint16 const* src, rrpge_uint8* dst, rrpge_uint32 bct)
 {
  if ((bct & 1U) != 0U){
   bct -= 1U;
-  dst[bct] = (uint8)(src[bct >> 1]) >> 8;
+  dst[bct] = ((src[bct >> 1]) >> 8) & 0xFFU;
  }
  while (bct != 0U){
   bct -= 2U;
-  dst[bct + 1U] = (uint8)(src[bct >> 1]);
-  dst[bct     ] = (uint8)(src[bct >> 1] >> 8);
+  dst[bct + 1U] = (src[bct >> 1])      & 0xFFU;
+  dst[bct     ] = (src[bct >> 1] >> 8) & 0xFFU;
  }
 }
 
@@ -48,8 +48,8 @@ void rrpge_conv_w2b(rrpge_uint16 const* src, rrpge_uint8* dst, rrpge_uint32 bct)
 /* State serialization - Implementation of RRPGE library function */
 void rrpge_state2raw(rrpge_state_t const* src, rrpge_uint8* dst)
 {
- auint  i;
- uint32 t;
+ auint i;
+ auint t;
 
  /* Order is: State (including app. header); CPU Data; PRAM */
 
@@ -60,10 +60,10 @@ void rrpge_state2raw(rrpge_state_t const* src, rrpge_uint8* dst)
 
  for (i = 0; i < (sizeof(src->pram) / sizeof(src->pram[0])); i++){
   t = src->pram[i];
-  dst[(i << 2) + 0U] = (uint8)(t >> 24);
-  dst[(i << 2) + 1U] = (uint8)(t >> 16);
-  dst[(i << 2) + 2U] = (uint8)(t >>  8);
-  dst[(i << 2) + 3U] = (uint8)(t      );
+  dst[(i << 2) + 0U] = (t >> 24) & 0xFFU;
+  dst[(i << 2) + 1U] = (t >> 16) & 0xFFU;
+  dst[(i << 2) + 2U] = (t >>  8) & 0xFFU;
+  dst[(i << 2) + 3U] = (t      ) & 0xFFU;
  }
 }
 
@@ -82,9 +82,9 @@ void rrpge_raw2state(rrpge_uint8 const* src, rrpge_state_t* dst)
  src += sizeof(dst->dram);
 
  for (i = 0; i < (sizeof(dst->pram) / sizeof(dst->pram[0])); i++){
-  dst->pram[i] = ((auint)(src[(i << 2) + 0U]) << 24) |
-                 ((auint)(src[(i << 2) + 1U]) << 16) |
-                 ((auint)(src[(i << 2) + 2U]) <<  8) |
-                 ((auint)(src[(i << 2) + 3U]));
+  dst->pram[i] = ((src[(i << 2) + 0U] & 0xFFU) << 24) |
+                 ((src[(i << 2) + 1U] & 0xFFU) << 16) |
+                 ((src[(i << 2) + 2U] & 0xFFU) <<  8) |
+                 ((src[(i << 2) + 3U] & 0xFFU));
  }
 }

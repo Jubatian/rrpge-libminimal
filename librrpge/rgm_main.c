@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.11.06
+**  \date      2014.12.10
 */
 
 
@@ -96,10 +96,10 @@ rrpge_uint32 rrpge_init_run(rrpge_object_t* hnd)
   rrpge_m_ires_initcode(hnd);
   p = &(hnd->appd[0]);
   cbp_loadbin.buf = &(hnd->crom[0]);
-  cbp_loadbin.scw = (((auint)(p[0x6U]) - 1U) & 0xFFFFU) + 1U;
-  cbp_loadbin.sow = ((auint)(p[0x2U]) << 16) + (auint)(p[0x3U]);
+  cbp_loadbin.scw = ((p[0x6U] - 1U) & 0xFFFFU) + 1U;
+  cbp_loadbin.sow = ((p[0x2U] & 0xFFFFU) << 16) + (p[0x3U] & 0xFFFFU);
   if ( (cbp_loadbin.scw + cbp_loadbin.sow) >
-       (((auint)(p[0x0U]) << 16) + (auint)(p[0x1U])) ){
+       (((p[0x0U] & 0xFFFFU) << 16) + (p[0x1U] & 0xFFFFU)) ){
    return (RRPGE_ERR_DSC + 0x2U); /* Code is out of app. binary */
   }
   hnd->cb_tsk[RRPGE_CB_LOADBIN](hnd, 0U, &cbp_loadbin);
@@ -123,10 +123,10 @@ rrpge_uint32 rrpge_init_run(rrpge_object_t* hnd)
 
   /* Load data area */
   cbp_loadbin.buf = &(hnd->dini[0x40U]);
-  cbp_loadbin.scw = ((auint)(p[0x7U]));
-  cbp_loadbin.sow = ((auint)(p[0x4U]) << 16) + (auint)(p[0x5U]);
+  cbp_loadbin.scw = ((p[0x7U] & 0xFFFFU));
+  cbp_loadbin.sow = ((p[0x4U] & 0xFFFFU) << 16) + (p[0x5U] & 0xFFFFU);
   if ( (cbp_loadbin.scw + cbp_loadbin.sow) >
-       (((auint)(p[0x0U]) << 16) + (auint)(p[0x1U])) ){
+       (((p[0x0U] & 0xFFFFU) << 16) + (p[0x1U] & 0xFFFFU)) ){
    return (RRPGE_ERR_DSC + 0x4U); /* Data is out of app. binary */
   }
   hnd->cb_tsk[RRPGE_CB_LOADBIN](hnd, 0U, &cbp_loadbin);
@@ -264,7 +264,7 @@ void rrpge_taskend(rrpge_object_t* hnd, rrpge_uint32 tsh, rrpge_uint32 res)
    break;
  }
 
- hnd->st.stat[RRPGE_STA_KTASK + 0xF + (tsh << 4)] = (uint16)(res);
+ hnd->st.stat[RRPGE_STA_KTASK + 0xF + (tsh << 4)] = res & 0xFFFFU;
 
  /* (Note: no need to clear the task started flags, it will be done when a
  ** new task is started) */

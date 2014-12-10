@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.11.06
+**  \date      2014.12.10
 */
 
 
@@ -47,29 +47,29 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
 
  /* Export Application state data into info structure */
 
- rrpge_m_info.vln = stat[RRPGE_STA_VARS + 0x10U];
- rrpge_m_info.vlc = stat[RRPGE_STA_VARS + 0x11U];
- rrpge_m_info.atc = stat[RRPGE_STA_VARS + 0x13U];
- rrpge_m_info.cyf[0] = ((auint)(stat[RRPGE_STA_VARS + 0x22U]) << 16) +
-                       ((auint)(stat[RRPGE_STA_VARS + 0x23U]));
- rrpge_m_info.cyf[1] = ((auint)(stat[RRPGE_STA_VARS + 0x2AU]) << 16) +
-                       ((auint)(stat[RRPGE_STA_VARS + 0x2BU]));
+ rrpge_m_info.vln = stat[RRPGE_STA_VARS + 0x10U] & 0xFFFFU;
+ rrpge_m_info.vlc = stat[RRPGE_STA_VARS + 0x11U] & 0xFFFFU;
+ rrpge_m_info.atc = stat[RRPGE_STA_VARS + 0x13U] & 0xFFFFU;
+ rrpge_m_info.cyf[0] = ((stat[RRPGE_STA_VARS + 0x22U] & 0xFFFFU) << 16) +
+                       ((stat[RRPGE_STA_VARS + 0x23U] & 0xFFFFU));
+ rrpge_m_info.cyf[1] = ((stat[RRPGE_STA_VARS + 0x2AU] & 0xFFFFU) << 16) +
+                       ((stat[RRPGE_STA_VARS + 0x2BU] & 0xFFFFU));
  rrpge_m_info.cys = 0U;   /* Stall cycles are always consumed right away (no carry-over between runs) */
  rrpge_m_info.grr = 1U;   /* Reload recolor banks */
  for (i = 0U; i < 8U; i++){
-  rrpge_m_info.xr[i] = stat[RRPGE_STA_VARS + 0x00U + i];
+  rrpge_m_info.xr[i] = stat[RRPGE_STA_VARS + 0x00U + i] & 0xFFFFU;
  }
- rrpge_m_info.xmh[0] = stat[RRPGE_STA_VARS + 0x08U];
- rrpge_m_info.xmh[1] = stat[RRPGE_STA_VARS + 0x09U];
- rrpge_m_info.pc = stat[RRPGE_STA_VARS + 0x0AU];
- rrpge_m_info.sp = stat[RRPGE_STA_VARS + 0x0BU];
- rrpge_m_info.bp = stat[RRPGE_STA_VARS + 0x0CU];
- if (stat[RRPGE_STA_VARS + 0x1AU] == 0U){ /* Separate stack */
+ rrpge_m_info.xmh[0] = stat[RRPGE_STA_VARS + 0x08U] & 0xFFFFU;
+ rrpge_m_info.xmh[1] = stat[RRPGE_STA_VARS + 0x09U] & 0xFFFFU;
+ rrpge_m_info.pc = stat[RRPGE_STA_VARS + 0x0AU] & 0xFFFFU;
+ rrpge_m_info.sp = stat[RRPGE_STA_VARS + 0x0BU] & 0xFFFFU;
+ rrpge_m_info.bp = stat[RRPGE_STA_VARS + 0x0CU] & 0xFFFFU;
+ if ((stat[RRPGE_STA_VARS + 0x1AU] & 0xFFFFU) == 0U){ /* Separate stack */
   rrpge_m_info.sbt = 0x10000U;
   rrpge_m_info.stp = 0x18000U;
  }else{                   /* Data area stack */
-  rrpge_m_info.sbt = stat[RRPGE_STA_VARS + 0x1BU];
-  rrpge_m_info.stp = stat[RRPGE_STA_VARS + 0x1AU] + rrpge_m_info.sbt;
+  rrpge_m_info.sbt = (stat[RRPGE_STA_VARS + 0x1BU] & 0xFFFFU);
+  rrpge_m_info.stp = (stat[RRPGE_STA_VARS + 0x1AU] & 0xFFFFU) + rrpge_m_info.sbt;
  }
 
 
@@ -174,21 +174,21 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
 
  /* Write-back Application state data from info structure */
 
- stat[RRPGE_STA_VARS + 0x10U] = (uint16)(rrpge_m_info.vln);
- stat[RRPGE_STA_VARS + 0x11U] = (uint16)(rrpge_m_info.vlc);
- stat[RRPGE_STA_VARS + 0x13U] = (uint16)(rrpge_m_info.atc);
- stat[RRPGE_STA_VARS + 0x22U] = (uint16)(rrpge_m_info.cyf[0] >> 16);
- stat[RRPGE_STA_VARS + 0x23U] = (uint16)(rrpge_m_info.cyf[0]);
- stat[RRPGE_STA_VARS + 0x2AU] = (uint16)(rrpge_m_info.cyf[1] >> 16);
- stat[RRPGE_STA_VARS + 0x2BU] = (uint16)(rrpge_m_info.cyf[1]);
+ stat[RRPGE_STA_VARS + 0x10U] = (rrpge_m_info.vln) & 0xFFFFU;
+ stat[RRPGE_STA_VARS + 0x11U] = (rrpge_m_info.vlc) & 0xFFFFU;
+ stat[RRPGE_STA_VARS + 0x13U] = (rrpge_m_info.atc) & 0xFFFFU;
+ stat[RRPGE_STA_VARS + 0x22U] = (rrpge_m_info.cyf[0] >> 16) & 0xFFFFU;
+ stat[RRPGE_STA_VARS + 0x23U] = (rrpge_m_info.cyf[0]      ) & 0xFFFFU;
+ stat[RRPGE_STA_VARS + 0x2AU] = (rrpge_m_info.cyf[1] >> 16) & 0xFFFFU;
+ stat[RRPGE_STA_VARS + 0x2BU] = (rrpge_m_info.cyf[1]      ) & 0xFFFFU;
  for (i = 0U; i < 8U; i++){
-  stat[RRPGE_STA_VARS + 0x00U + i] = (uint16)(rrpge_m_info.xr[i]);
+  stat[RRPGE_STA_VARS + 0x00U + i] = (rrpge_m_info.xr[i]) & 0xFFFFU;
  }
- stat[RRPGE_STA_VARS + 0x08U] = (uint16)(rrpge_m_info.xmh[0]);
- stat[RRPGE_STA_VARS + 0x09U] = (uint16)(rrpge_m_info.xmh[1]);
- stat[RRPGE_STA_VARS + 0x0AU] = (uint16)(rrpge_m_info.pc);
- stat[RRPGE_STA_VARS + 0x0BU] = (uint16)(rrpge_m_info.sp);
- stat[RRPGE_STA_VARS + 0x0CU] = (uint16)(rrpge_m_info.bp);
+ stat[RRPGE_STA_VARS + 0x08U] = (rrpge_m_info.xmh[0]) & 0xFFFFU;
+ stat[RRPGE_STA_VARS + 0x09U] = (rrpge_m_info.xmh[1]) & 0xFFFFU;
+ stat[RRPGE_STA_VARS + 0x0AU] = (rrpge_m_info.pc) & 0xFFFFU;
+ stat[RRPGE_STA_VARS + 0x0BU] = (rrpge_m_info.sp) & 0xFFFFU;
+ stat[RRPGE_STA_VARS + 0x0CU] = (rrpge_m_info.bp) & 0xFFFFU;
 
  rrpge_m_edat->hlt = rrpge_m_info.hlt; /* Update halt cause */
 

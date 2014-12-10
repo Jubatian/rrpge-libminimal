@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.11.06
+**  \date      2014.12.10
 */
 
 
@@ -25,9 +25,9 @@ static auint rrpge_m_ktsalloc(uint16 const* par, auint n)
  auint i;
  auint j;
  for (i = RRPGE_STA_KTASK; i < (RRPGE_STA_KTASK + 0x100U); i += 0x10U){
-  if (rrpge_m_edat->st.stat[i + 0xFU] == 0U){
+  if ((rrpge_m_edat->st.stat[i + 0xFU] & 0xFFFFU) == 0U){
    for (j = 0U; j < n; j++){
-    rrpge_m_edat->st.stat[i + j] = par[j];
+    rrpge_m_edat->st.stat[i + j] = par[j] & 0xFFFFU;
    }
    rrpge_m_edat->st.stat[i + 0xFU] = 0x0001U;
    j = ((i - 0xD80U) >> 4);
@@ -212,7 +212,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    cbp_getdidesc.dev = par[1] & 0xFU; /* Device to query */
    if (stat[RRPGE_STA_VARS + 0x30U + cbp_getdidesc.dev] != 0U){
-    cbp_getdidesc.inp = (par[2] << 4) + (par[3] & 0xFU); /* Input to query */
+    cbp_getdidesc.inp = ((par[2] & 0xFFFFU) << 4) + (par[3] & 0xFU); /* Input to query */
     rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETDIDESC](rrpge_m_edat, &cbp_getdidesc);
    }else{
     rrpge_m_info.xr[7] = 0U;
@@ -231,7 +231,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    cbp_getdi.dev = par[1] & 0xFU; /* Device to query */
    if (stat[RRPGE_STA_VARS + 0x30U + cbp_getdi.dev] != 0U){
-    cbp_getdi.ing = par[2];       /* Input group to query */
+    cbp_getdi.ing = par[2] & 0xFFFFU; /* Input group to query */
     rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETDI](rrpge_m_edat, &cbp_getdi);
    }else{
     rrpge_m_info.xr[7] = 0U;
@@ -249,7 +249,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    cbp_getai.dev = par[1] & 0xFU; /* Device to query */
    if (stat[RRPGE_STA_VARS + 0x30U + cbp_getai.dev] != 0U){
-    cbp_getai.inp = par[2];       /* Input to query */
+    cbp_getai.inp = par[2] & 0xFFFFU; /* Input to query */
     rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETAI](rrpge_m_edat, &cbp_getai);
    }else{
     rrpge_m_info.xr[7] = 0U;
@@ -284,10 +284,10 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    }
 
    cbp_checkarea.dev = par[1] & 0xFU; /* Device to query */
-   cbp_checkarea.x   = par[2];
-   cbp_checkarea.y   = par[3];
-   cbp_checkarea.w   = par[4];
-   cbp_checkarea.h   = par[5];
+   cbp_checkarea.x   = par[2] & 0xFFFFU;
+   cbp_checkarea.y   = par[3] & 0xFFFFU;
+   cbp_checkarea.w   = par[4] & 0xFFFFU;
+   cbp_checkarea.h   = par[5] & 0xFFFFU;
 
    if ((cbp_checkarea.x & 0x8000U) != 0U){ /* Negative X */
     cbp_checkarea.w = (cbp_checkarea.w + cbp_checkarea.x) & 0xFFFFU;
@@ -323,9 +323,9 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   r = (auint)(par[1]) - (rrpge_m_prng() & 0x3FFU); /* 1024 cycle jitter */
-   if (r > (auint)(par[1])){ r = 0U;   }            /* Underflow */
-   if (r < 200U){            r = 200U; }            /* Minimal consumed cycles */
+   r = (par[1] & 0xFFFFU) - (rrpge_m_prng() & 0x3FFU); /* 1024 cycle jitter */
+   if (r > (par[1] & 0xFFFFU)){ r = 0U;   }            /* Underflow */
+   if (r < 200U){               r = 200U; }            /* Minimal consumed cycles */
    break;
 
 
@@ -335,11 +335,11 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   if (rrpge_m_task_chkdata(par[1], 32U)){ /* Not in Data area */
+   if (rrpge_m_task_chkdata(par[1] & 0xFFFFU, 32U)){ /* Not in Data area */
     goto fault_inv;
    }
 
-   cbp_getlocal.buf = &rrpge_m_edat->st.dram[par[1]];
+   cbp_getlocal.buf = &rrpge_m_edat->st.dram[par[1] & 0xFFFFU];
    rrpge_m_edat->cb_sub[RRPGE_CB_GETLOCAL](rrpge_m_edat, &cbp_getlocal);
 
    r = 2400U;
@@ -363,7 +363,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   cbp_getlang.lno = par[1];
+   cbp_getlang.lno = par[1] & 0xFFFFU;
    rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETLANG](rrpge_m_edat, &cbp_getlang);
    rrpge_m_info.xr[2] = rrpge_m_info.xr[7] >> 16;
 
@@ -373,7 +373,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
   case 0x0611U:   /* Get user preferred colors */
 
-   if (n != 2U){  /* Needs 1+1 parameters */
+   if (n != 1U){  /* Needs 1+0 parameters */
     goto fault_inv;
    }
 
@@ -413,11 +413,11 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   if (rrpge_m_task_chkdata(par[1], par[2])){ /* Not in Data area */
+   if (rrpge_m_task_chkdata(par[1] & 0xFFFFU, par[2] & 0xFFFFU)){ /* Not in Data area */
     goto fault_inv;
    }
 
-   if (rrpge_m_task_chkdata(par[3], 8U)){ /* Not in Data area */
+   if (rrpge_m_task_chkdata(par[3] & 0xFFFFU, 8U)){ /* Not in Data area */
     goto fault_inv;
    }
 
@@ -439,13 +439,13 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
     r = rrpge_m_edat->reir;
     for (i = 0U; i < 8U; i++){  /* Copy user ID data into target */
-     rrpge_m_edat->st.dram[par[3] + i] = rrpge_m_edat->reci[(r << 3) + i];
+     rrpge_m_edat->st.dram[(par[3] & 0xFFFFU) + i] = rrpge_m_edat->reci[(r << 3) + i];
     }
 
     r = rrpge_m_edat->recl[r];
-    if (r > par[2]){ r = par[2]; }
+    if (r > (par[2] & 0xFFFFU)){ r = par[2] & 0xFFFFU; }
     for (i = 0U; i < r; i++){   /* Copy packet data */
-     rrpge_m_edat->st.dram[par[1] + i] = rrpge_m_edat->recb[rrpge_m_edat->rebr];
+     rrpge_m_edat->st.dram[(par[1] & 0xFFFFU) + i] = rrpge_m_edat->recb[rrpge_m_edat->rebr];
      rrpge_m_edat->rebr = (rrpge_m_edat->rebr + 1U) & 0xFFFU;
     }
 
@@ -476,8 +476,11 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   if (par[1] != 0U){ stat[RRPGE_STA_VARS + 0x1FU] = 1U; }
-   else             { stat[RRPGE_STA_VARS + 0x1FU] = 0U; }
+   if ((par[1] & 0xFFFFU) != 0U){
+    stat[RRPGE_STA_VARS + 0x1FU] = 1U;
+   }else{
+    stat[RRPGE_STA_VARS + 0x1FU] = 0U;
+   }
 
    r = 400U;
    break;
@@ -501,8 +504,11 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   if (par[1] >= 0x10U){ rrpge_m_info.xr[7] = 0xFFFFU; }
-   else                { rrpge_m_info.xr[7] = stat[RRPGE_STA_KTASK + 0xFU + (par[1] << 4)]; }
+   if ((par[1] & 0xFFFFU) >= 0x10U){
+    rrpge_m_info.xr[7] = 0xFFFFU;
+   }else{
+    rrpge_m_info.xr[7] = stat[RRPGE_STA_KTASK + 0xFU + (par[1] << 4)];
+   }
 
    r = 400U;
    break;
@@ -514,8 +520,8 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   if (par[1] < 0x10U){
-    o = RRPGE_STA_KTASK + (par[1] << 4);
+   if ((par[1] & 0xFFFFU) < 0x10U){
+    o = RRPGE_STA_KTASK + ((par[1] & 0xFFFFU) << 4);
     /* Only discards completed tasks */
     if ((stat[o] & 0x8000U) != 0U){
      stat[o] = 0U;

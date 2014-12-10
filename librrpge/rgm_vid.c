@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.11.16
+**  \date      2014.12.10
 */
 
 
@@ -136,16 +136,16 @@ void  rrpge_m_vidwrite(auint adr, auint val)
 
   case 0x0U:                  /* Mask / Colorkey definitions */
 
-   stat[RRPGE_STA_UPA_G + adr] = (uint16)(val);
+   stat[RRPGE_STA_UPA_G + adr] = val & 0xFFFFU;
    break;
 
   case 0x4U:                  /* Shift mode region & Controls & Flags */
 
    if ((adr & 0x2U) == 0U){   /* Shift mode region */
-    stat[RRPGE_STA_UPA_G + adr] = (uint16)(val & 0x7F7FU);
+    stat[RRPGE_STA_UPA_G + adr] = val & 0x7F7FU;
    }else{                     /* Controls & Flags */
     if (adr == 0x6U){         /* Display list clear */
-     stat[RRPGE_STA_UPA_G + 0x6U] = (uint16)(val);
+     stat[RRPGE_STA_UPA_G + 0x6U] = val & 0xFFFFU;
     }else{                    /* Display list definition & process flags (Flags become set) */
      stat[RRPGE_STA_UPA_G + 0x7U] = (stat[RRPGE_STA_UPA_G + 0x7U] & 0x3000U) |
                                     ((val & ((PRAMS - 1U) >> 9)) | 0xC000U);
@@ -156,7 +156,7 @@ void  rrpge_m_vidwrite(auint adr, auint val)
 
   default:                    /* Source definitions */
 
-   stat[RRPGE_STA_UPA_G + adr] = (uint16)(val);
+   stat[RRPGE_STA_UPA_G + adr] = val & 0xFFFFU;
    break;
 
  }

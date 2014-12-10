@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.26
+**  \date      2014.12.10
 */
 
 
@@ -50,7 +50,7 @@ RRPGE_M_FASTCALL auint rrpge_m_pramread(auint adr, auint rmw)
 
  /* Access memory */
 
- a = ((auint)(stat[0]) << 16) + ((auint)(stat[1]));
+ a = ((stat[0] & 0xFFFFU) << 16) + (stat[1] & 0xFFFFU);
  s = stat[4] & 0x7U;
  r = (a >> 5) & (PRAMS - 1U);
  rrpge_m_info.pia = r;        /* Save original address value for possible write */
@@ -68,9 +68,9 @@ RRPGE_M_FASTCALL auint rrpge_m_pramread(auint adr, auint rmw)
 
  if ((adr & 0x7U) == 0x7U){   /* Post - increment */
   if (((stat[4] & 0x8U) == 0U) || rmw){
-   a += ((auint)(stat[2]) << 16) + ((auint)(stat[3]));
-   stat[0] = (uint16)(a >> 16);
-   stat[1] = (uint16)(a);
+   a += ((stat[2] & 0xFFFFU) << 16) + (stat[3] & 0xFFFFU);
+   stat[0] = (a >> 16) & 0xFFFFU;
+   stat[1] = (a      ) & 0xFFFFU;
   }
  }
 

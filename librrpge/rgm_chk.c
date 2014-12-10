@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.11.06
+**  \date      2014.12.10
 */
 
 
@@ -67,9 +67,9 @@ static const uint8  rrpge_m_chk_stazc[3U * STAZC_CT] = {
 
 
 /* Read a byte from word memory */
-static uint8 rrpge_m_chk_getb(uint16 const* d, auint o)
+static auint rrpge_m_chk_getb(uint16 const* d, auint o)
 {
- return (uint8)(d[o >> 1] >> (((o & 1U) ^ 1U) << 3));
+ return ((d[o >> 1] >> (((o & 1U) ^ 1U) << 3)) & 0xFFU);
 }
 
 
@@ -81,7 +81,7 @@ static uint8 rrpge_m_chk_getb(uint16 const* d, auint o)
 static auint rrpge_m_chk_ascii7(uint16 const* d, auint s, auint e)
 {
  auint i;
- uint8 b;
+ auint b;
  for (i = s; i < e; i++){
   b = rrpge_m_chk_getb(d, i);
   if ( (b < 0x20U) || (b > 0x7EU) ) break;
@@ -99,15 +99,15 @@ static auint rrpge_m_chk_ascii7(uint16 const* d, auint s, auint e)
 static auint rrpge_m_chk_userid(uint16 const* d, auint s, auint e)
 {
  auint i;
- uint8 b;
+ auint b;
  for (i = s; i < e; i++){
   b = rrpge_m_chk_getb(d, i);
-  if ( ((b < (uint8)('a')) || (b > (uint8)('z'))) &&
-       ((b < (uint8)('A')) || (b > (uint8)('Z'))) &&
-       ((b < (uint8)('0')) || (b > (uint8)('9'))) &&
-       ( b != (uint8)('-')) &&
-       ( b != (uint8)(' ')) ) break;
-  if ( (i == s) && (b == (uint8)(' ')) ) break;
+  if ( ((b < (auint)('a')) || (b > (auint)('z'))) &&
+       ((b < (auint)('A')) || (b > (auint)('Z'))) &&
+       ((b < (auint)('0')) || (b > (auint)('9'))) &&
+       ( b != (auint)('-')) &&
+       ( b != (auint)(' ')) ) break;
+  if ( (i == s) && (b == (auint)(' ')) ) break;
  }
  return i;
 }
@@ -121,12 +121,12 @@ static auint rrpge_m_chk_userid(uint16 const* d, auint s, auint e)
 static auint rrpge_m_chk_numeric(uint16 const* d, auint s, auint e, auint* v)
 {
  auint i;
- uint8 b;
+ auint b;
  *v = 0U;
  for (i = s; i < e; i++){
   b = rrpge_m_chk_getb(d, i);
-  if ( (b < (uint8)('0')) || (b > (uint8)('9')) ) break;
-  *v = ((*v) * 10U) + (auint)(b - (uint8)('0'));
+  if ( (b < (auint)('0')) || (b > (auint)('9')) ) break;
+  *v = ((*v) * 10U) + (b - (auint)('0'));
  }
  return i;
 }
@@ -140,14 +140,14 @@ static auint rrpge_m_chk_numeric(uint16 const* d, auint s, auint e, auint* v)
 static auint rrpge_m_chk_uhex(uint16 const* d, auint s, auint e, auint* v)
 {
  auint i;
- uint8 b;
+ auint b;
  *v = 0U;
  for (i = s; i < e; i++){
   b = rrpge_m_chk_getb(d, i);
-  if       ( (b >= (uint8)('0')) && (b <= (uint8)('9')) ){
-   *v = ((*v) << 4) + (auint)(b - (uint8)('0'));
-  }else if ( (b >= (uint8)('A')) && (b <= (uint8)('F')) ){
-   *v = ((*v) << 4) + (auint)(b - (uint8)('A') + 10U);
+  if       ( (b >= (auint)('0')) && (b <= (auint)('9')) ){
+   *v = ((*v) << 4) + (b - (auint)('0'));
+  }else if ( (b >= (auint)('A')) && (b <= (auint)('F')) ){
+   *v = ((*v) << 4) + (b - (auint)('A') + 10U);
   }else{
    break;
   }
@@ -164,10 +164,10 @@ static auint rrpge_m_chk_uhex(uint16 const* d, auint s, auint e, auint* v)
 static auint rrpge_m_chk_str(uint16 const* d, auint s, auint e, uint8 const* c)
 {
  auint i;
- uint8 b;
+ auint b;
  for (i = s; i < e; i++){
   b = rrpge_m_chk_getb(d, i);
-  if (b != c[i - s]) break;
+  if (b != (c[i - s] & 0xFFU)) break;
  }
  return i;
 }
@@ -180,7 +180,7 @@ static auint rrpge_m_chk_str(uint16 const* d, auint s, auint e, uint8 const* c)
 auint rgm_chk_checkapphead(rrpge_uint16 const* d, auint* dof)
 {
  auint f;
- uint8 c;
+ auint c;
  auint dum;
  auint smaj;      /* RRPGE specification version */
  auint smin;
@@ -193,8 +193,8 @@ auint rgm_chk_checkapphead(rrpge_uint16 const* d, auint* dof)
  if (f != 2U){ goto apph_fault; }
 
  f = 2U;
- c = (uint8)(d[f >> 1] >> 8);
- if ((c != 'A') && (c != 'S')){ goto apph_fault; }
+ c = (d[f >> 1] >> 8) & 0xFFU;
+ if ((c != (auint)('A')) && (c != (auint)('S'))){ goto apph_fault; }
 
  f = rrpge_m_chk_str(d,  3U, 14U, (uint8 const*)("\n\nAppAuth: "));
  if (f != 14U){ goto apph_fault; }
@@ -288,17 +288,17 @@ rrpge_uint32 rrpge_checkappstate(rrpge_uint16 const* d)
  ** elements, it is OK even though descriptor faults would be nicer). */
 
  f = RRPGE_STA_VARS + 0x18U;
- aps = ((auint)(d[f     ]) << 16) +
-       ((auint)(d[f + 1U]));
+ aps = ((d[f     ] & 0xFFFFU) << 16) +
+       ((d[f + 1U] & 0xFFFFU));
  if (aps < 64U){ goto stat_fault; }          /* Definitely too small */
 
  dol = aps;
  if (dol > 0x10000U){ dol = 0x10000U; }      /* App. Descriptor's position limit */
 
  f = RRPGE_STA_VARS + 0x1BU;
- if (d[f - 1U] != 0U){                       /* In-data stack */
-  if (d[f] < 64U){ goto stat_fault; }
-  if (((auint)(d[f - 1U]) + (auint)(d[f])) > 0x10000U){ goto stat_fault; }
+ if ((d[f - 1U] & 0xFFFFU) != 0U){           /* In-data stack */
+  if ((d[f] & 0xFFFFU) < 64U){ goto stat_fault; }
+  if (((d[f - 1U] & 0xFFFFU) + (d[f] & 0xFFFFU)) > 0x10000U){ goto stat_fault; }
  }
 
  f = RRPGE_STA_VARS + 0x1DU;
@@ -328,15 +328,15 @@ rrpge_uint32 rrpge_checkappstate(rrpge_uint16 const* d)
  }
 
  for (f = RRPGE_STA_VARS + 0x40; f < RRPGE_STA_VARS + 0x4FU; f++){
-  if (d[f] != 0){ goto stat_fault; }        /* Reserved area */
+  if ((d[f] & 0xFFFFU) != 0U){ goto stat_fault; } /* Reserved area */
  }
 
  /* Zero mask checks */
 
  for (i = 0U; i < STAZC_CT; i++){
   f = rrpge_m_chk_stazc[i * 3U];
-  if ( (d[f] & ( ((auint)(rrpge_m_chk_stazc[i * 3U + 1U]) << 8) |
-                 ((auint)(rrpge_m_chk_stazc[i * 3U + 2U])) ) ) != 0U){
+  if ( (d[f] & ( ((rrpge_m_chk_stazc[i * 3U + 1U] & 0xFFU) << 8) |
+                 ((rrpge_m_chk_stazc[i * 3U + 2U] & 0xFFU)) ) ) != 0U){
    goto stat_fault;
   }
  }
@@ -367,10 +367,10 @@ rrpge_uint32 rrpge_isstatecomp(rrpge_uint16 const* sta,
 
  /* Simple: the headers must match */
 
- if (sta[0] != ((auint)('R') << 8) + ((auint)( 'P'))){ return 0U; }
- if (sta[1] != ((auint)('S') << 8) + ((auint)('\n'))){ return 0U; }
+ if ((sta[0] & 0xFFFFU) != ((auint)('R') << 8) + ((auint)( 'P'))){ return 0U; }
+ if ((sta[1] & 0xFFFFU) != ((auint)('S') << 8) + ((auint)('\n'))){ return 0U; }
  for (i = 2U; i < 64U; i++){
-  if (sta[i] != app[i]){ return 0U; }
+  if ((sta[i] & 0xFFFFU) != (app[i] & 0xFFFFU)){ return 0U; }
  }
  return 1U;
 }

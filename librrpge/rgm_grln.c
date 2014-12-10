@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.11.19
+**  \date      2014.12.10
 */
 
 
@@ -116,9 +116,9 @@ void rrpge_m_grln(void)
 
   /* Reset line buffer */
 
-  t    = dlin[0];
+  t    = dlin[0] & 0xFFFFFFFFU;
   for (i = 0U; i < 80U; i++){
-   rrpge_m_grln_buf[i] = (uint32)(t);
+   rrpge_m_grln_buf[i] = t;
   }
   doff = 1U;
 
@@ -127,9 +127,9 @@ void rrpge_m_grln(void)
 
   while (1){
 
-   cmd  = dlin[doff];             /* Current command */
+   cmd  = dlin[doff] & 0xFFFFFFFFU;  /* Current command */
    doff ++;
-   csr  = rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x8U + ((cmd >> 28) & 7U)]; /* Current source to use */
+   csr  = rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x8U + ((cmd >> 28) & 7U)] & 0xFFFFU; /* Current source to use */
    sbnk = &(rrpge_m_edat->st.pram[((csr & 0x0F00U) << 8) & (PRAMS - 1U)]);
    soff = (csr & 0xF000U) | ((((cmd >> 16) & 0xFFFU) << ((csr >> 5) & 7U)) & 0xFFFFU);
    if       ((cmd & 0xBC00U) == 0U){ /* Render command inactive */
@@ -222,7 +222,7 @@ void rrpge_m_grln(void)
 
       /* Combine destination */
 
-      rrpge_m_grln_buf[i] = (uint32)((psd & m) | (d & (~m)));
+      rrpge_m_grln_buf[i] = ((psd & m) | (d & (~m))) & 0xFFFFFFFFU;
       i    = (i + 1U) & 0x7FU;
 
       /* Done, finalize */
@@ -285,7 +285,7 @@ void rrpge_m_grln(void)
 
       /* Combine destination */
 
-      rrpge_m_grln_buf[i] = (uint32)((psd & m) | (d & (~m)));
+      rrpge_m_grln_buf[i] = ((psd & m) | (d & (~m))) & 0xFFFFFFFFU;
       i    = (i + 1U) & 0x7FU;
 
       /* Done, finalize */

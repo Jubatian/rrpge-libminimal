@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.26
+**  \date      2014.12.10
 */
 
 
@@ -832,7 +832,7 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_jfr_88(void)
    if ((op & 0x0040U) != 0U){ break; }    /* There are no more parameters */
    op               = rrpge_m_edat->crom[rrpge_m_info.pc & 0xFFFFU];
    rrpge_m_info.opc = op;
-   kp[mx] = (uint16)(rrpge_m_addr_read_table[op & 0x3FU](0U));
+   kp[mx] = (rrpge_m_addr_read_table[op & 0x3FU](0U)) & 0xFFFFU;
    cy              += rrpge_m_info.ocy + 4U;
    rrpge_m_info.pc += rrpge_m_info.oaw;
    mx ++;

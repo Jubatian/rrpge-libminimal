@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.11.02
+**  \date      2014.12.10
 */
 
 
@@ -20,15 +20,15 @@ auint rrpge_m_mixerop(void)
 {
  uint32* pram = &(rrpge_m_edat->st.pram[0]);     /* Address of RW data RAM */
  uint16* stat = &(rrpge_m_edat->st.stat[RRPGE_STA_MIXER]);
- auint ssoh = stat[0xAU]; /* Sample source, whole */
- auint ssol = ((auint)(stat[0xBU]) << 16) + (auint)(stat[0xCU]); /* Sample source, fraction */
- auint asoh = stat[0x0U]; /* Amplitude source, whole */
- auint asol = ((auint)(stat[0x1U]) << 16) + (auint)(stat[0x2U]); /* Amplitude source, fraction */
- auint sdoh = stat[0x7U]; /* Sample destination, high part */
- auint sdol = stat[0x8U]; /* Sample destination, low part */
- auint sfrq = ((auint)(stat[0xDU]) << 16) + (auint)(stat[0xEU]); /* Sample frequency */
- auint afrq = ((auint)(stat[0x3U]) << 16) + (auint)(stat[0x4U]); /* Amplitudo read (AM) frequency */
- auint ampl = stat[0x9U]; /* Amplitudo multiplier */
+ auint ssoh = stat[0xAU] & 0xFFFFU; /* Sample source, whole */
+ auint ssol = ((stat[0xBU] & 0xFFFFU) << 16) + (stat[0xCU] & 0xFFFFU); /* Sample source, fraction */
+ auint asoh = stat[0x0U] & 0xFFFFU; /* Amplitude source, whole */
+ auint asol = ((stat[0x1U] & 0xFFFFU) << 16) + (stat[0x2U] & 0xFFFFU); /* Amplitude source, fraction */
+ auint sdoh = stat[0x7U] & 0xFFFFU; /* Sample destination, high part */
+ auint sdol = stat[0x8U] & 0xFFFFU; /* Sample destination, low part */
+ auint sfrq = ((stat[0xDU] & 0xFFFFU) << 16) + (stat[0xEU] & 0xFFFFU); /* Sample frequency */
+ auint afrq = ((stat[0x3U] & 0xFFFFU) << 16) + (stat[0x4U] & 0xFFFFU); /* Amplitudo read (AM) frequency */
+ auint ampl = stat[0x9U] & 0xFFFFU; /* Amplitudo multiplier */
  auint clno = ((stat[0xFU] - 1U) & 0xFFFU) + 1U; /* Number of cells to process */
  auint sdpr;
  auint sspr;

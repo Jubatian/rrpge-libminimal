@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.11.10
+**  \date      2014.12.10
 */
 
 
@@ -140,7 +140,7 @@ static void rrpge_m_ires_setb(uint32* d, auint o, auint v)
  auint oh = o >> 2;
  auint ol = ((o & 3U) ^ 3U) << 3;
 
- d[oh] = (uint32)((d[oh] & (~((auint)(0xFFU) << ol))) | ((v & 0xFFU) << ol));
+ d[oh] = ((d[oh] & (~((auint)(0xFFU) << ol))) | ((v & 0xFFU) << ol)) & 0xFFFFFFFFU;
 }
 
 
@@ -208,8 +208,8 @@ void rrpge_m_ires_initdata(rrpge_object_t* obj)
   i--;
   j--;
   r = rrpge_m_ires_ft[j] >> t;
-  d[0xFC00U + (i << 1)] = (uint16)(r >> 16);
-  d[0xFC01U + (i << 1)] = (uint16)(r);
+  d[0xFC00U + (i << 1)] = (r >> 16) & 0xFFFFU;
+  d[0xFC01U + (i << 1)] = (r      ) & 0xFFFFU;
   if (j == 0U){
    t++;
    j = 12U;
@@ -236,9 +236,9 @@ void rrpge_m_ires_initdata(rrpge_object_t* obj)
 
  /* User Library initializers */
  for (i = 0U; i < RRPGE_M_ULIB_ICNT; i++){
-  d[0xFA00U + (auint)(rrpge_m_ulib_idat[i * 3U])] =
-      ((auint)(rrpge_m_ulib_idat[(i * 3U) + 1U]) << 8) +
-      ((auint)(rrpge_m_ulib_idat[(i * 3U) + 2U]));
+  d[0xFA00U + (rrpge_m_ulib_idat[i * 3U] & 0xFFU)] =
+      ((rrpge_m_ulib_idat[(i * 3U) + 1U] & 0xFFU) << 8) +
+      ((rrpge_m_ulib_idat[(i * 3U) + 2U] & 0xFFU));
  }
 
 }
@@ -285,8 +285,8 @@ void rrpge_m_ires_initstat(rrpge_object_t* obj)
 
  /* Stuff in the VARS area */
  for (i = 0U; i < STANZ_CT; i++){
-  s[rrpge_m_ires_stanz[i * 3U]] = ((auint)(rrpge_m_ires_stanz[(i * 3U) + 1U]) << 8) +
-                                  ((auint)(rrpge_m_ires_stanz[(i * 3U) + 2U]));
+  s[rrpge_m_ires_stanz[i * 3U]] = ((rrpge_m_ires_stanz[(i * 3U) + 1U] & 0xFFU) << 8) +
+                                  ((rrpge_m_ires_stanz[(i * 3U) + 2U] & 0xFFU));
  }
 
  /* Color palette */
