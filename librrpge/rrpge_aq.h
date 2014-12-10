@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.26
+**  \date      2014.12.10
 */
 
 
@@ -27,7 +27,7 @@
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
 **  \return            Nonzero if user is available for new connections.
 */
-rrpge_uint32 rrpge_getnetavail(rrpge_object_t* hnd);
+rrpge_ibool rrpge_getnetavail(rrpge_object_t* hnd);
 
 
 
@@ -44,7 +44,7 @@ rrpge_uint32 rrpge_getnetavail(rrpge_object_t* hnd);
 **  \param[in]   dev   The device ID to query.
 **  \return            The device type excepted at the given ID.
 */
-rrpge_uint32 rrpge_getlastdev(rrpge_object_t* hnd, rrpge_uint32 dev);
+rrpge_iuint rrpge_getlastdev(rrpge_object_t* hnd, rrpge_iuint dev);
 
 
 
@@ -58,7 +58,7 @@ rrpge_uint32 rrpge_getlastdev(rrpge_object_t* hnd, rrpge_uint32 dev);
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
 **  \return            The device types allowed by the application.
 */
-rrpge_uint32 rrpge_getalloweddevs(rrpge_object_t* hnd);
+rrpge_iuint rrpge_getalloweddevs(rrpge_object_t* hnd);
 
 
 
@@ -72,7 +72,7 @@ rrpge_uint32 rrpge_getalloweddevs(rrpge_object_t* hnd);
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
 **  \return            Video mode.
 */
-rrpge_uint32 rrpge_getvidmode(rrpge_object_t* hnd);
+rrpge_iuint rrpge_getvidmode(rrpge_object_t* hnd);
 
 
 
@@ -91,7 +91,7 @@ rrpge_uint32 rrpge_getvidmode(rrpge_object_t* hnd);
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
 **  \return            Stereoscopic 3D output properties.
 */
-rrpge_uint32 rrpge_getst3dprops(rrpge_object_t* hnd);
+rrpge_iuint rrpge_getst3dprops(rrpge_object_t* hnd);
 
 
 
@@ -106,7 +106,7 @@ rrpge_uint32 rrpge_getst3dprops(rrpge_object_t* hnd);
 **  \param[in]   cid   Color index (0 - 255).
 **  \return            Palette entry (color) in 4-4-4 RGB.
 */
-rrpge_uint32 rrpge_getpalentry(rrpge_object_t* hnd, rrpge_uint32 cid);
+rrpge_iuint rrpge_getpalentry(rrpge_object_t* hnd, rrpge_iuint cid);
 
 
 

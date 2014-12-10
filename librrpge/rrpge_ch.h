@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.12.10
 */
 
 
@@ -30,7 +30,7 @@
 **  \param[in]   d     The area to check (64 elements).
 **  \return            Fault code.
 */
-rrpge_uint32 rrpge_checkapphead(rrpge_uint16 const* d);
+rrpge_iuint rrpge_checkapphead(rrpge_uint16 const* d);
 
 
 
@@ -46,7 +46,7 @@ rrpge_uint32 rrpge_checkapphead(rrpge_uint16 const* d);
 **  \param[in]   d     The state to check (1024 elements).
 **  \return            Fault code.
 */
-rrpge_uint32 rrpge_checkappstate(rrpge_uint16 const* d);
+rrpge_iuint rrpge_checkappstate(rrpge_uint16 const* d);
 
 
 
@@ -61,8 +61,8 @@ rrpge_uint32 rrpge_checkappstate(rrpge_uint16 const* d);
 **  \param[in]   app   The application to check against, app. header (64 elements).
 **  \return            Result of check: 1: compatible, 0: not compatible.
 */
-rrpge_uint32 rrpge_isstatecomp(rrpge_uint16 const* sta,
-                               rrpge_uint16 const* app);
+rrpge_ibool rrpge_isstatecomp(rrpge_uint16 const* sta,
+                              rrpge_uint16 const* app);
 
 
 #endif

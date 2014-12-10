@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.12.10
 */
 
 
@@ -99,7 +99,7 @@ void inputcom_reset(rrpge_object_t* hnd)
 /*
 ** Get device properties callback service routine.
 */
-rrpge_uint32 inputcom_getprops(rrpge_object_t* hnd, const void* par)
+rrpge_iuint inputcom_getprops(rrpge_object_t* hnd, const void* par)
 {
  rrpge_cbp_getprops_t const* p = (rrpge_cbp_getprops_t const*)(par);
  auint t;
@@ -138,7 +138,7 @@ rrpge_uint32 inputcom_getprops(rrpge_object_t* hnd, const void* par)
 /*
 ** Drop device callback service routine.
 */
-void         inputcom_dropdev(rrpge_object_t* hnd, const void* par)
+void        inputcom_dropdev(rrpge_object_t* hnd, const void* par)
 {
  rrpge_cbp_dropdev_t const* p = (rrpge_cbp_dropdev_t const*)(par);
  auint t;
@@ -159,7 +159,7 @@ void         inputcom_dropdev(rrpge_object_t* hnd, const void* par)
 /*
 ** Get digital input description symbols callback service routine.
 */
-rrpge_uint32 inputcom_getdidesc(rrpge_object_t* hnd, const void* par)
+rrpge_iuint inputcom_getdidesc(rrpge_object_t* hnd, const void* par)
 {
  return 0xFFFFFFFFU; /* Not implemented yet. Return native control for now. */
 }
@@ -169,7 +169,7 @@ rrpge_uint32 inputcom_getdidesc(rrpge_object_t* hnd, const void* par)
 /*
 ** Get digital inputs callback service routine.
 */
-rrpge_uint32 inputcom_getdi(rrpge_object_t* hnd, const void* par)
+rrpge_iuint inputcom_getdi(rrpge_object_t* hnd, const void* par)
 {
  rrpge_cbp_getdi_t const* p = (rrpge_cbp_getdi_t const*)(par);
  auint t;
@@ -185,7 +185,7 @@ rrpge_uint32 inputcom_getdi(rrpge_object_t* hnd, const void* par)
 /*
 ** Get analog inputs callback service routine.
 */
-rrpge_uint32 inputcom_getai(rrpge_object_t* hnd, const void* par)
+rrpge_iuint inputcom_getai(rrpge_object_t* hnd, const void* par)
 {
  rrpge_cbp_getai_t const* p = (rrpge_cbp_getai_t const*)(par);
  auint t;
@@ -201,7 +201,7 @@ rrpge_uint32 inputcom_getai(rrpge_object_t* hnd, const void* par)
 /*
 ** Pop text FIFO callback service routine.
 */
-rrpge_uint32 inputcom_popchar(rrpge_object_t* hnd, const void* par)
+rrpge_iuint inputcom_popchar(rrpge_object_t* hnd, const void* par)
 {
  return 0U; /* Not implemented yet. Returns no character in the FIFO for now. */
 }

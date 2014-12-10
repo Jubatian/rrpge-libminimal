@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.11.29
+**  \date      2014.12.10
 */
 
 
@@ -28,7 +28,7 @@
 
 
 /* Prototype for binary load kernel task */
-static void main_loadbin(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par);
+static void main_loadbin(rrpge_object_t* hnd, rrpge_iuint tsh, const void* par);
 
 /* Temporary areas */
 static uint8  main_tdata[128U * 1024U];
@@ -78,7 +78,7 @@ static const rrpge_cbpack_t main_cbpack={
 
 
 /* Loads binary page, kernel task callback */
-static void main_loadbin(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
+static void main_loadbin(rrpge_object_t* hnd, rrpge_iuint tsh, const void* par)
 {
  const rrpge_cbp_loadbin_t* p = (const rrpge_cbp_loadbin_t*)(par);
  /* No async task loading, neither check stuff, just run it. Prototype...

@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.12.10
 */
 
 
@@ -18,8 +18,8 @@
 
 
 /**
-**  \anchor    base_types
-**  \name      Base types
+**  \anchor    fixed_types
+**  \name      Fixed size types
 **
 **  These are fixed size unsigned integer types. In C89 such types are not
 **  defined by the standard, when compiling by C99 or above, these may be
@@ -29,6 +29,21 @@
 typedef uint32_t rrpge_uint32; /**< 32 bit unsigned integer */
 typedef uint16_t rrpge_uint16; /**< 16 bit unsigned integer */
 typedef uint8_t  rrpge_uint8;  /**< 8 bit unsigned integer */
+/** \} */
+
+
+
+/**
+**  \anchor    if_types
+**  \name      Interface types
+**
+**  Types used for passing and returning values for functions. These should be
+**  defined so they are optimal for the target architecture, and match it's
+**  software infrastructure so the library can fit in.
+**
+**  \{ */
+typedef unsigned int rrpge_iuint; /**< Interface integer, at least 32 bits */
+typedef unsigned int rrpge_ibool; /**< Interface boolean, 0 for FALSE */
 /** \} */
 
 

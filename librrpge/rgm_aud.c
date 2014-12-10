@@ -89,7 +89,7 @@ void rrpge_m_audproc(auint cy)
 
 
 /* Get audio events and streams - implementation of RRPGE library function */
-rrpge_uint32 rrpge_getaudio(rrpge_object_t* hnd, rrpge_uint8* lbuf, rrpge_uint8* rbuf)
+rrpge_iuint rrpge_getaudio(rrpge_object_t* hnd, rrpge_uint8* lbuf, rrpge_uint8* rbuf)
 {
  auint r;
  auint i;

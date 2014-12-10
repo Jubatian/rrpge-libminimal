@@ -22,7 +22,7 @@
 
 
 /* Runs the emulator - Implementation of RRPGE library function. */
-rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod)
+rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
 {
  auint i;
  auint cy;                     /* Cycle counting work variable */

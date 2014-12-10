@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.12.10
 */
 
 
@@ -28,7 +28,7 @@
 **  \param[out]  dst   Destination data (((bct + 1) >> 1) words).
 **  \param[in]   bct   Count of bytes to process.
 */
-void rrpge_conv_b2w(rrpge_uint8 const* src, rrpge_uint16* dst, rrpge_uint32 bct);
+void rrpge_conv_b2w(rrpge_uint8 const* src, rrpge_uint16* dst, rrpge_iuint bct);
 
 
 
@@ -42,7 +42,7 @@ void rrpge_conv_b2w(rrpge_uint8 const* src, rrpge_uint16* dst, rrpge_uint32 bct)
 **  \param[out]  dst   Destination data (bct bytes).
 **  \param[in]   bct   Count of bytes to process.
 */
-void rrpge_conv_w2b(rrpge_uint16 const* src, rrpge_uint8* dst, rrpge_uint32 bct);
+void rrpge_conv_w2b(rrpge_uint16 const* src, rrpge_uint8* dst, rrpge_iuint bct);
 
 
 

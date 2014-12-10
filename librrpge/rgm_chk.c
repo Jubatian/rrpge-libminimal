@@ -260,7 +260,7 @@ apph_fault:
 
 
 /* Check application header - Implementation of RRPGE library function */
-rrpge_uint32 rrpge_checkapphead(rrpge_uint16 const* d)
+rrpge_iuint rrpge_checkapphead(rrpge_uint16 const* d)
 {
  auint dum;
  return (rrpge_uint32)(rgm_chk_checkapphead(d, &dum));
@@ -269,7 +269,7 @@ rrpge_uint32 rrpge_checkapphead(rrpge_uint16 const* d)
 
 
 /* Check Application State - Implementation of RRPGE library function */
-rrpge_uint32 rrpge_checkappstate(rrpge_uint16 const* d)
+rrpge_iuint rrpge_checkappstate(rrpge_uint16 const* d)
 {
  auint f;
  auint i;
@@ -360,8 +360,8 @@ stat_fault:
 
 
 /* Check state - app. comp. - Implementation of RRPGE library function */
-rrpge_uint32 rrpge_isstatecomp(rrpge_uint16 const* sta,
-                               rrpge_uint16 const* app)
+rrpge_ibool rrpge_isstatecomp(rrpge_uint16 const* sta,
+                              rrpge_uint16 const* app)
 {
  auint i;
 
@@ -372,5 +372,5 @@ rrpge_uint32 rrpge_isstatecomp(rrpge_uint16 const* sta,
  for (i = 2U; i < 64U; i++){
   if ((sta[i] & 0xFFFFU) != (app[i] & 0xFFFFU)){ return 0U; }
  }
- return 1U;
+ return !(0U);
 }

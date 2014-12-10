@@ -19,7 +19,7 @@
 
 
 /* Initialize emulator - implementation of RRPGE library function */
-rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb, rrpge_object_t* hnd)
+rrpge_iuint rrpge_init(rrpge_cbpack_t const* cb, rrpge_object_t* hnd)
 {
  /* Add callbacks */
 
@@ -38,7 +38,7 @@ rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb, rrpge_object_t* hnd)
 
 
 /* Run initialization - implementation of RRPGE library function */
-rrpge_uint32 rrpge_init_run(rrpge_object_t* hnd)
+rrpge_iuint rrpge_init_run(rrpge_object_t* hnd)
 {
  auint   f;
  auint   i;
@@ -190,7 +190,7 @@ rrpge_state_t* rrpge_detachstate(rrpge_object_t* hnd)
 
 
 /* Reattaches emulator state - implementation of RRPGE library function */
-rrpge_uint32 rrpge_attachstate(rrpge_object_t* hnd)
+rrpge_iuint rrpge_attachstate(rrpge_object_t* hnd)
 {
  auint f;
 
@@ -207,7 +207,7 @@ rrpge_uint32 rrpge_attachstate(rrpge_object_t* hnd)
 
 
 /* Reattaches emulator state with comp. check - implementation of RRPGE library function */
-rrpge_uint32 rrpge_attachstatecomp(rrpge_object_t* hnd)
+rrpge_iuint rrpge_attachstatecomp(rrpge_object_t* hnd)
 {
  return rrpge_attachstate(hnd); /* Needs additional though... */
 }
@@ -215,7 +215,7 @@ rrpge_uint32 rrpge_attachstatecomp(rrpge_object_t* hnd)
 
 
 /* Submit task result - implementation of RRPGE library function */
-void rrpge_taskend(rrpge_object_t* hnd, rrpge_uint32 tsh, rrpge_uint32 res)
+void rrpge_taskend(rrpge_object_t* hnd, rrpge_iuint tsh, rrpge_iuint res)
 {
  if ((hnd->insm) != 0U){ /* Initializing - assume ending an app binary load */
   hnd->insm ++;          /* Advance initialization state (this notifies that the part is loaded) */
@@ -274,7 +274,7 @@ void rrpge_taskend(rrpge_object_t* hnd, rrpge_uint32 tsh, rrpge_uint32 res)
 
 /* Submit received packet - implementation of RRPGE library function */
 void rrpge_pushpacket(rrpge_object_t* hnd, rrpge_uint16 const* id,
-                      rrpge_uint16 const* buf, rrpge_uint32 len)
+                      rrpge_uint16 const* buf, rrpge_iuint len)
 {
  auint s;
  auint i;
@@ -319,7 +319,7 @@ void rrpge_pushpacket(rrpge_object_t* hnd, rrpge_uint16 const* id,
 
 
 /* Request halt cause - implementation of RRPGE library function */
-rrpge_uint32 rrpge_gethaltcause(rrpge_object_t* hnd)
+rrpge_iuint rrpge_gethaltcause(rrpge_object_t* hnd)
 {
  return hnd->hlt;
 }
@@ -327,8 +327,8 @@ rrpge_uint32 rrpge_gethaltcause(rrpge_object_t* hnd)
 
 
 /* Toggle graphics rendering - implementation of RRPGE library function */
-void rrpge_enarender(rrpge_object_t* hnd, rrpge_uint32 tg)
+void rrpge_enarender(rrpge_object_t* hnd, rrpge_ibool tg)
 {
- if (tg != 0) tg = 1U;
- hnd->rena = ((hnd->rena) & (~1U)) | tg;
+ if (tg){ hnd->rena = (hnd->rena) |   1U;  }
+ else   { hnd->rena = (hnd->rena) & (~1U); }
 }

@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.26
+**  \date      2014.12.10
 */
 
 
@@ -20,31 +20,31 @@
 ** immediate termination using rrpge_taskend() with the appropriate result. */
 
 /* Line renderer */
-static void rrpge_m_cb_line(rrpge_object_t* hnd, rrpge_uint32 ln, rrpge_uint32 const* buf)
+static void rrpge_m_cb_line(rrpge_object_t* hnd, rrpge_iuint ln, rrpge_uint32 const* buf)
 {
 }
 
 /* Task: Load binary data */
-static void rrpge_m_cb_loadbin(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
+static void rrpge_m_cb_loadbin(rrpge_object_t* hnd, rrpge_iuint tsh, const void* par)
 {
  rrpge_taskend(hnd, tsh, 0x8000U);
  rrpge_m_info.hlt |= RRPGE_HLT_FAULT; /* This callback is mandatory */
 }
 
 /* Task: Load page from file */
-static void rrpge_m_cb_load(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
+static void rrpge_m_cb_load(rrpge_object_t* hnd, rrpge_iuint tsh, const void* par)
 {
  rrpge_taskend(hnd, tsh, RRPGE_SFI_UNSUPP); /* Load failed */
 }
 
 /* Task: Save page into file */
-static void rrpge_m_cb_save(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
+static void rrpge_m_cb_save(rrpge_object_t* hnd, rrpge_iuint tsh, const void* par)
 {
  rrpge_taskend(hnd, tsh, RRPGE_SFI_UNSUPP); /* Save failed */
 }
 
 /* Task: Find next file */
-static void rrpge_m_cb_next(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
+static void rrpge_m_cb_next(rrpge_object_t* hnd, rrpge_iuint tsh, const void* par)
 {
  rrpge_cbp_next_t const* p = (rrpge_cbp_next_t const*)(par);
  if ((p->ncw) != 0U){ p->nam[0] = 0U; }     /* No files can be found */
@@ -52,7 +52,7 @@ static void rrpge_m_cb_next(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* p
 }
 
 /* Task: Move a file */
-static void rrpge_m_cb_move(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
+static void rrpge_m_cb_move(rrpge_object_t* hnd, rrpge_iuint tsh, const void* par)
 {
  rrpge_taskend(hnd, tsh, RRPGE_SFI_UNSUPP); /* Move failed */
 }
@@ -79,7 +79,7 @@ static void rrpge_m_cb_setst3d(rrpge_object_t* hnd, const void* par)
 }
 
 /* Function: Get device properties */
-static rrpge_uint32 rrpge_m_cb_getprops(rrpge_object_t* hnd, const void* par)
+static rrpge_iuint rrpge_m_cb_getprops(rrpge_object_t* hnd, const void* par)
 {
  return 0;
 }
@@ -90,25 +90,25 @@ static void rrpge_m_cb_dropdev(rrpge_object_t* hnd, const void* par)
 }
 
 /* Function: Get digital input description symbols */
-static rrpge_uint32 rrpge_m_cb_getdidesc(rrpge_object_t* hnd, const void* par)
+static rrpge_iuint rrpge_m_cb_getdidesc(rrpge_object_t* hnd, const void* par)
 {
  return 0;
 }
 
 /* Function: Get digital inputs */
-static rrpge_uint32 rrpge_m_cb_getdi(rrpge_object_t* hnd, const void* par)
+static rrpge_iuint rrpge_m_cb_getdi(rrpge_object_t* hnd, const void* par)
 {
  return 0;
 }
 
 /* Function: Get analog inputs */
-static rrpge_uint32 rrpge_m_cb_getai(rrpge_object_t* hnd, const void* par)
+static rrpge_iuint rrpge_m_cb_getai(rrpge_object_t* hnd, const void* par)
 {
  return 0;
 }
 
 /* Function: Pop text FIFO */
-static rrpge_uint32 rrpge_m_cb_popchar(rrpge_object_t* hnd, const void* par)
+static rrpge_iuint rrpge_m_cb_popchar(rrpge_object_t* hnd, const void* par)
 {
  return 0;
 }
@@ -119,43 +119,43 @@ static void rrpge_m_cb_getlocal(rrpge_object_t* hnd, const void* par)
 }
 
 /* Task: Read UTF-8 representation of User ID. */
-static void rrpge_m_cb_getutf(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
+static void rrpge_m_cb_getutf(rrpge_object_t* hnd, rrpge_iuint tsh, const void* par)
 {
  rrpge_taskend(hnd, tsh, 0x8000U);    /* Does nothing (empty strings) and returns. */
 }
 
 /* Function: Get user preferred language */
-static rrpge_uint32 rrpge_m_cb_getlang(rrpge_object_t* hnd, const void* par)
+static rrpge_iuint rrpge_m_cb_getlang(rrpge_object_t* hnd, const void* par)
 {
  return 0;
 }
 
 /* Function: Get user preferred colors */
-static rrpge_uint32 rrpge_m_cb_getcolors(rrpge_object_t* hnd, const void* par)
+static rrpge_iuint rrpge_m_cb_getcolors(rrpge_object_t* hnd, const void* par)
 {
  return 0;
 }
 
 /* Function: Get user stereoscopic 3D preference */
-static rrpge_uint32 rrpge_m_cb_getst3d(rrpge_object_t* hnd, const void* par)
+static rrpge_iuint rrpge_m_cb_getst3d(rrpge_object_t* hnd, const void* par)
 {
  return 0;
 }
 
 /* Task: Send out network packet. */
-static void rrpge_m_cb_send(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
+static void rrpge_m_cb_send(rrpge_object_t* hnd, rrpge_iuint tsh, const void* par)
 {
  rrpge_taskend(hnd, tsh, 0x8000U);    /* Packet went up in smoke, fine with that. */
 }
 
 /* Task: List accessible users. */
-static void rrpge_m_cb_listusers(rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par)
+static void rrpge_m_cb_listusers(rrpge_object_t* hnd, rrpge_iuint tsh, const void* par)
 {
  rrpge_taskend(hnd, tsh, 0x8000U);    /* No users found. */
 }
 
 /* Function: Return area activity. This is public (RRPGE library interface) */
-rrpge_uint32 rrpge_m_cb_checkarea(rrpge_object_t* hnd, const void* par)
+rrpge_iuint rrpge_cb_checkarea(rrpge_object_t* hnd, const void* par)
 {
  rrpge_cbp_checkarea_t const* p = par;
  rrpge_cbp_getdi_t sdi;
@@ -252,7 +252,7 @@ void rrpge_m_cb_process(rrpge_object_t* obj, rrpge_cbpack_t const* cbp)
  obj->cb_fun[RRPGE_CB_GETDI]     = &rrpge_m_cb_getdi;
  obj->cb_fun[RRPGE_CB_GETAI]     = &rrpge_m_cb_getai;
  obj->cb_fun[RRPGE_CB_POPCHAR]   = &rrpge_m_cb_popchar;
- obj->cb_fun[RRPGE_CB_CHECKAREA] = &rrpge_m_cb_checkarea;
+ obj->cb_fun[RRPGE_CB_CHECKAREA] = &rrpge_cb_checkarea;
  obj->cb_fun[RRPGE_CB_GETLANG]   = &rrpge_m_cb_getlang;
  obj->cb_fun[RRPGE_CB_GETCOLORS] = &rrpge_m_cb_getcolors;
  obj->cb_fun[RRPGE_CB_GETST3D]   = &rrpge_m_cb_getst3d;

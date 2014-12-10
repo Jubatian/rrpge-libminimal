@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.26
+**  \date      2014.12.10
 */
 
 
@@ -34,7 +34,7 @@
 **  \param[in]   ln    The number of the line rendered (0 - 399).
 **  \param[in]   buf   The contents of the line (80 elements).
 */
-typedef void rrpge_cb_line_t (rrpge_object_t* hnd, rrpge_uint32 ln, rrpge_uint32 const* buf);
+typedef void rrpge_cb_line_t (rrpge_object_t* hnd, rrpge_iuint ln, rrpge_uint32 const* buf);
 
 
 
@@ -53,7 +53,7 @@ typedef void rrpge_cb_line_t (rrpge_object_t* hnd, rrpge_uint32 ln, rrpge_uint32
 **  \param[in]   tsh   Task handle by which the host may report back (0-15).
 **  \param[in]   par   Extra parameters for the particular callback.
 */
-typedef void rrpge_cb_kcalltsk_t (rrpge_object_t* hnd, rrpge_uint32 tsh, const void* par);
+typedef void rrpge_cb_kcalltsk_t (rrpge_object_t* hnd, rrpge_iuint tsh, const void* par);
 
 
 
@@ -89,7 +89,7 @@ typedef void rrpge_cb_kcallsub_t (rrpge_object_t* hnd, const void* par);
 **  \param[in]   par   Extra parameters for the particular callback.
 **  \return            Result of function to be written into C:X3.
 */
-typedef rrpge_uint32 rrpge_cb_kcallfun_t (rrpge_object_t* hnd, const void* par);
+typedef rrpge_iuint rrpge_cb_kcallfun_t (rrpge_object_t* hnd, const void* par);
 
 
 
@@ -99,7 +99,7 @@ typedef rrpge_uint32 rrpge_cb_kcallfun_t (rrpge_object_t* hnd, const void* par);
 **  Binds a kernel task callback to callback type.
 */
 typedef struct{
- rrpge_uint32             id;          /**< Callback ID (type) */
+ rrpge_iuint              id;          /**< Callback ID (type) */
  rrpge_cb_kcalltsk_t*     cb;          /**< Callback function */
 }rrpge_cbd_tsk_t;
 
@@ -111,7 +111,7 @@ typedef struct{
 **  Binds a kernel subroutine callback to callback type.
 */
 typedef struct{
- rrpge_uint32             id;          /**< Callback ID (type) */
+ rrpge_iuint              id;          /**< Callback ID (type) */
  rrpge_cb_kcallsub_t*     cb;          /**< Callback function */
 }rrpge_cbd_sub_t;
 
@@ -123,7 +123,7 @@ typedef struct{
 **  Binds a kernel function callback to callback type.
 */
 typedef struct{
- rrpge_uint32             id;          /**< Callback ID (type) */
+ rrpge_iuint              id;          /**< Callback ID (type) */
  rrpge_cb_kcallfun_t*     cb;          /**< Callback function */
 }rrpge_cbd_fun_t;
 
@@ -147,11 +147,11 @@ typedef struct{
                                        **   this (leaving it may still be
                                        **   useful for playing music only
                                        **   apps). */
- rrpge_uint32             tsk_n;       /**< Number of task callbacks passed */
+ rrpge_iuint              tsk_n;       /**< Number of task callbacks passed */
  rrpge_cbd_tsk_t const*   tsk_d;       /**< Task callback descriptors */
- rrpge_uint32             sub_n;       /**< Number of sub. callbacks passed */
+ rrpge_iuint              sub_n;       /**< Number of sub. callbacks passed */
  rrpge_cbd_sub_t const*   sub_d;       /**< Subroutine callback descriptors */
- rrpge_uint32             fun_n;       /**< Number of fun. callbacks passed */
+ rrpge_iuint              fun_n;       /**< Number of fun. callbacks passed */
  rrpge_cbd_fun_t const*   fun_d;       /**< Function callback descriptors */
 }rrpge_cbpack_t;
 
@@ -199,8 +199,8 @@ typedef struct{
 **  \brief     Extra parameters for Load binary data.
 */
 typedef struct{
- rrpge_uint32        sow; /**< The source (word) offset to load from. */
- rrpge_uint32        scw; /**< Number of words to load */
+ rrpge_iuint         sow; /**< The source (word) offset to load from. */
+ rrpge_iuint         scw; /**< Number of words to load */
  rrpge_uint16*       buf; /**< Target area to fill. */
 }rrpge_cbp_loadbin_t;
 
@@ -218,11 +218,11 @@ typedef struct{
 **  \brief     Extra parameters for Load from file.
 */
 typedef struct{
- rrpge_uint32        sob; /**< The source (byte) offset in the file to load from. */
- rrpge_uint32        scb; /**< The number of bytes to load from the file (0 - 16383). */
+ rrpge_iuint         sob; /**< The source (byte) offset in the file to load from. */
+ rrpge_iuint         scb; /**< The number of bytes to load from the file (0 - 16383). */
  rrpge_uint16*       buf; /**< The memory area to fill in, using Big Endian byte order. */
  rrpge_uint16 const* nam; /**< The file name (Big Endian byte order). */
- rrpge_uint32        ncw; /**< Size of file name in words. */
+ rrpge_iuint         ncw; /**< Size of file name in words. */
 }rrpge_cbp_load_t;
 
 
@@ -239,11 +239,11 @@ typedef struct{
 **  \brief     Extra parameters for Save to file.
 */
 typedef struct{
- rrpge_uint32        tob; /**< The target (byte) offset in the file to write from. */
- rrpge_uint32        tcb; /**< The number of bytes to write into the file (0 - 16383). */
+ rrpge_iuint         tob; /**< The target (byte) offset in the file to write from. */
+ rrpge_iuint         tcb; /**< The number of bytes to write into the file (0 - 16383). */
  rrpge_uint16 const* buf; /**< The memory area to load data from, using Big Endian byte order. */
  rrpge_uint16 const* nam; /**< The file name (Big Endian byte order). */
- rrpge_uint32        ncw; /**< Size of file name in words. */
+ rrpge_iuint         ncw; /**< Size of file name in words. */
 }rrpge_cbp_save_t;
 
 
@@ -260,7 +260,7 @@ typedef struct{
 */
 typedef struct{
  rrpge_uint16*       nam; /**< The file name (source and target, Big Endian byte order). */
- rrpge_uint32        ncw; /**< Size of file name in words. */
+ rrpge_iuint         ncw; /**< Size of file name in words. */
 }rrpge_cbp_next_t;
 
 
@@ -279,8 +279,8 @@ typedef struct{
 typedef struct{
  rrpge_uint16 const* snm; /**< The source file name (Big Endian byte order). */
  rrpge_uint16 const* tnm; /**< The target file name (Big Endian byte order). */
- rrpge_uint32        scw; /**< Size of source name in words. */
- rrpge_uint32        tcw; /**< Size of target name in words. */
+ rrpge_iuint         scw; /**< Size of source name in words. */
+ rrpge_iuint         tcw; /**< Size of target name in words. */
 }rrpge_cbp_move_t;
 
 
@@ -303,8 +303,8 @@ typedef struct{
 **  \brief     Extra parameters for Set palette entry.
 */
 typedef struct{
- rrpge_uint32        id;  /**< Color index (0 - 255). */
- rrpge_uint32        col; /**< Color in 4-4-4 RGB (Red high) encoding. */
+ rrpge_iuint         id;  /**< Color index (0 - 255). */
+ rrpge_iuint         col; /**< Color in 4-4-4 RGB (Red high) encoding. */
 }rrpge_cbp_setpal_t;
 
 
@@ -324,7 +324,7 @@ typedef struct{
 **  \brief     Extra parameters for Change video mode.
 */
 typedef struct{
- rrpge_uint32        mod; /**< Requested video mode (0: 640x400; 4bit, 1: 320x400; 8bit). */
+ rrpge_iuint         mod; /**< Requested video mode (0: 640x400; 4bit, 1: 320x400; 8bit). */
 }rrpge_cbp_mode_t;
 
 
@@ -348,7 +348,7 @@ typedef struct{
 **  \brief     Extra parameters for Set stereoscopic 3D.
 */
 typedef struct{
- rrpge_uint32        mod; /**< Stereoscopic 3D output parameters. */
+ rrpge_iuint         mod; /**< Stereoscopic 3D output parameters. */
 }rrpge_cbp_setst3d_t;
 
 
@@ -365,7 +365,7 @@ typedef struct{
 **  \brief     Extra parameters for Get device properties.
 */
 typedef struct{
- rrpge_uint32        dev; /**< The device to query. */
+ rrpge_iuint         dev; /**< The device to query. */
 }rrpge_cbp_getprops_t;
 
 
@@ -380,7 +380,7 @@ typedef struct{
 **  \brief     Extra parameters for Drop device.
 */
 typedef struct{
- rrpge_uint32        dev; /**< The device to drop. */
+ rrpge_iuint         dev; /**< The device to drop. */
 }rrpge_cbp_dropdev_t;
 
 
@@ -397,8 +397,8 @@ typedef struct{
 **  \brief     Extra parameters for Get digital input description symbols.
 */
 typedef struct{
- rrpge_uint32        dev; /**< The device to query. */
- rrpge_uint32        inp; /**< Input number to query (group * 16 + input id). */
+ rrpge_iuint         dev; /**< The device to query. */
+ rrpge_iuint         inp; /**< Input number to query (group * 16 + input id). */
 }rrpge_cbp_getdidesc_t;
 
 
@@ -414,8 +414,8 @@ typedef struct{
 **  \brief     Extra parameters for Get digital inputs.
 */
 typedef struct{
- rrpge_uint32        dev; /**< The device to query. */
- rrpge_uint32        ing; /**< Input group to query. */
+ rrpge_iuint         dev; /**< The device to query. */
+ rrpge_iuint         ing; /**< Input group to query. */
 }rrpge_cbp_getdi_t;
 
 
@@ -431,8 +431,8 @@ typedef struct{
 **  \brief     Extra parameters for Get analog inputs.
 */
 typedef struct{
- rrpge_uint32        dev; /**< The device to query. */
- rrpge_uint32        inp; /**< Input to query. */
+ rrpge_iuint         dev; /**< The device to query. */
+ rrpge_iuint         inp; /**< Input to query. */
 }rrpge_cbp_getai_t;
 
 
@@ -448,7 +448,7 @@ typedef struct{
 **  \brief     Extra parameters for Pop text FIFO.
 */
 typedef struct{
- rrpge_uint32        dev; /**< The device to query. */
+ rrpge_iuint         dev; /**< The device to query. */
 }rrpge_cbp_popchar_t;
 
 
@@ -471,11 +471,11 @@ typedef struct{
 **  \brief     Extra parameters for Define touch sensitive area.
 */
 typedef struct{
- rrpge_uint32        dev; /**< The device to query. */
- rrpge_uint32          x; /**< Upper left X (0 - 639). */
- rrpge_uint32          y; /**< Upper left Y (0 - 399). */
- rrpge_uint32          w; /**< Width (0 - 639). */
- rrpge_uint32          h; /**< Height (0 - 399). */
+ rrpge_iuint         dev; /**< The device to query. */
+ rrpge_iuint           x; /**< Upper left X (0 - 639). */
+ rrpge_iuint           y; /**< Upper left Y (0 - 399). */
+ rrpge_iuint           w; /**< Width (0 - 639). */
+ rrpge_iuint           h; /**< Height (0 - 399). */
 }rrpge_cbp_checkarea_t;
 
 
@@ -510,9 +510,9 @@ typedef struct{
 typedef struct{
  rrpge_uint16 const*  id; /**< User ID (8 words). */
  rrpge_uint16*       nam; /**< Area to fill with the main part of user name. */
- rrpge_uint32        ncw; /**< Size of user name main part area in words. */
+ rrpge_iuint         ncw; /**< Size of user name main part area in words. */
  rrpge_uint16*       ext; /**< Area to fill with the extended part of user name. */
- rrpge_uint32        ecw; /**< Size of user name extended part area in words. */
+ rrpge_iuint         ecw; /**< Size of user name extended part area in words. */
 }rrpge_cbp_getutf_t;
 
 
@@ -529,7 +529,7 @@ typedef struct{
 **  \brief     Extra parameters for Get user preferred language.
 */
 typedef struct{
- rrpge_uint32        lno; /**< Language number to return (0: most preferred) */
+ rrpge_iuint         lno; /**< Language number to return (0: most preferred) */
 }rrpge_cbp_getlang_t;
 
 
@@ -571,7 +571,7 @@ typedef struct{
 */
 typedef struct{
  rrpge_uint16 const*  id; /**< User ID to target. */
- rrpge_uint32        bcw; /**< Number of words to send. */
+ rrpge_iuint         bcw; /**< Number of words to send. */
  rrpge_uint16 const* buf; /**< The source data to send. */
 }rrpge_cbp_send_t;
 
@@ -590,7 +590,7 @@ typedef struct{
 */
 typedef struct{
  rrpge_uint16 const*  id; /**< User ID to start the list from. */
- rrpge_uint32        bcu; /**< Maximal number of user ID's to receive (8 words each). */
+ rrpge_iuint         bcu; /**< Maximal number of user ID's to receive (8 words each). */
  rrpge_uint16*       buf; /**< The memory to fill in. */
 }rrpge_cbp_listusers_t;
 
@@ -607,7 +607,7 @@ typedef struct{
 **  \param[in]   par   Extra parameters (rrpge_cbp_checkarea_t).
 **  \return            Result of function to be written into C:X3.
 */
-rrpge_uint32 rrpge_cb_checkarea(rrpge_object_t* hnd, const void* par);
+rrpge_iuint rrpge_cb_checkarea(rrpge_object_t* hnd, const void* par);
 
 
 #endif

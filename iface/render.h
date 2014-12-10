@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.12.10
 **
 **
 ** Graphics rendering: produces the graphics output from the lines provided by
@@ -28,7 +28,7 @@
 /*
 ** Line callback service routine.
 */
-void render_line(rrpge_object_t* hnd, rrpge_uint32 ln, rrpge_uint32 const* buf);
+void render_line(rrpge_object_t* hnd, rrpge_iuint ln, rrpge_uint32 const* buf);
 
 /*
 ** Palette callback service routine.

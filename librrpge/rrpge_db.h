@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.12.10
 */
 
 
@@ -30,7 +30,7 @@
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
 **  \param[in]   adr   Address to set as breakpoint (only low 16 bits used).
 */
-void rrpge_setbreak(rrpge_object_t* hnd, rrpge_uint32 adr);
+void rrpge_setbreak(rrpge_object_t* hnd, rrpge_iuint adr);
 
 
 
@@ -41,7 +41,7 @@ void rrpge_setbreak(rrpge_object_t* hnd, rrpge_uint32 adr);
 **  \param[in]   adr   Address to query (only low 16 bits used).
 **  \return            Nonzero if a breakpoint was set at the given address.
 */
-rrpge_uint32 rrpge_isbreak(rrpge_object_t* hnd, rrpge_uint32 adr);
+rrpge_ibool rrpge_isbreak(rrpge_object_t* hnd, rrpge_iuint adr);
 
 
 
@@ -51,7 +51,7 @@ rrpge_uint32 rrpge_isbreak(rrpge_object_t* hnd, rrpge_uint32 adr);
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
 **  \param[in]   adr   Address to remove break from (only low 16 bits used).
 */
-void rrpge_rembreak(rrpge_object_t* hnd, rrpge_uint32 adr);
+void rrpge_rembreak(rrpge_object_t* hnd, rrpge_iuint adr);
 
 
 
@@ -68,7 +68,7 @@ void rrpge_rembreak(rrpge_object_t* hnd, rrpge_uint32 adr);
 **  \param[out]  buf   Up to 16 elements: the parameters of the kernel call.
 **  \return            Number of elements the kernel call has or 0.
 */
-rrpge_uint32 rrpge_getkcallpar(rrpge_object_t* hnd, rrpge_uint16* buf);
+rrpge_iuint rrpge_getkcallpar(rrpge_object_t* hnd, rrpge_uint16* buf);
 
 
 

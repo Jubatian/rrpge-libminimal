@@ -14,7 +14,7 @@
 
 
 /* Byte -> Word conversion - Implementation of RRPGE library function. */
-void rrpge_conv_b2w(rrpge_uint8 const* src, rrpge_uint16* dst, rrpge_uint32 bct)
+void rrpge_conv_b2w(rrpge_uint8 const* src, rrpge_uint16* dst, rrpge_iuint bct)
 {
  if ((bct & 1U) != 0U){
   bct -= 1U;
@@ -30,7 +30,7 @@ void rrpge_conv_b2w(rrpge_uint8 const* src, rrpge_uint16* dst, rrpge_uint32 bct)
 
 
 /* Word -> Byte conversion - Implementation of RRPGE library function. */
-void rrpge_conv_w2b(rrpge_uint16 const* src, rrpge_uint8* dst, rrpge_uint32 bct)
+void rrpge_conv_w2b(rrpge_uint16 const* src, rrpge_uint8* dst, rrpge_iuint bct)
 {
  if ((bct & 1U) != 0U){
   bct -= 1U;

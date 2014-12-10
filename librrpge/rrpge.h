@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2014.12.10
 */
 
 
@@ -47,7 +47,7 @@
 **  \param[out]  hnd   Emulation instance to initialize.
 **  \return            0 on success, failure code otherwise.
 */
-rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb, rrpge_object_t* hnd);
+rrpge_iuint rrpge_init(rrpge_cbpack_t const* cb, rrpge_object_t* hnd);
 
 
 
@@ -61,7 +61,7 @@ rrpge_uint32 rrpge_init(rrpge_cbpack_t const* cb, rrpge_object_t* hnd);
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
 **  \return            0 on success, failure code otherwise.
 */
-rrpge_uint32 rrpge_init_run(rrpge_object_t* hnd);
+rrpge_iuint rrpge_init_run(rrpge_object_t* hnd);
 
 
 
@@ -118,7 +118,7 @@ rrpge_state_t* rrpge_detachstate(rrpge_object_t* hnd);
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
 **  \return            0 on success, failure code otherwise.
 */
-rrpge_uint32 rrpge_attachstate(rrpge_object_t* hnd);
+rrpge_iuint rrpge_attachstate(rrpge_object_t* hnd);
 
 
 
@@ -135,7 +135,7 @@ rrpge_uint32 rrpge_attachstate(rrpge_object_t* hnd);
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
 **  \return            0 on success, failure code otherwise.
 */
-rrpge_uint32 rrpge_attachstatecomp(rrpge_object_t* hnd);
+rrpge_iuint rrpge_attachstatecomp(rrpge_object_t* hnd);
 
 
 
@@ -154,7 +154,7 @@ rrpge_uint32 rrpge_attachstatecomp(rrpge_object_t* hnd);
 **  \param[in]   rmod  Running mode. See \ref rrpge_run_modes.
 **  \return            Number of cycles emulated.
 */
-rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod);
+rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod);
 
 
 
@@ -173,7 +173,7 @@ rrpge_uint32 rrpge_run(rrpge_object_t* hnd, rrpge_uint32 rmod);
 **  \param[in]   tsh   Task handle acquired from the callback (0-15).
 **  \param[in]   res   Result of task (low 15 bits used, bit 15 always set).
 */
-void rrpge_taskend(rrpge_object_t* hnd, rrpge_uint32 tsh, rrpge_uint32 res);
+void rrpge_taskend(rrpge_object_t* hnd, rrpge_iuint tsh, rrpge_iuint res);
 
 
 
@@ -192,7 +192,7 @@ void rrpge_taskend(rrpge_object_t* hnd, rrpge_uint32 tsh, rrpge_uint32 res);
 **  \param[in]   len   Size of packet in word units.
 */
 void rrpge_pushpacket(rrpge_object_t* hnd, rrpge_uint16 const* id,
-                      rrpge_uint16 const* buf, rrpge_uint32 len);
+                      rrpge_uint16 const* buf, rrpge_iuint len);
 
 
 
@@ -208,7 +208,7 @@ void rrpge_pushpacket(rrpge_object_t* hnd, rrpge_uint16 const* id,
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
 **  \return            Halt causes (see defines at \ref halt_causes).
 */
-rrpge_uint32 rrpge_gethaltcause(rrpge_object_t* hnd);
+rrpge_iuint rrpge_gethaltcause(rrpge_object_t* hnd);
 
 
 
@@ -235,7 +235,7 @@ rrpge_uint32 rrpge_gethaltcause(rrpge_object_t* hnd);
 **  \param[out]  rbuf  8bit audio buffer to receive right sample data.
 **  \return            Number of audio events pending.
 */
-rrpge_uint32 rrpge_getaudio(rrpge_object_t* hnd, rrpge_uint8* lbuf, rrpge_uint8* rbuf);
+rrpge_iuint rrpge_getaudio(rrpge_object_t* hnd, rrpge_uint8* lbuf, rrpge_uint8* rbuf);
 
 
 
@@ -254,7 +254,7 @@ rrpge_uint32 rrpge_getaudio(rrpge_object_t* hnd, rrpge_uint8* lbuf, rrpge_uint8*
 **  \param[in]   hnd   Emulation instance populated by rrpge_init().
 **  \param[in]   tg    0: Rendering OFF, nonzero: Rendering ON.
 */
-void rrpge_enarender(rrpge_object_t* hnd, rrpge_uint32 tg);
+void rrpge_enarender(rrpge_object_t* hnd, rrpge_ibool tg);
 
 
 
