@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.11.02
+**  \date      2014.12.10
 **
 **
 **  Contains the Graphics & Mixer FIFO's logic. The FIFOs operate detached
@@ -34,7 +34,7 @@ RRPGE_M_FASTCALL static void rrpge_m_fifoacc(auint adr, auint val)
 {
  if ((adr & 0x100U) == 0U){
   rrpge_m_edat->st.stat[RRPGE_STA_ACC   + (adr & 0x1FU)] = (uint16)(val);
-  if ((adr & 0x1FU) == 0x0FU){ /* Trigger */
+  if ((adr & 0x1FU) == 0x1FU){ /* Trigger */
    rrpge_m_info.cyf[1] += rrpge_m_grop_accel();
    rrpge_m_edat->st.stat[RRPGE_STA_UPA_GF + 1U] |= 1U; /* FIFO / Peripheral working */
   }
