@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2014.12.28
 */
 
 
@@ -56,9 +56,10 @@ static const rrpge_cbd_tsk_t main_cbtsk[1] = {
  { RRPGE_CB_LOADBIN,   &main_loadbin       }
 };
 /* Functions */
-static const rrpge_cbd_fun_t main_cbfun[5] = {
+static const rrpge_cbd_fun_t main_cbfun[6] = {
  { RRPGE_CB_GETPROPS,  &inputcom_getprops  },
  { RRPGE_CB_GETDIDESC, &inputcom_getdidesc },
+ { RRPGE_CB_GETAIDESC, &inputcom_getaidesc },
  { RRPGE_CB_GETDI,     &inputcom_getdi     },
  { RRPGE_CB_GETAI,     &inputcom_getai     },
  { RRPGE_CB_POPCHAR,   &inputcom_popchar   }
@@ -71,7 +72,7 @@ static const rrpge_cbpack_t main_cbpack={
  &main_cbtsk[0],
  3,                           /* Subroutine callbacks */
  &main_cbsub[0],
- 5,                           /* Function callbacks */
+ 6,                           /* Function callbacks */
  &main_cbfun[0]
 };
 

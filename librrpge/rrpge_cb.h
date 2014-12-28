@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2014.12.28
 */
 
 
@@ -185,7 +185,7 @@ typedef struct{
 
 
 /** Maximal callback ID plus one (may be used to allocate related storage) */
-#define RRPGE_CB_IDRANGE       22U
+#define RRPGE_CB_IDRANGE       24U
 
 
 
@@ -386,20 +386,58 @@ typedef struct{
 
 
 /**
-**  \brief     Function: Get digital input description symbols.
+**  \brief     Function: Get digital input descriptor.
 **
-**  Returns a descriptive symbol for the given digital input as an UTF32
-**  character code or a special code according to the specification. May
+**  Returns a description for the given digital input as an UTF-8 string. May
 **  return 0 indicating the input does not exist.
 */
 #define RRPGE_CB_GETDIDESC     10U
 /**
-**  \brief     Extra parameters for Get digital input description symbols.
+**  \brief     Extra parameters for Get digital input descriptor.
 */
 typedef struct{
  rrpge_iuint         dev; /**< The device to query. */
  rrpge_iuint         inp; /**< Input number to query (group * 16 + input id). */
+ rrpge_uint16*       nam; /**< The name of the input (Big Endian byte order). */
+ rrpge_iuint         ncw; /**< Size of name in words. */
 }rrpge_cbp_getdidesc_t;
+
+
+
+/**
+**  \brief     Function: Get analog input descriptor.
+**
+**  Returns a description for the given analog input as an UTF-8 string. May
+**  return 0 indicating the input does not exist.
+*/
+#define RRPGE_CB_GETAIDESC     11U
+/**
+**  \brief     Extra parameters for Get analog input descriptor.
+*/
+typedef struct{
+ rrpge_iuint         dev; /**< The device to query. */
+ rrpge_iuint         inp; /**< Input number to query. */
+ rrpge_uint16*       nam; /**< The name of the input (Big Endian byte order). */
+ rrpge_iuint         ncw; /**< Size of name in words. */
+}rrpge_cbp_getaidesc_t;
+
+
+
+/**
+**  \brief     Function: Get device name.
+**
+**  Returns a description for the given device as an UTF-8 string. May return
+**  0 indicating the description (or the device) does not exist.
+*/
+#define RRPGE_CB_GETNAME       12U
+/**
+**  \brief     Extra parameters for Get device name.
+*/
+typedef struct{
+ rrpge_iuint         dev; /**< The device to query. */
+ rrpge_uint16*       nam; /**< The name of the input (Big Endian byte order). */
+ rrpge_iuint         ncw; /**< Size of name in words. */
+}rrpge_cbp_getname_t;
 
 
 
@@ -409,7 +447,7 @@ typedef struct{
 **  Returns digital input states for an input group of a given device (16
 **  digital inputs per group).
 */
-#define RRPGE_CB_GETDI         11U
+#define RRPGE_CB_GETDI         13U
 /**
 **  \brief     Extra parameters for Get digital inputs.
 */
@@ -426,7 +464,7 @@ typedef struct{
 **  Returns analog input state for an analog input of a given device. The
 **  return is 16 bits 2's complement.
 */
-#define RRPGE_CB_GETAI         12U
+#define RRPGE_CB_GETAI         14U
 /**
 **  \brief     Extra parameters for Get analog inputs.
 */
@@ -443,7 +481,7 @@ typedef struct{
 **  Pops the last UTF32 character or control code off the text FIFO of a text
 **  input device.
 */
-#define RRPGE_CB_POPCHAR       13U
+#define RRPGE_CB_POPCHAR       15U
 /**
 **  \brief     Extra parameters for Pop text FIFO.
 */
@@ -466,7 +504,7 @@ typedef struct{
 **  using the appropriate get digital inputs and get analog input calls. It
 **  only needs to be implemented if multi-touch support is desired.
 */
-#define RRPGE_CB_CHECKAREA     14U
+#define RRPGE_CB_CHECKAREA     16U
 /**
 **  \brief     Extra parameters for Define touch sensitive area.
 */
@@ -487,7 +525,7 @@ typedef struct{
 **  area is provided to fill in with these User IDs. The area is zeroed out
 **  before calling the callback.
 */
-#define RRPGE_CB_GETLOCAL      15U
+#define RRPGE_CB_GETLOCAL      17U
 /**
 **  \brief     Extra parameters for Get local users.
 */
@@ -503,7 +541,7 @@ typedef struct{
 **  Servicing this call may require network queries when the host is connected
 **  to request user names.
 */
-#define RRPGE_CB_GETUTF        16U
+#define RRPGE_CB_GETUTF        18U
 /**
 **  \brief     Extra parameters for Read UTF-8 representation of user.
 */
@@ -524,7 +562,7 @@ typedef struct{
 **  characters may occur, high first, containing a language code. Zero
 **  indicates no language.
 */
-#define RRPGE_CB_GETLANG       17U
+#define RRPGE_CB_GETLANG       19U
 /**
 **  \brief     Extra parameters for Get user preferred language.
 */
@@ -542,7 +580,7 @@ typedef struct{
 **  two the same (return zero) to indicate no preferred colors are set by the
 **  user.
 */
-#define RRPGE_CB_GETCOLORS     18U
+#define RRPGE_CB_GETCOLORS     20U
 
 
 
@@ -565,7 +603,7 @@ typedef struct{
 **  it must prefer sending to the network user (so it may be possible to
 **  connect two RRPGE systems with no user name set, and play).
 */
-#define RRPGE_CB_SEND          19U
+#define RRPGE_CB_SEND          22U
 /**
 **  \brief     Extra parameters for Send out network packet.
 */
@@ -584,7 +622,7 @@ typedef struct{
 **  with the passed ID. It must only return users who are running the same
 **  app. and report they are available for connection.
 */
-#define RRPGE_CB_LISTUSERS     20U
+#define RRPGE_CB_LISTUSERS     23U
 /**
 **  \brief     Extra parameters for List accessible network users.
 */

@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2014.12.28
 */
 
 
@@ -60,6 +60,8 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
  rrpge_cbp_getprops_t  cbp_getprops;
  rrpge_cbp_dropdev_t   cbp_dropdev;
  rrpge_cbp_getdidesc_t cbp_getdidesc;
+ rrpge_cbp_getaidesc_t cbp_getaidesc;
+ rrpge_cbp_getname_t   cbp_getname;
  rrpge_cbp_getdi_t     cbp_getdi;
  rrpge_cbp_getai_t     cbp_getai;
  rrpge_cbp_popchar_t   cbp_popchar;
@@ -204,22 +206,74 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0412U:   /* Get digital input description symbols */
+  case 0x0412U:   /* Get digital input descriptor */
 
-   if (n != 4U){  /* Needs 1+3 parameters */
+   if (n != 6U){  /* Needs 1+5 parameters */
+    goto fault_inv;
+   }
+
+   if (rrpge_m_task_chkdata(par[4] & 0xFFFFU, par[5] & 0xFFFFU)){ /* Not in Data area */
     goto fault_inv;
    }
 
    cbp_getdidesc.dev = par[1] & 0xFU; /* Device to query */
    if (stat[RRPGE_STA_VARS + 0x30U + cbp_getdidesc.dev] != 0U){
     cbp_getdidesc.inp = ((par[2] & 0xFFFFU) << 4) + (par[3] & 0xFU); /* Input to query */
+    cbp_getdidesc.ncw = par[5] & 0xFFFFU;
+    cbp_getdidesc.nam = &(rrpge_m_edat->st.dram[par[4] & 0xFFFFU]);
     rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETDIDESC](rrpge_m_edat, &cbp_getdidesc);
    }else{
     rrpge_m_info.xr[7] = 0U;
    }
-   rrpge_m_info.xr[2] = rrpge_m_info.xr[7] >> 16;
 
-   r = 800U;
+   r = 2400U;
+   goto ret_callback;
+
+
+  case 0x0413U:   /* Get analog input descriptor */
+
+   if (n != 5U){  /* Needs 1+4 parameters */
+    goto fault_inv;
+   }
+
+   if (rrpge_m_task_chkdata(par[3] & 0xFFFFU, par[4] & 0xFFFFU)){ /* Not in Data area */
+    goto fault_inv;
+   }
+
+   cbp_getaidesc.dev = par[1] & 0xFU; /* Device to query */
+   if (stat[RRPGE_STA_VARS + 0x30U + cbp_getaidesc.dev] != 0U){
+    cbp_getaidesc.inp = par[2] & 0xFFFFU; /* Input to query */
+    cbp_getaidesc.ncw = par[4] & 0xFFFFU;
+    cbp_getaidesc.nam = &(rrpge_m_edat->st.dram[par[3] & 0xFFFFU]);
+    rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETAIDESC](rrpge_m_edat, &cbp_getaidesc);
+   }else{
+    rrpge_m_info.xr[7] = 0U;
+   }
+
+   r = 2400U;
+   goto ret_callback;
+
+
+  case 0x0414U:   /* Get device name */
+
+   if (n != 4U){  /* Needs 1+3 parameters */
+    goto fault_inv;
+   }
+
+   if (rrpge_m_task_chkdata(par[2] & 0xFFFFU, par[3] & 0xFFFFU)){ /* Not in Data area */
+    goto fault_inv;
+   }
+
+   cbp_getname.dev = par[1] & 0xFU; /* Device to query */
+   if (stat[RRPGE_STA_VARS + 0x30U + cbp_getname.dev] != 0U){
+    cbp_getname.ncw = par[4] & 0xFFFFU;
+    cbp_getname.nam = &(rrpge_m_edat->st.dram[par[3] & 0xFFFFU]);
+    rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETNAME](rrpge_m_edat, &cbp_getname);
+   }else{
+    rrpge_m_info.xr[7] = 0U;
+   }
+
+   r = 2400U;
    goto ret_callback;
 
 

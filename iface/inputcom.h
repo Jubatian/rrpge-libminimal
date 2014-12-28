@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2014.12.28
 **
 **
 **  Common handler for input devices interfacing the RRPGE library. It
@@ -118,9 +118,14 @@ rrpge_iuint inputcom_getprops(rrpge_object_t* hnd, const void* par);
 void        inputcom_dropdev(rrpge_object_t* hnd, const void* par);
 
 /*
-** Get digital input description symbols callback service routine.
+** Get digital input descriptor callback service routine.
 */
 rrpge_iuint inputcom_getdidesc(rrpge_object_t* hnd, const void* par);
+
+/*
+** Get analog input descriptor callback service routine.
+*/
+rrpge_iuint inputcom_getaidesc(rrpge_object_t* hnd, const void* par);
 
 /*
 ** Get digital inputs callback service routine.

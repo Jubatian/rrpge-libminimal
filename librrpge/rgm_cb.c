@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2014.12.28
 */
 
 
@@ -89,8 +89,20 @@ static void rrpge_m_cb_dropdev(rrpge_object_t* hnd, const void* par)
 {
 }
 
-/* Function: Get digital input description symbols */
+/* Function: Get digital input descriptor */
 static rrpge_iuint rrpge_m_cb_getdidesc(rrpge_object_t* hnd, const void* par)
+{
+ return 0;
+}
+
+/* Function: Get analog input descriptor */
+static rrpge_iuint rrpge_m_cb_getaidesc(rrpge_object_t* hnd, const void* par)
+{
+ return 0;
+}
+
+/* Function: Get device name */
+static rrpge_iuint rrpge_m_cb_getname(rrpge_object_t* hnd, const void* par)
 {
  return 0;
 }
@@ -198,28 +210,30 @@ rrpge_iuint rrpge_cb_checkarea(rrpge_object_t* hnd, const void* par)
 /* Check ID for validity. Returns nonzero if valid, 0 otherwise. */
 static auint rrpge_m_cbid_isvalid(auint id)
 {
- if (id == RRPGE_CB_LOADBIN)  { return 1; }
- if (id == RRPGE_CB_LOAD)     { return 1; }
- if (id == RRPGE_CB_SAVE)     { return 1; }
- if (id == RRPGE_CB_NEXT)     { return 1; }
- if (id == RRPGE_CB_MOVE)     { return 1; }
- if (id == RRPGE_CB_GETUTF)   { return 1; }
- if (id == RRPGE_CB_SEND)     { return 1; }
- if (id == RRPGE_CB_LISTUSERS){ return 1; }
- if (id == RRPGE_CB_SETPAL)   { return 1; }
- if (id == RRPGE_CB_MODE)     { return 1; }
- if (id == RRPGE_CB_SETST3D)  { return 1; }
- if (id == RRPGE_CB_DROPDEV)  { return 1; }
- if (id == RRPGE_CB_CHECKAREA){ return 1; }
- if (id == RRPGE_CB_GETLOCAL) { return 1; }
- if (id == RRPGE_CB_GETPROPS) { return 1; }
- if (id == RRPGE_CB_GETDIDESC){ return 1; }
- if (id == RRPGE_CB_GETDI)    { return 1; }
- if (id == RRPGE_CB_GETAI)    { return 1; }
- if (id == RRPGE_CB_POPCHAR)  { return 1; }
- if (id == RRPGE_CB_GETLANG)  { return 1; }
- if (id == RRPGE_CB_GETCOLORS){ return 1; }
- if (id == RRPGE_CB_GETST3D)  { return 1; }
+ if ( (id == RRPGE_CB_LOADBIN)   ||
+      (id == RRPGE_CB_LOAD)      ||
+      (id == RRPGE_CB_SAVE)      ||
+      (id == RRPGE_CB_NEXT)      ||
+      (id == RRPGE_CB_MOVE)      ||
+      (id == RRPGE_CB_GETUTF)    ||
+      (id == RRPGE_CB_SEND)      ||
+      (id == RRPGE_CB_LISTUSERS) ||
+      (id == RRPGE_CB_SETPAL)    ||
+      (id == RRPGE_CB_MODE)      ||
+      (id == RRPGE_CB_SETST3D)   ||
+      (id == RRPGE_CB_DROPDEV)   ||
+      (id == RRPGE_CB_CHECKAREA) ||
+      (id == RRPGE_CB_GETLOCAL)  ||
+      (id == RRPGE_CB_GETPROPS)  ||
+      (id == RRPGE_CB_GETDIDESC) ||
+      (id == RRPGE_CB_GETAIDESC) ||
+      (id == RRPGE_CB_GETNAME)   ||
+      (id == RRPGE_CB_GETDI)     ||
+      (id == RRPGE_CB_GETAI)     ||
+      (id == RRPGE_CB_POPCHAR)   ||
+      (id == RRPGE_CB_GETLANG)   ||
+      (id == RRPGE_CB_GETCOLORS) ||
+      (id == RRPGE_CB_GETST3D)   ){ return 1; }
  return 0;
 }
 
@@ -249,6 +263,8 @@ void rrpge_m_cb_process(rrpge_object_t* obj, rrpge_cbpack_t const* cbp)
  obj->cb_sub[RRPGE_CB_GETLOCAL]  = &rrpge_m_cb_getlocal;
  obj->cb_fun[RRPGE_CB_GETPROPS]  = &rrpge_m_cb_getprops;
  obj->cb_fun[RRPGE_CB_GETDIDESC] = &rrpge_m_cb_getdidesc;
+ obj->cb_fun[RRPGE_CB_GETAIDESC] = &rrpge_m_cb_getaidesc;
+ obj->cb_fun[RRPGE_CB_GETNAME]   = &rrpge_m_cb_getname;
  obj->cb_fun[RRPGE_CB_GETDI]     = &rrpge_m_cb_getdi;
  obj->cb_fun[RRPGE_CB_GETAI]     = &rrpge_m_cb_getai;
  obj->cb_fun[RRPGE_CB_POPCHAR]   = &rrpge_m_cb_popchar;
