@@ -33,6 +33,15 @@ The program is largely untested though, and contains several locations of
 prototype patches.
 
 
+Related projects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- RRPGE Specification: https://www.github.com/Jubatian/rrpge-spec
+- RRPGE Assembler: https://www.github.com/Jubatian/rrpge-asm
+- RRPGE User Library: https://www.github.com/Jubatian/rrpge-userlib
+- Example programs: https://www.github.com/Jubatian/rrpge-examples
+
+
 Temporary license notes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
