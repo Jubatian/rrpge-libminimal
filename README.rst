@@ -36,6 +36,7 @@ prototype patches.
 Related projects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+- RRPGE home: http://www.rrpge.org
 - RRPGE Specification: https://www.github.com/Jubatian/rrpge-spec
 - RRPGE Assembler: https://www.github.com/Jubatian/rrpge-asm
 - RRPGE User Library: https://www.github.com/Jubatian/rrpge-userlib
