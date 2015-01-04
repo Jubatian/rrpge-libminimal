@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.29
+**  \date      2014.01.04
 **
 **
 **  The User Library included is taken from the RRPGE User Library project.
@@ -20,13 +20,13 @@
 
 
 /* Size of the RRPGE User Library */
-#define RRPGE_M_ULIB_SIZE (4806U / 2U)
+#define RRPGE_M_ULIB_SIZE (5268U / 2U)
 
 /* The RRPGE User Library */
 extern const uint16 rrpge_m_ulib[RRPGE_M_ULIB_SIZE];
 
 /* Count of elements in the 0xFA00 - 0xFAFF nonzero data initializers */
-#define RRPGE_M_ULIB_ICNT 11U
+#define RRPGE_M_ULIB_ICNT 27U
 
 /* 0xFA00 - 0xFAFF initializers. First byte is offset low, then high & low of data */
 extern const uint8  rrpge_m_ulib_idat[RRPGE_M_ULIB_ICNT * 3U];
