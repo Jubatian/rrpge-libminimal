@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.01.10
+**  \date      2014.01.20
 **
 **
 **  The User Library included is taken from the RRPGE User Library project.
