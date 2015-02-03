@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2015.02.03
 */
 
 
@@ -166,18 +166,19 @@ auint rrpge_m_grop_accel(void)
   reinm = wrmask;                     /* In blending reindex mode the destination passes the write mask */
  }
 
+ /* Calculate source & destination splits based on partition settings */
+
+ srpart = (ssplit >> 12);
+ ssplit = (ssplit >>  8) & 0xFU;
+ dspart = (dswhol >> 28);
+ srpart = (((auint)(2U)) << srpart) - 1U;
+ ssplit = (((auint)(2U)) << ssplit) - 1U;
+ dspart = (((auint)(2U)) << dspart) - 1U;
+
  /* Mask source & destination to video RAM size (power of 2 multiple of 64K) */
 
  dswhol &= PRAMS - 1U;
  sxwhol &= PRAMS - 1U;
-
- /* Calculate source & destination splits based on partition settings */
-
- srpart = ssplit;
- dspart = ssplit;
- srpart = (((auint)(2U)) << ((srpart >> 12) & 0xFU)) - 1U;
- ssplit = (((auint)(2U)) << ((ssplit >>  8) & 0xFU)) - 1U;
- dspart = (((auint)(2U)) << ((dspart >>  4) & 0xFU)) - 1U;
 
  /* Prepare OR mask */
 
