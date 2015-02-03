@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.01.03
+**  \date      2015.02.03
 */
 
 
@@ -777,7 +777,7 @@ void rrpge_m_ires_initcode(rrpge_object_t* obj)
  /* Fill in User Library */
 
  for (i = 0U; i < RRPGE_M_ULIB_SIZE; i++){
-  c[0xF000U + i] = rrpge_m_ulib[i];
+  c[0xE000U + i] = rrpge_m_ulib[i];
  }
 }
 
