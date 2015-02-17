@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2014.02.17
 */
 
 
@@ -809,7 +809,7 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_jfr_88(void)
   rrpge_m_stk_push(rrpge_m_info.pc);
   rrpge_m_stk_push(rrpge_m_info.bp);
   t1 = rrpge_m_info.bp + rrpge_m_info.sp; /* New base pointer */
-  mx = 16;                                /* Parameter limit */
+  mx = 16U;                               /* Parameter limit */
   do{
    if ((op & 0x0040U) != 0U){ break; }    /* There are no more parameters */
    op               = rrpge_m_edat->crom[rrpge_m_info.pc & 0xFFFFU];
@@ -820,6 +820,7 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_jfr_88(void)
    mx --;
   }while(mx);
   rrpge_m_info.bp = t1;
+  rrpge_m_info.sp = 16U - mx;
   rrpge_m_info.pc = t0;
   cy += 2U + 7U;
 
@@ -849,7 +850,7 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_jfr_88(void)
 
   }else{ /* Ordinary return */
 
-   rrpge_m_info.sp = 0;
+   rrpge_m_info.sp = 0U;
    t0 = rrpge_m_stk_pop();   /* Previous bp */
    rrpge_m_info.sp = rrpge_m_info.bp - t0;
    rrpge_m_info.bp = t0;     /* Stack again points to prev. bp */
