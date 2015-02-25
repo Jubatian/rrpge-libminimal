@@ -2,11 +2,11 @@
 **  \file
 **  \brief     RRPGE User Library binary
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.02.05
+**  \date      2015.02.25
 **
 **
 **  The User Library included is taken from the RRPGE User Library project.
@@ -20,7 +20,7 @@
 
 
 /* Size of the RRPGE User Library */
-#define RRPGE_M_ULIB_SIZE (6820U / 2U)
+#define RRPGE_M_ULIB_SIZE (6816U / 2U)
 
 /* The RRPGE User Library */
 extern const uint16 rrpge_m_ulib[RRPGE_M_ULIB_SIZE];
