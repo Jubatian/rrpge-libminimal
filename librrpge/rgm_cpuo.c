@@ -477,13 +477,18 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_jfr_44(void)
 
   }else{ /* Ordinary return */
 
+   rrpge_m_info.xr[0x7U] = rrpge_m_addr_read_table[op & 0x3FU](0U); /* Load X3 */
+   cy = rrpge_m_info.ocy + 9U;
+   if ((op & 0x0040U) != 0U){
+    rrpge_m_info.xr[REG_C] = 0U;          /* Also clear carry */
+    cy ++;
+   }
    rrpge_m_info.sp = 0U;
    t0 = rrpge_m_stk_pop();   /* Previous bp */
    rrpge_m_info.sp = rrpge_m_info.bp - t0;
    rrpge_m_info.bp = t0;     /* Stack again points to prev. bp */
    rrpge_m_info.sp --;       /* Now to prev. pc */
    rrpge_m_info.pc = rrpge_m_stk_pop();
-   cy = 6U;
 
   }
  }
@@ -857,67 +862,95 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_slcc_7e(void)
 }
 
 
-/* 1000 000r rraa aaaa: MOV adr, special (SP, XM or XH) */
+/* 1000 000r rraa aaaa: MOV adr, special (SP, XM or XH) & SP ops */
 RRPGE_M_FASTCALL static auint rrpge_m_op_mov_80(void)
 {
  auint op = rrpge_m_info.opc;
+ auint t0;
  if ((op & 0x0100U) == 0U){
   (void)(rrpge_m_addr_read_table[op & 0x3FU](1U));
-  if ((op & 0x0080U) != 0U){ /* SP */
+  if ((op & 0x0080U) != 0U){  /* SP */
    rrpge_m_info.awf(rrpge_m_info.sp);
-  }else{                     /* XM or XH in order by bit6 of opcode */
+  }else{                      /* XM or XH in order by bit6 of opcode */
    rrpge_m_info.awf(rrpge_m_info.xmh[((op >> 6) & 0x1U)]);
   }
   rrpge_m_info.pc += rrpge_m_info.oaw;
   return rrpge_m_info.ocy + 3U;
  }else{
-  if ((op & 0x0080U) != 0U){ /* MOV imx, SP (NOP) */
+  if ((op & 0x0080U) != 0U){  /* MOV imx, SP (NOP) */
    rrpge_m_info.pc += 1U;
    return 3U;
-  }else{                     /* NUL (for now) */
-   rrpge_m_info.pc += 1U;
-   return 3U;
+  }else{
+   t0 = rrpge_m_addr_read_table[op & 0x3FU](0U);
+   rrpge_m_info.pc += rrpge_m_info.oaw;
+   if ((op & 0x0040U) != 0U){ /* XEQ adr, SP */
+    if (t0 == (rrpge_m_info.sp & 0xFFFFU)){
+     rrpge_m_info.pc++;
+     rrpge_m_info.ocy++;
+    }
+   }else{                     /* XUG adr, SP */
+    if (t0 >  (rrpge_m_info.sp & 0xFFFFU)){
+     rrpge_m_info.pc++;
+     rrpge_m_info.ocy++;
+    }
+   }
+   return rrpge_m_info.ocy + 4U;
   }
  }
 }
-/* 1000 001r rraa aaaa: MOV special, adr (SP, XM or XH) */
+/* 1000 001r rraa aaaa: MOV special, adr (SP, XM or XH) & SP ops */
 RRPGE_M_FASTCALL static auint rrpge_m_op_mov_82(void)
 {
  auint op = rrpge_m_info.opc;
  auint t0;
  if ((op & 0x0100U) == 0U){
   t0 = rrpge_m_addr_read_table[op & 0x3FU](0U);
-  if ((op & 0x0080U) != 0U){ /* SP */
+  if ((op & 0x0080U) != 0U){  /* SP */
    rrpge_m_info.sp = t0;
-  }else{                     /* XM or XH in order by bit6 of opcode */
+  }else{                      /* XM or XH in order by bit6 of opcode */
    rrpge_m_info.xmh[((op >> 6) & 0x1U)] = t0;
   }
   rrpge_m_info.pc += rrpge_m_info.oaw;
   return rrpge_m_info.ocy + 3U;
  }else{
-  if ((op & 0x0080U) != 0U){ /* MOV SP, imx */
+  if ((op & 0x0080U) != 0U){  /* MOV SP, imx */
    rrpge_m_info.sp = op & 0x007FU;
    rrpge_m_info.pc += 1U;
    return 3U;
-  }else{                     /* NUL (for now) */
-   rrpge_m_info.pc += 1U;
-   return 3U;
+  }else{
+   t0 = rrpge_m_addr_read_table[op & 0x3FU](0U);
+   rrpge_m_info.pc += rrpge_m_info.oaw;
+   if ((op & 0x0040U) != 0U){ /* XNE SP, adr */
+    if (t0 != (rrpge_m_info.sp & 0xFFFFU)){
+     rrpge_m_info.pc++;
+     rrpge_m_info.ocy++;
+    }
+   }else{                     /* XUG SP, adr */
+    if (t0 <  (rrpge_m_info.sp & 0xFFFFU)){
+     rrpge_m_info.pc++;
+     rrpge_m_info.ocy++;
+    }
+   }
+   return rrpge_m_info.ocy + 4U;
   }
  }
 }
 
 
-/* 1000 010f --aa aaaa: JMR, JMA (absolute / relative jumps) */
+/* 1000 010f rraa aaaa: JMR, JMA (absolute / relative jumps) */
 RRPGE_M_FASTCALL static auint rrpge_m_op_jmp_84(void)
 {
  auint op = rrpge_m_info.opc;
  auint t0 = rrpge_m_addr_read_table[op & 0x3FU](0U);
+ if ((op & 0x00C0U) != 0U){ /* B, C or D should receive PC after jump */
+  rrpge_m_info.xr[(op >> 6) & 0x3U] = rrpge_m_info.pc + rrpge_m_info.oaw;
+ }
  if ((op & 0x0100U) == 0U){ /* JMR */
   rrpge_m_info.pc += t0;
  }else{                     /* JMA */
   rrpge_m_info.pc = t0;
  }
- return rrpge_m_info.ocy + 5U;
+ return rrpge_m_info.ocy + 6U;
 }
 
 /* 0100 011r rraa aaaa: MOV rx, imx */
@@ -1023,6 +1056,32 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_xbs_ac(void)
  auint t0 = rrpge_m_addr_read_table[op & 0x3FU](0U);
  rrpge_m_info.pc += rrpge_m_info.oaw;
  if ( (t0 & ((auint)(1U) << ((op >> 6) & 0xFU))) != 0U){
+  rrpge_m_info.pc++;
+  rrpge_m_info.ocy++;
+ }
+ return rrpge_m_info.ocy + 4U;
+}
+
+
+/* 1011 000r rraa aaaa: XST adr, rx */
+RRPGE_M_FASTCALL static auint rrpge_m_op_xst_b0(void)
+{
+ auint op = rrpge_m_info.opc;
+ auint t0 = rrpge_m_addr_read_table[op & 0x3FU](0U);
+ rrpge_m_info.pc += rrpge_m_info.oaw;
+ if ((t0 & (rrpge_m_info.xr[((op >> 6) & 0x7U)] & 0xFFFFU)) != 0U){
+  rrpge_m_info.pc++;
+  rrpge_m_info.ocy++;
+ }
+ return rrpge_m_info.ocy + 4U;
+}
+/* 1011 001r rraa aaaa: XNS rx, adr */
+RRPGE_M_FASTCALL static auint rrpge_m_op_xns_b2(void)
+{
+ auint op = rrpge_m_info.opc;
+ auint t0 = rrpge_m_addr_read_table[op & 0x3FU](0U);
+ rrpge_m_info.pc += rrpge_m_info.oaw;
+ if ((t0 & (rrpge_m_info.xr[((op >> 6) & 0x7U)] & 0xFFFFU)) == 0U){
   rrpge_m_info.pc++;
   rrpge_m_info.ocy++;
  }
@@ -1147,7 +1206,7 @@ rrpge_m_opf_t* const rrpge_m_optable[128] = {
  &rrpge_m_op_sv,      &rrpge_m_op_sv,      &rrpge_m_op_sv,      &rrpge_m_op_sv,
  &rrpge_m_op_btc_a0,  &rrpge_m_op_btc_a0,  &rrpge_m_op_xbc_a4,  &rrpge_m_op_xbc_a4,
  &rrpge_m_op_bts_a8,  &rrpge_m_op_bts_a8,  &rrpge_m_op_xbs_ac,  &rrpge_m_op_xbs_ac,
- &rrpge_m_op_nop,     &rrpge_m_op_nop,     &rrpge_m_op_xsg_b4,  &rrpge_m_op_xsg_b6,
+ &rrpge_m_op_xst_b0,  &rrpge_m_op_xns_b2,  &rrpge_m_op_xsg_b4,  &rrpge_m_op_xsg_b6,
  &rrpge_m_op_xeq_b8,  &rrpge_m_op_xne_ba,  &rrpge_m_op_xug_bc,  &rrpge_m_op_xug_be,
  &rrpge_m_op_nop,     &rrpge_m_op_nop,     &rrpge_m_op_nop,     &rrpge_m_op_nop,
  &rrpge_m_op_nop,     &rrpge_m_op_nop,     &rrpge_m_op_nop,     &rrpge_m_op_nop,
