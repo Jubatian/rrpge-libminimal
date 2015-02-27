@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.02.26
+**  \date      2015.02.27
 */
 
 
@@ -54,6 +54,18 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_xch_04(void)
  rrpge_m_info.xr[ra] = t0;
  rrpge_m_info.pc += rrpge_m_info.oaw;
  return rrpge_m_info.ocy + 4U;
+}
+
+/* 0000 011r rraa aaaa: MOV rx, imx */
+RRPGE_M_FASTCALL static auint rrpge_m_op_mov_06(void)
+{
+ auint op = rrpge_m_info.opc;
+ auint p  = (0U - ((op >> 5) & 1U)) & 0xFU;
+ auint q  = (0U - ((op >> 4) & 1U)) & 0xFU;
+ auint i  = (op & 0xFU);
+ rrpge_m_info.xr[((op >> 6) & 0x7U)] = (p << 12) | (p << 8) | (i << 4) | (q);
+ rrpge_m_info.pc ++;
+ return 3U;
 }
 
 
@@ -380,6 +392,34 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_mov_42(void)
 }
 
 
+/* Decodes a single function parameter */
+RRPGE_M_FASTCALL static auint rrpge_m_op_fpr(auint* cy)
+{
+ auint  op = rrpge_m_info.opc;
+ auint  r;
+ if ((op & 0x3C00U) == 0x0000U){ /* Normal address parameter */
+  r = (rrpge_m_addr_read_table[op & 0x3FU](0U)) & 0xFFFFU;
+  *cy             += rrpge_m_info.ocy + 4U;
+  rrpge_m_info.pc += rrpge_m_info.oaw;
+ }else{
+  if       ((op & 0x2000U) != 0x0000U){ /* --1j jjjj jeii iiii */
+   r = (op & 0x003FU) | ((op & 0x1F80U) >> 1);
+  }else if ((op & 0x3800U) == 0x1800U){ /* --01 1jjj jeii iiii */
+   r = ((op & 0x003FU) << 6) | ((op & 0x0780U) << 5) | 0x003FU;
+  }else if ((op & 0x3800U) == 0x1000U){ /* --01 0jjj jeii iiii */
+   r = ((op & 0x003FU) << 6) | ((op & 0x0780U) << 5);
+  }else if ((op & 0x3800U) == 0x0800U){ /* --00 1jjj jeii iiii */
+   r = (op & 0x003FU) | ((op & 0x0780U) >> 1) | 0xFC00U;
+  }else{                                /* --00 01-j jeii iiii */
+   r = (op & 0x003FU) | ((op & 0x0180U) >> 1);
+   r = r | (r << 8);
+  }
+  *cy             += 4U;
+  rrpge_m_info.pc += 1U;
+ }
+ return r;
+}
+
 /* 0100 010f feaa aaaa: Function / Supervisor entry / return */
 RRPGE_M_FASTCALL static auint rrpge_m_op_jfr_44(void)
 {
@@ -405,9 +445,7 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_jfr_44(void)
    if ((op & 0x0040U) != 0U){ break; }    /* There are no more parameters */
    op               = rrpge_m_edat->crom[rrpge_m_info.pc & 0xFFFFU];
    rrpge_m_info.opc = op;
-   rrpge_m_stk_push(rrpge_m_addr_read_table[op & 0x3FU](0U));
-   cy              += rrpge_m_info.ocy + 4U;
-   rrpge_m_info.pc += rrpge_m_info.oaw;
+   rrpge_m_stk_push(rrpge_m_op_fpr(&cy));
    mx --;
   }while(mx);
   rrpge_m_info.bp = t1;
@@ -424,9 +462,7 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_jfr_44(void)
    if ((op & 0x0040U) != 0U){ break; }    /* There are no more parameters */
    op               = rrpge_m_edat->crom[rrpge_m_info.pc & 0xFFFFU];
    rrpge_m_info.opc = op;
-   kp[mx] = (rrpge_m_addr_read_table[op & 0x3FU](0U)) & 0xFFFFU;
-   cy              += rrpge_m_info.ocy + 4U;
-   rrpge_m_info.pc += rrpge_m_info.oaw;
+   kp[mx] = rrpge_m_op_fpr(&cy);
    mx ++;
   }while(mx < 16U);
   cy += 2U + 7U;
@@ -453,6 +489,18 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_jfr_44(void)
  }
 
  return cy;
+}
+
+/* 0100 011r rraa aaaa: MOV rx, imx */
+RRPGE_M_FASTCALL static auint rrpge_m_op_mov_46(void)
+{
+ auint op = rrpge_m_info.opc;
+ auint p  = (0U - ((op >> 5) & 1U)) & 0xFU;
+ auint q  = (0U - ((op >> 4) & 1U)) & 0xFU;
+ auint i  = (op & 0xFU);
+ rrpge_m_info.xr[((op >> 6) & 0x7U)] = (p << 12) | (i << 8) | (q << 4) | (q);
+ rrpge_m_info.pc ++;
+ return 3U;
 }
 
 
@@ -813,27 +861,49 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_slcc_7e(void)
 RRPGE_M_FASTCALL static auint rrpge_m_op_mov_80(void)
 {
  auint op = rrpge_m_info.opc;
- (void)(rrpge_m_addr_read_table[op & 0x3FU](1U));
- if ((op & 0x0080U) != 0U){ /* SP */
-  rrpge_m_info.awf(rrpge_m_info.sp);
- }else{                     /* XM or XH in order by bit6 of opcode */
-  rrpge_m_info.awf(rrpge_m_info.xmh[((op >> 6) & 0x1U)]);
+ if ((op & 0x0100U) == 0U){
+  (void)(rrpge_m_addr_read_table[op & 0x3FU](1U));
+  if ((op & 0x0080U) != 0U){ /* SP */
+   rrpge_m_info.awf(rrpge_m_info.sp);
+  }else{                     /* XM or XH in order by bit6 of opcode */
+   rrpge_m_info.awf(rrpge_m_info.xmh[((op >> 6) & 0x1U)]);
+  }
+  rrpge_m_info.pc += rrpge_m_info.oaw;
+  return rrpge_m_info.ocy + 3U;
+ }else{
+  if ((op & 0x0080U) != 0U){ /* MOV imx, SP (NOP) */
+   rrpge_m_info.pc += 1U;
+   return 3U;
+  }else{                     /* NUL (for now) */
+   rrpge_m_info.pc += 1U;
+   return 3U;
+  }
  }
- rrpge_m_info.pc += rrpge_m_info.oaw;
- return rrpge_m_info.ocy + 3U;
 }
 /* 1000 001r rraa aaaa: MOV special, adr (SP, XM or XH) */
 RRPGE_M_FASTCALL static auint rrpge_m_op_mov_82(void)
 {
  auint op = rrpge_m_info.opc;
- auint t0 = rrpge_m_addr_read_table[op & 0x3FU](0U);
- if ((op & 0x0080U) != 0U){ /* SP */
-  rrpge_m_info.sp = t0;
- }else{                     /* XM or XH in order by bit6 of opcode */
-  rrpge_m_info.xmh[((op >> 6) & 0x1U)] = t0;
+ auint t0;
+ if ((op & 0x0100U) == 0U){
+  t0 = rrpge_m_addr_read_table[op & 0x3FU](0U);
+  if ((op & 0x0080U) != 0U){ /* SP */
+   rrpge_m_info.sp = t0;
+  }else{                     /* XM or XH in order by bit6 of opcode */
+   rrpge_m_info.xmh[((op >> 6) & 0x1U)] = t0;
+  }
+  rrpge_m_info.pc += rrpge_m_info.oaw;
+  return rrpge_m_info.ocy + 3U;
+ }else{
+  if ((op & 0x0080U) != 0U){ /* MOV SP, imx */
+   rrpge_m_info.sp = op & 0x007FU;
+   rrpge_m_info.pc += 1U;
+   return 3U;
+  }else{                     /* NUL (for now) */
+   rrpge_m_info.pc += 1U;
+   return 3U;
+  }
  }
- rrpge_m_info.pc += rrpge_m_info.oaw;
- return rrpge_m_info.ocy + 3U;
 }
 
 
@@ -848,6 +918,32 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_jmp_84(void)
   rrpge_m_info.pc = t0;
  }
  return rrpge_m_info.ocy + 5U;
+}
+
+/* 0100 011r rraa aaaa: MOV rx, imx */
+static const uint16 rrpge_m_op_mov_86_tb[16] = {
+ 0x0280U, 0x0028U, 0x0064U, 0x0078U, 0x03E8U, 0x00C8U, 0x2710U, 0x0118U,
+ 0x0140U, 0x0168U, 0x0190U, 0x01B8U, 0x01E0U, 0x0208U, 0x0230U, 0x0258U};
+RRPGE_M_FASTCALL static auint rrpge_m_op_mov_86(void)
+{
+ auint op = rrpge_m_info.opc;
+ auint ra = ((op >> 6) & 0x7U);
+ auint q  = (op >> 4) & 3U;
+ auint i  = (op & 0xFU);
+ switch (q){
+  case 0x2U:
+   rrpge_m_info.xr[ra] = i | 0x0010U;
+   break;
+  case 0x3U:
+   rrpge_m_info.xr[ra] = rrpge_m_op_mov_86_tb[i];
+   break;
+  default:
+   q = (0U - ((op >> 4) & 1U)) & 0xFU;
+   rrpge_m_info.xr[ra] = (i << 12) | (q << 8) | (q << 4) | (q);
+   break;
+ }
+ rrpge_m_info.pc ++;
+ return 3U;
 }
 
 
@@ -1029,7 +1125,7 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_nop(void)
 ** attempted to perform. Callbacks may also happen (here through calling the
 ** supervisor). */
 rrpge_m_opf_t* const rrpge_m_optable[128] = {
- &rrpge_m_op_mov_00,  &rrpge_m_op_mov_02,  &rrpge_m_op_xch_04,  &rrpge_m_op_nop,
+ &rrpge_m_op_mov_00,  &rrpge_m_op_mov_02,  &rrpge_m_op_xch_04,  &rrpge_m_op_mov_06,
  &rrpge_m_op_add_08,  &rrpge_m_op_add_0a,  &rrpge_m_op_sub_0c,  &rrpge_m_op_sub_0e,
  &rrpge_m_op_or_10,   &rrpge_m_op_or_12,   &rrpge_m_op_div_14,  &rrpge_m_op_div_16,
  &rrpge_m_op_adc_18,  &rrpge_m_op_adc_1a,  &rrpge_m_op_sbc_1c,  &rrpge_m_op_sbc_1e,
@@ -1037,7 +1133,7 @@ rrpge_m_opf_t* const rrpge_m_optable[128] = {
  &rrpge_m_op_shr_28,  &rrpge_m_op_shr_2a,  &rrpge_m_op_shl_2c,  &rrpge_m_op_shl_2e,
  &rrpge_m_op_asr_30,  &rrpge_m_op_asr_32,  &rrpge_m_op_mac_34,  &rrpge_m_op_mac_36,
  &rrpge_m_op_src_38,  &rrpge_m_op_src_3a,  &rrpge_m_op_slc_3c,  &rrpge_m_op_slc_3e,
- &rrpge_m_op_mov_40,  &rrpge_m_op_mov_42,  &rrpge_m_op_jfr_44,  &rrpge_m_op_nop,
+ &rrpge_m_op_mov_40,  &rrpge_m_op_mov_42,  &rrpge_m_op_jfr_44,  &rrpge_m_op_mov_46,
  &rrpge_m_op_addc_48, &rrpge_m_op_addc_4a, &rrpge_m_op_subc_4c, &rrpge_m_op_subc_4e,
  &rrpge_m_op_xor_50,  &rrpge_m_op_xor_52,  &rrpge_m_op_divc_54, &rrpge_m_op_divc_56,
  &rrpge_m_op_adcc_58, &rrpge_m_op_adcc_5a, &rrpge_m_op_sbcc_5c, &rrpge_m_op_sbcc_5e,
@@ -1045,7 +1141,7 @@ rrpge_m_opf_t* const rrpge_m_optable[128] = {
  &rrpge_m_op_shrc_68, &rrpge_m_op_shrc_6a, &rrpge_m_op_shlc_6c, &rrpge_m_op_shlc_6e,
  &rrpge_m_op_asrc_70, &rrpge_m_op_asrc_72, &rrpge_m_op_macc_74, &rrpge_m_op_macc_76,
  &rrpge_m_op_srcc_78, &rrpge_m_op_srcc_7a, &rrpge_m_op_slcc_7c, &rrpge_m_op_slcc_7e,
- &rrpge_m_op_mov_80,  &rrpge_m_op_mov_82,  &rrpge_m_op_jmp_84,  &rrpge_m_op_nop,
+ &rrpge_m_op_mov_80,  &rrpge_m_op_mov_82,  &rrpge_m_op_jmp_84,  &rrpge_m_op_mov_86,
  &rrpge_m_op_and_88,  &rrpge_m_op_and_8a,  &rrpge_m_op_jms_8c,  &rrpge_m_op_jms_8c,
  &rrpge_m_op_sv,      &rrpge_m_op_sv,      &rrpge_m_op_sv,      &rrpge_m_op_sv,
  &rrpge_m_op_sv,      &rrpge_m_op_sv,      &rrpge_m_op_sv,      &rrpge_m_op_sv,
