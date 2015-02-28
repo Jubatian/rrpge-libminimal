@@ -57,13 +57,15 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_xch_04(void)
 }
 
 /* 0000 011r rraa aaaa: MOV rx, imx */
+static const uint16 rrpge_m_op_mov_06_tb[16] = {
+ 0x0280U, 0xFF0FU, 0xF0FFU, 0x0180U, 0x0300U, 0x01C0U, 0x0F00U, 0x0118U,
+ 0x0140U, 0x0168U, 0x0190U, 0x01B8U, 0x01E0U, 0x0208U, 0x0230U, 0x0258U};
 RRPGE_M_FASTCALL static auint rrpge_m_op_mov_06(void)
 {
  auint op = rrpge_m_info.opc;
- auint p  = (0U - ((op >> 5) & 1U)) & 0xFU;
- auint q  = (0U - ((op >> 4) & 1U)) & 0xFU;
- auint i  = (op & 0xFU);
- rrpge_m_info.xr[((op >> 6) & 0x7U)] = (p << 12) | (p << 8) | (i << 4) | (q);
+ auint i  = (op & 0x3FU);
+ if (i < 16U){ i = rrpge_m_op_mov_06_tb[i]; }
+ rrpge_m_info.xr[(op >> 6) & 0x7U] = i;
  rrpge_m_info.pc ++;
  return 3U;
 }
@@ -501,10 +503,7 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_jfr_44(void)
 RRPGE_M_FASTCALL static auint rrpge_m_op_mov_46(void)
 {
  auint op = rrpge_m_info.opc;
- auint p  = (0U - ((op >> 5) & 1U)) & 0xFU;
- auint q  = (0U - ((op >> 4) & 1U)) & 0xFU;
- auint i  = (op & 0xFU);
- rrpge_m_info.xr[((op >> 6) & 0x7U)] = (p << 12) | (i << 8) | (q << 4) | (q);
+ rrpge_m_info.xr[(op >> 6) & 0x7U] = (op & 0x3FU) | 0x40U;
  rrpge_m_info.pc ++;
  return 3U;
 }
@@ -954,28 +953,20 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_jmp_84(void)
  return rrpge_m_info.ocy + 6U;
 }
 
-/* 0100 011r rraa aaaa: MOV rx, imx */
-static const uint16 rrpge_m_op_mov_86_tb[16] = {
- 0x0280U, 0x0028U, 0x0064U, 0x0078U, 0x03E8U, 0x00C8U, 0x2710U, 0x0118U,
- 0x0140U, 0x0168U, 0x0190U, 0x01B8U, 0x01E0U, 0x0208U, 0x0230U, 0x0258U};
+/* 1000 011r rraa aaaa: MOV rx, imx */
+static const uint16 rrpge_m_op_mov_86_tb[64] = {
+ 0x0080U, 0x0088U, 0x0090U, 0x0098U, 0x0010U, 0x0020U, 0x0040U, 0x0080U,
+ 0x0100U, 0x0200U, 0x0400U, 0x0800U, 0x1000U, 0x2000U, 0x4000U, 0x8000U,
+ 0x00A0U, 0x00A8U, 0x00B0U, 0x00B8U, 0xFFEFU, 0xFFDFU, 0xFFBFU, 0xFF7FU,
+ 0xFEFFU, 0xFDFFU, 0xFBFFU, 0xF7FFU, 0xEFFFU, 0xDFFFU, 0xBFFFU, 0x7FFFU,
+ 0x00C0U, 0x00C8U, 0x00D0U, 0x00D8U, 0xFFE0U, 0xFFC0U, 0xFF80U, 0xFF00U,
+ 0xFE00U, 0xFC00U, 0xF800U, 0xF000U, 0xE000U, 0xC000U, 0x8000U, 0x0000U,
+ 0x00E0U, 0x00E8U, 0x00F0U, 0x00F8U, 0x001FU, 0x003FU, 0x007FU, 0x00FFU,
+ 0x01FFU, 0x03FFU, 0x07FFU, 0x0FFFU, 0x1FFFU, 0x3FFFU, 0x7FFFU, 0xFFFFU};
 RRPGE_M_FASTCALL static auint rrpge_m_op_mov_86(void)
 {
  auint op = rrpge_m_info.opc;
- auint ra = ((op >> 6) & 0x7U);
- auint q  = (op >> 4) & 3U;
- auint i  = (op & 0xFU);
- switch (q){
-  case 0x2U:
-   rrpge_m_info.xr[ra] = i | 0x0010U;
-   break;
-  case 0x3U:
-   rrpge_m_info.xr[ra] = rrpge_m_op_mov_86_tb[i];
-   break;
-  default:
-   q = (0U - ((op >> 4) & 1U)) & 0xFU;
-   rrpge_m_info.xr[ra] = (i << 12) | (q << 8) | (q << 4) | (q);
-   break;
- }
+ rrpge_m_info.xr[(op >> 6) & 0x7U] = rrpge_m_op_mov_86_tb[op & 0x3FU];
  rrpge_m_info.pc ++;
  return 3U;
 }
