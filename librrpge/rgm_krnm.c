@@ -2,11 +2,11 @@
 **  \file
 **  \brief     Kernel functionality
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.28
+**  \date      2015.02.28
 */
 
 
@@ -78,7 +78,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
  switch (par[0]){ /* At least one parameter is supplied, so can go */
 
 
-  case 0x0100U:   /* Kernel task: Start loading binary data page */
+  case 0x00U:     /* Kernel task: Start loading binary data page */
 
    if (n != 5U){  /* Needs 1+4 parameters */
     goto fault_inv;
@@ -89,7 +89,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0110U:   /* Kernel task: Start loading page from file */
+  case 0x01U:     /* Kernel task: Start loading page from file */
 
    if (n != 7U){  /* Needs 1+6 parameters */
     goto fault_inv;
@@ -100,7 +100,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0111U:   /* Kernel task: Start saving page into file */
+  case 0x02U:     /* Kernel task: Start saving page into file */
 
    if (n != 7U){  /* Needs 1+6 parameters */
     goto fault_inv;
@@ -111,7 +111,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0112U:   /* Kernel task: Find next file */
+  case 0x03U:     /* Kernel task: Find next file */
 
    if (n != 3U){  /* Needs 1+2 parameters */
     goto fault_inv;
@@ -122,7 +122,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0113U:   /* Kernel task: Move a file */
+  case 0x04U:     /* Kernel task: Move a file */
 
    if (n != 5U){  /* Needs 1+4 parameters */
     goto fault_inv;
@@ -133,7 +133,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0300U:   /* Set palette entry */
+  case 0x08U:     /* Set palette entry */
 
    if (n != 3U){  /* Needs 1+2 parameters */
     goto fault_inv;
@@ -148,7 +148,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0330U:   /* Change video mode */
+  case 0x09U:     /* Change video mode */
 
    if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
@@ -164,7 +164,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0340U:   /* Set stereoscopic 3D */
+  case 0x0AU:     /* Set stereoscopic 3D */
 
    if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
@@ -178,7 +178,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0410U:   /* Get device properties */
+  case 0x10U:     /* Get device properties */
 
    if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
@@ -192,7 +192,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0411U:   /* Drop device */
+  case 0x11U:     /* Drop device */
 
    if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
@@ -206,7 +206,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0412U:   /* Get digital input descriptor */
+  case 0x12U:     /* Get digital input descriptor */
 
    if (n != 6U){  /* Needs 1+5 parameters */
     goto fault_inv;
@@ -230,7 +230,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0413U:   /* Get analog input descriptor */
+  case 0x13U:     /* Get analog input descriptor */
 
    if (n != 5U){  /* Needs 1+4 parameters */
     goto fault_inv;
@@ -254,7 +254,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0414U:   /* Get device name */
+  case 0x14U:     /* Get device name */
 
    if (n != 4U){  /* Needs 1+3 parameters */
     goto fault_inv;
@@ -277,7 +277,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0422U:   /* Get digital inputs */
+  case 0x16U:     /* Get digital inputs */
 
    if (n != 3U){  /* Needs 1+2 parameters */
     goto fault_inv;
@@ -295,7 +295,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0423U:   /* Get analog inputs */
+  case 0x17U:     /* Get analog inputs */
 
    if (n != 3U){  /* Needs 1+2 parameters */
     goto fault_inv;
@@ -313,7 +313,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0424U:   /* Pop text FIFO */
+  case 0x18U:     /* Pop text FIFO */
 
    if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
@@ -331,7 +331,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0425U:   /* Return area activity */
+  case 0x19U:     /* Return area activity */
 
    if (n != 6U){  /* Needs 1+5 parameters */
     goto fault_inv;
@@ -371,7 +371,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0500U:   /* Delay some cycles */
+  case 0x1FU:     /* Delay some cycles */
 
    if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
@@ -383,7 +383,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    break;
 
 
-  case 0x0600U:   /* Get local users */
+  case 0x20U:     /* Get local users */
 
    if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
@@ -400,7 +400,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0601U:   /* Kernel task: Get UTF-8 representation of User ID */
+  case 0x21U:     /* Kernel task: Get UTF-8 representation of User ID */
 
    if (n != 6U){ /* Needs 1+5 parameters */
     goto fault_inv;
@@ -411,7 +411,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0610U:   /* Get user preferred language */
+  case 0x22U:     /* Get user preferred language */
 
    if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
@@ -425,7 +425,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0611U:   /* Get user preferred colors */
+  case 0x23U:     /* Get user preferred colors */
 
    if (n != 1U){  /* Needs 1+0 parameters */
     goto fault_inv;
@@ -438,7 +438,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0612U:   /* Get user stereoscopic 3D preference */
+  case 0x24U:     /* Get user stereoscopic 3D preference */
 
    if (n != 1U){  /* Needs 1+0 parameters */
     goto fault_inv;
@@ -450,7 +450,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0700U:   /* Kernel task: Send data to user */
+  case 0x28U:     /* Kernel task: Send data to user */
 
    if (n != 4U){  /* Needs 1+3 parameters */
     goto fault_inv;
@@ -461,7 +461,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0701U:   /* Poll for packets */
+  case 0x29U:     /* Poll for packets */
 
    if (n != 4U){  /* Needs 1+3 parameters */
     goto fault_inv;
@@ -513,7 +513,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    break;
 
 
-  case 0x0710U:   /* Kernel task: List accessible users */
+  case 0x2AU:     /* Kernel task: List accessible users */
 
    if (n != 4U){  /* Needs 1+3 parameters */
     goto fault_inv;
@@ -524,7 +524,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    goto ret_callback;
 
 
-  case 0x0720U:   /* Set network availability */
+  case 0x2BU:     /* Set network availability */
 
    if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
@@ -540,7 +540,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    break;
 
 
-  case 0x0721U:   /* Query network availability */
+  case 0x2CU:     /* Query network availability */
 
    if (n != 1U){  /* Needs 1+0 parameters */
     goto fault_inv;
@@ -552,7 +552,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    break;
 
 
-  case 0x0800U:   /* Query task */
+  case 0x2EU:     /* Query task */
 
    if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;
@@ -568,7 +568,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    break;
 
 
-  case 0x0801U:   /* Discard task */
+  case 0x2FU:     /* Discard task */
 
    if (n != 2U){  /* Needs 1+1 parameters */
     goto fault_inv;

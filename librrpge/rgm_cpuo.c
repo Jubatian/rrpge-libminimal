@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.02.27
+**  \date      2015.02.28
 */
 
 
@@ -456,8 +456,9 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_jfr_44(void)
  }else if ((op & 0x0100U) == 0U){         /* JSV: Supervisor call */
 
   cy = 0;                                 /* Cycle count */
-  rrpge_m_info.pc += 1U;                  /* There is no address in the JSV opcode */
-  mx = 0;                                 /* Parameter count */
+  kp[0] = op & 0x3FU;                     /* First parameter is the service to call */
+  rrpge_m_info.pc += 1U;
+  mx = 1;                                 /* Parameter count (service to call included) */
   do{
    if ((op & 0x0040U) != 0U){ break; }    /* There are no more parameters */
    op               = rrpge_m_edat->crom[rrpge_m_info.pc & 0xFFFFU];

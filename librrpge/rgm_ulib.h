@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.02.27
+**  \date      2015.02.28
 **
 **
 **  The User Library included is taken from the RRPGE User Library project.
@@ -20,7 +20,7 @@
 
 
 /* Size of the RRPGE User Library */
-#define RRPGE_M_ULIB_SIZE (6708U / 2U)
+#define RRPGE_M_ULIB_SIZE (6692U / 2U)
 
 /* The RRPGE User Library */
 extern const uint16 rrpge_m_ulib[RRPGE_M_ULIB_SIZE];
