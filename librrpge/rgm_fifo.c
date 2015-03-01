@@ -2,11 +2,11 @@
 **  \file
 **  \brief     FIFO (Accelerator, Mixer) related operations.
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2015.03.01
 **
 **
 **  Contains the Graphics & Mixer FIFO's logic. The FIFOs operate detached
@@ -157,7 +157,7 @@ void  rrpge_m_fifowrite(auint adr, auint val)
   case 2U:                    /* FIFO address latch */
 
    t = RRPGE_STA_VARS + 0x24U + ((adr & 4U) << 1);
-   if ((val & 0x8000U) == 0U){
+   if ((val & 0x8000U) != 0U){
     stat[t] = (stat[t] + 1U) & 0x7FFFU;
    }else{
     stat[t] = val & 0x7FFFU;
