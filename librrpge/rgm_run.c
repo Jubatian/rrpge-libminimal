@@ -59,8 +59,8 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
  for (i = 0U; i < 8U; i++){
   rrpge_m_info.xr[i] = stat[RRPGE_STA_VARS + 0x00U + i] & 0xFFFFU;
  }
- rrpge_m_info.xmh[0] = stat[RRPGE_STA_VARS + 0x08U] & 0xFFFFU;
- rrpge_m_info.xmh[1] = stat[RRPGE_STA_VARS + 0x09U] & 0xFFFFU;
+ rrpge_m_info.xmb[0] = stat[RRPGE_STA_VARS + 0x08U] & 0xFFFFU;
+ rrpge_m_info.xmb[1] = stat[RRPGE_STA_VARS + 0x09U] & 0xFFFFU;
  rrpge_m_info.pc = stat[RRPGE_STA_VARS + 0x0AU] & 0xFFFFU;
  rrpge_m_info.sp = stat[RRPGE_STA_VARS + 0x0BU] & 0xFFFFU;
  rrpge_m_info.bp = stat[RRPGE_STA_VARS + 0x0CU] & 0xFFFFU;
@@ -184,8 +184,8 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
  for (i = 0U; i < 8U; i++){
   stat[RRPGE_STA_VARS + 0x00U + i] = (rrpge_m_info.xr[i]) & 0xFFFFU;
  }
- stat[RRPGE_STA_VARS + 0x08U] = (rrpge_m_info.xmh[0]) & 0xFFFFU;
- stat[RRPGE_STA_VARS + 0x09U] = (rrpge_m_info.xmh[1]) & 0xFFFFU;
+ stat[RRPGE_STA_VARS + 0x08U] = (rrpge_m_info.xmb[0]) & 0xFFFFU;
+ stat[RRPGE_STA_VARS + 0x09U] = (rrpge_m_info.xmb[1]) & 0xFFFFU;
  stat[RRPGE_STA_VARS + 0x0AU] = (rrpge_m_info.pc) & 0xFFFFU;
  stat[RRPGE_STA_VARS + 0x0BU] = (rrpge_m_info.sp) & 0xFFFFU;
  stat[RRPGE_STA_VARS + 0x0CU] = (rrpge_m_info.bp) & 0xFFFFU;

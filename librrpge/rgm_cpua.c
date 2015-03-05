@@ -2,11 +2,11 @@
 **  \file
 **  \brief     CPU addressing unit
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2015.03.05
 */
 
 
@@ -22,9 +22,14 @@ static const uint16 rrpge_m_addr_dms[16] = {
  0x00FFU, 0x000FU, 0x0003U, 0x0001U, 0xFFFFU, 0xFFFFU, 0xFFFFU, 0xFFFFU,
  0x00FFU, 0x000FU, 0x0003U, 0x0001U, 0x00FFU, 0x000FU, 0x0003U, 0x0001U};
 
-/* Address shift values by pointer mode */
-static const uint8  rrpge_m_addr_ads[16] = {
- 1U, 2U, 3U, 4U, 0U, 0U, 0U, 0U, 1U, 2U, 3U, 4U, 1U, 2U, 3U, 4U};
+/* Address fractional bit mask values by pointer mode */
+static const uint8  rrpge_m_addr_ams[16] = {
+ 0x8U, 0xCU, 0xEU, 0xFU, 0x0U, 0x0U, 0x0U, 0x0U,
+ 0x8U, 0xCU, 0xEU, 0xFU, 0x8U, 0xCU, 0xEU, 0xFU};
+
+/* Address add shift values (to increment bit address) */
+static const uint8  rrpge_m_addr_ash[16] = {
+ 3U, 2U, 1U, 0U, 4U, 4U, 4U, 4U, 3U, 2U, 1U, 0U, 3U, 2U, 1U, 0U};
 
 
 
@@ -235,27 +240,25 @@ RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_xr(auint rmw)
 RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_dx16(auint rmw)
 {
  auint s = rrpge_m_info.opc & 0x3U;            /* Pointer register select */
- auint t = (s << 2);                           /* 0, 4, 8 or 12, shift amount for xm & xh */
- auint m = (rrpge_m_info.xmh[0] >> t) & 0xFU;  /* Pointer mode */
+ auint t = (s << 2);                           /* 0, 4, 8 or 12, shift amount for xm & xb */
+ auint m = (rrpge_m_info.xmb[0] >> t) & 0xFU;  /* Pointer mode */
+ auint b = (rrpge_m_info.xmb[1] >> t) & 0xFU;  /* Pointer fraction */
  auint a;                                      /* Address */
- auint u;
 
  rrpge_m_info.awf = rrpge_m_addr_wr_dx16;
  rrpge_m_info.oaw = 1U;
-
- t  = 16U - t;                                 /* 16, 12, 8 or 4, shift amount for xh */
- a  = (rrpge_m_info.xr[s + 4U] & 0xFFFFU) +    /* Address base */
-      ((rrpge_m_info.xmh[1] << t) & 0xF0000U); /* Address high */
- u  = rrpge_m_addr_ads[m];
  rrpge_m_info.ocy = 0U;
- rrpge_m_info.ads = ((~a) << (4U - u)) & ((0xFF0FU >> (m & 0xCU)) & 0xFU);
+
+ rrpge_m_info.ads = (0xFU - b) & rrpge_m_addr_ams[m];
  rrpge_m_info.adm = rrpge_m_addr_dms[m] << rrpge_m_info.ads;
- rrpge_m_info.ada = (a >> u) & 0xFFFFU;
+ rrpge_m_info.ada = rrpge_m_info.xr[s + 4U] & 0xFFFFU;
+ a  = (rrpge_m_info.ada << 4) + b;
  a += ( ((0x0F40U >> m) & 1U) |                /* 1 if post-incrementing ptr. mode */
-        ((0xF080U >> m) & rmw) );              /* 1 if post-incrementing on write only mode & rmw set (it is 1) */
- rrpge_m_info.xr[s + 4U] = a;
- rrpge_m_info.xmh[1] = (rrpge_m_info.xmh[1] & (0xFFF0FFFFU >> t)) |
-                       ((a & 0xF0000U) >> t);  /* Address write-back */
+        ((0xF080U >> m) & rmw) ) <<            /* 1 if post-incrementing on write only mode & rmw set (it is 1) */
+      rrpge_m_addr_ash[m];
+ rrpge_m_info.xr[s + 4U] = a >> 4;
+ rrpge_m_info.xmb[1] = (rrpge_m_info.xmb[1] & (~(0xFU << t))) |
+                       ((a & 0xFU) << t);      /* Address write-back */
 
  rrpge_m_addr_rd_data(rmw);
  return (rrpge_m_info.add & rrpge_m_info.adm) >> rrpge_m_info.ads;
@@ -265,27 +268,25 @@ RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_dx16(auint rmw)
 RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_sx16(auint rmw)
 {
  auint s = rrpge_m_info.opc & 0x3U;            /* Pointer register select */
- auint t = (s << 2);                           /* 0, 4, 8 or 12, shift amount for xm & xh */
- auint m = (rrpge_m_info.xmh[0] >> t) & 0xFU;  /* Pointer mode */
+ auint t = (s << 2);                           /* 0, 4, 8 or 12, shift amount for xm & xb */
+ auint m = (rrpge_m_info.xmb[0] >> t) & 0xFU;  /* Pointer mode */
+ auint b = (rrpge_m_info.xmb[1] >> t) & 0xFU;  /* Pointer fraction */
  auint a;                                      /* Address */
- auint u;
 
  rrpge_m_info.awf = rrpge_m_addr_wr_sx16;
  rrpge_m_info.oaw = 1U;
-
- t  = 16U - t;                                 /* 16, 12, 8 or 4, shift amount for xh */
- a  = (rrpge_m_info.xr[s + 4U] & 0xFFFFU) +    /* Address base */
-      ((rrpge_m_info.xmh[1] << t) & 0xF0000U); /* Address high */
- u  = rrpge_m_addr_ads[m];
  rrpge_m_info.ocy = 0U;
- rrpge_m_info.ads = ((~a) << (4U - u)) & ((0xFF0FU >> (m & 0xCU)) & 0xFU);
+
+ rrpge_m_info.ads = (0xFU - b) & rrpge_m_addr_ams[m];
  rrpge_m_info.adm = rrpge_m_addr_dms[m] << rrpge_m_info.ads;
- rrpge_m_info.ada = a >> u;
+ rrpge_m_info.ada = rrpge_m_info.xr[s + 4U];
+ a  = (rrpge_m_info.ada << 4) + b;
  a += ( ((0x0F40U >> m) & 1U) |                /* 1 if post-incrementing ptr. mode */
-        ((0xF080U >> m) & rmw) );              /* 1 if post-incrementing on write only mode & rmw set (it is 1) */
- rrpge_m_info.xr[s + 4U] = a;
- rrpge_m_info.xmh[1] = (rrpge_m_info.xmh[1] & (0xFFF0FFFFU >> t)) |
-                       ((a & 0xF0000U) >> t);  /* Address write-back */
+        ((0xF080U >> m) & rmw) ) <<            /* 1 if post-incrementing on write only mode & rmw set (it is 1) */
+      rrpge_m_addr_ash[m];
+ rrpge_m_info.xr[s + 4U] = a >> 4;
+ rrpge_m_info.xmb[1] = (rrpge_m_info.xmb[1] & (~(0xFU << t))) |
+                       ((a & 0xFU) << t);      /* Address write-back */
 
  rrpge_m_info.ada = ((rrpge_m_info.ada + rrpge_m_info.bp) & 0xFFFFU) |
                     (rrpge_m_info.sbt & (~0xFFFFU));

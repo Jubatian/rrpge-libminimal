@@ -2,11 +2,11 @@
 **  \file
 **  \brief     Global information structure.
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.11.19
+**  \date      2015.03.05
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -167,7 +167,7 @@ typedef struct{
                      ** first word of the parameter components. */
 
  auint  xr[8];       /* CPU general registers (A-D, X0-X3) (State: 0x040-0x047) */
- auint  xmh[2];      /* CPU pointer mode/high registers (XM, XH) (State: 0x048-0x049) */
+ auint  xmb[2];      /* CPU pointer mode/high registers (XM, XB) (State: 0x048-0x049) */
  auint  pc;          /* CPU program counter (State: 0x04A) */
  auint  sp;          /* CPU stack pointer (State: 0x04B) */
  auint  bp;          /* CPU base pointer (State: 0x04C) */

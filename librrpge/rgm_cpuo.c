@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.03.03
+**  \date      2015.03.05
 */
 
 
@@ -370,24 +370,24 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_slc_3e(void)
 }
 
 
-/* 0100 000p rraa aaaa: MOV adr, xmn/xhn (Pointer mode moves) */
+/* 0100 000p rraa aaaa: MOV adr, xmn/xbn (Pointer mode moves) */
 RRPGE_M_FASTCALL static auint rrpge_m_op_mov_40(void)
 {
  auint op = rrpge_m_info.opc;
  (void)(rrpge_m_addr_read_table[op & 0x3FU](1U));
- rrpge_m_info.awf( ( rrpge_m_info.xmh[(op >> 8) & 0x1U] >>
+ rrpge_m_info.awf( ( rrpge_m_info.xmb[(op >> 8) & 0x1U] >>
                      ((op >> 4) & 0xCU) ) & 0xFU);
  rrpge_m_info.pc += rrpge_m_info.oaw;
  return rrpge_m_info.ocy + 3U;
 }
-/* 0100 001p rraa aaaa: MOV xmn/xhn, adr (Pointer mode moves) */
+/* 0100 001p rraa aaaa: MOV xmn/xbn, adr (Pointer mode moves) */
 RRPGE_M_FASTCALL static auint rrpge_m_op_mov_42(void)
 {
  auint op = rrpge_m_info.opc;
  auint t0 = (op >> 8) & 0x1U;
  auint t1 = (op >> 4) & 0xCU;
  auint t2 = rrpge_m_addr_read_table[op & 0x3FU](0U);
- rrpge_m_info.xmh[t0] = (rrpge_m_info.xmh[t0] & (~(0xFU << t1))) |
+ rrpge_m_info.xmb[t0] = (rrpge_m_info.xmb[t0] & (~(0xFU << t1))) |
                         ((t2 & 0xFU) << t1);
  rrpge_m_info.pc += rrpge_m_info.oaw;
  return rrpge_m_info.ocy + 3U;
@@ -862,7 +862,7 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_slcc_7e(void)
 }
 
 
-/* 1000 000r rraa aaaa: MOV adr, special (SP, XM or XH) & SP ops */
+/* 1000 000r rraa aaaa: MOV adr, special (SP, XM or XB) & SP ops */
 RRPGE_M_FASTCALL static auint rrpge_m_op_mov_80(void)
 {
  auint op = rrpge_m_info.opc;
@@ -871,8 +871,8 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_mov_80(void)
   (void)(rrpge_m_addr_read_table[op & 0x3FU](1U));
   if ((op & 0x0080U) != 0U){  /* SP */
    rrpge_m_info.awf(rrpge_m_info.sp);
-  }else{                      /* XM or XH in order by bit6 of opcode */
-   rrpge_m_info.awf(rrpge_m_info.xmh[((op >> 6) & 0x1U)]);
+  }else{                      /* XM or XB in order by bit6 of opcode */
+   rrpge_m_info.awf(rrpge_m_info.xmb[((op >> 6) & 0x1U)]);
   }
   rrpge_m_info.pc += rrpge_m_info.oaw;
   return rrpge_m_info.ocy + 3U;
@@ -898,7 +898,7 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_mov_80(void)
   }
  }
 }
-/* 1000 001r rraa aaaa: MOV special, adr (SP, XM or XH) & SP ops */
+/* 1000 001r rraa aaaa: MOV special, adr (SP, XM or XB) & SP ops */
 RRPGE_M_FASTCALL static auint rrpge_m_op_mov_82(void)
 {
  auint op = rrpge_m_info.opc;
@@ -907,8 +907,8 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_mov_82(void)
   t0 = rrpge_m_addr_read_table[op & 0x3FU](0U);
   if ((op & 0x0080U) != 0U){  /* SP */
    rrpge_m_info.sp = t0;
-  }else{                      /* XM or XH in order by bit6 of opcode */
-   rrpge_m_info.xmh[((op >> 6) & 0x1U)] = t0;
+  }else{                      /* XM or XB in order by bit6 of opcode */
+   rrpge_m_info.xmb[((op >> 6) & 0x1U)] = t0;
   }
   rrpge_m_info.pc += rrpge_m_info.oaw;
   return rrpge_m_info.ocy + 3U;
