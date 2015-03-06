@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.03.05
+**  \date      2015.03.06
 */
 
 
@@ -1079,7 +1079,7 @@ void rrpge_m_ires_initdata(rrpge_object_t* obj)
 
  /* Color palette */
  for (i = 0U; i < 256U; i++){
-  d[0xFB00U + i] = rrpge_m_ires_pal[i];
+  d[0xFA00U + i] = rrpge_m_ires_pal[i];
  }
 
  /* Musical logarithmic table */
@@ -1090,8 +1090,8 @@ void rrpge_m_ires_initdata(rrpge_object_t* obj)
   i--;
   j--;
   r = rrpge_m_ires_ft[j] >> t;
-  d[0xFC00U + (i << 1)] = (r >> 16) & 0xFFFFU;
-  d[0xFC01U + (i << 1)] = (r      ) & 0xFFFFU;
+  d[0xF800U + (i << 1)] = (r >> 16) & 0xFFFFU;
+  d[0xF801U + (i << 1)] = (r      ) & 0xFFFFU;
   if (j == 0U){
    t++;
    j = 12U;
@@ -1118,7 +1118,7 @@ void rrpge_m_ires_initdata(rrpge_object_t* obj)
 
  /* User Library initializers */
  for (i = 0U; i < RRPGE_M_ULIB_ICNT; i++){
-  d[0xFA00U + (rrpge_m_ulib_idat[i * 3U] & 0xFFU)] =
+  d[0xFD00U + (rrpge_m_ulib_idat[i * 3U] & 0xFFU)] =
       ((rrpge_m_ulib_idat[(i * 3U) + 1U] & 0xFFU) << 8) +
       ((rrpge_m_ulib_idat[(i * 3U) + 2U] & 0xFFU));
  }
