@@ -2,11 +2,11 @@
 **  \file
 **  \brief     Mixer DMA peripheral
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2015.03.09
 */
 
 
@@ -24,8 +24,8 @@ auint rrpge_m_mixerop(void)
  auint ssol = ((stat[0xBU] & 0xFFFFU) << 16) + (stat[0xCU] & 0xFFFFU); /* Sample source, fraction */
  auint asoh = stat[0x0U] & 0xFFFFU; /* Amplitude source, whole */
  auint asol = ((stat[0x1U] & 0xFFFFU) << 16) + (stat[0x2U] & 0xFFFFU); /* Amplitude source, fraction */
- auint sdoh = stat[0x7U] & 0xFFFFU; /* Sample destination, high part */
- auint sdol = stat[0x8U] & 0xFFFFU; /* Sample destination, low part */
+ auint sdoh = stat[0x6U] & 0xFFFFU; /* Sample destination, high part */
+ auint sdol = stat[0x7U] & 0xFFFFU; /* Sample destination, low part */
  auint sfrq = ((stat[0xDU] & 0xFFFFU) << 16) + (stat[0xEU] & 0xFFFFU); /* Sample frequency */
  auint afrq = ((stat[0x3U] & 0xFFFFU) << 16) + (stat[0x4U] & 0xFFFFU); /* Amplitudo read (AM) frequency */
  auint ampl = stat[0x9U] & 0xFFFFU; /* Amplitudo multiplier */
@@ -42,19 +42,21 @@ auint rrpge_m_mixerop(void)
  auint ret;
 
  /* Apply partitioning */
- i = stat[0x5U];          /* Partitioning bits */
- sdpr  = (2U <<  (i & 0x000FU)       ) - 1U;
+ i = stat[0x5U];          /* For destination partitioning bits */
+ sdpr  = (2U << ((i & 0x0F00U) >>  8)) - 1U;
  sdoh &= ~sdpr;
- sspr  = (2U << ((i & 0x00F0U) >>  4)) - 1U;
+ i = stat[0x8U];          /* For source partitioning bits */
+ sspr  = (2U << ((i & 0x0F00U) >>  8)) - 1U;
  ssoh &= ~sspr;
- aspr  = (2U << ((i & 0x0F00U) >>  8)) - 1U;
+ aspr  = (2U << ((i & 0xF000U) >> 12)) - 1U;
  asoh &= ~aspr;
 
  /* Apply bank selection on whole parts */
- i = stat[0x6U];          /* Bank select bits */
+ i = stat[0x5U];          /* For destination bank select bits */
  sdoh |= (i & 0x000FU) << 16;
- ssoh |= (i & 0x00F0U) << 12;
- asoh |= (i & 0x0F00U) <<  8;
+ i = stat[0x8U];          /* For source bank select bits */
+ ssoh |= (i & 0x000FU) << 16;
+ asoh |= (i & 0x00F0U) << 12;
 
  /* Fix amplitudo multiplier (for non-AM modes) */
  if ((ampl & 0x0100U) != 0U){ ampl = 0x100U; }
