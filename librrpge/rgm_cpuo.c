@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.03.05
+**  \date      2015.03.13
 */
 
 
@@ -868,14 +868,30 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_mov_80(void)
  auint op = rrpge_m_info.opc;
  auint t0;
  if ((op & 0x0100U) == 0U){
-  (void)(rrpge_m_addr_read_table[op & 0x3FU](1U));
-  if ((op & 0x0080U) != 0U){  /* SP */
-   rrpge_m_info.awf(rrpge_m_info.sp);
-  }else{                      /* XM or XB in order by bit6 of opcode */
-   rrpge_m_info.awf(rrpge_m_info.xmb[((op >> 6) & 0x1U)]);
+  if ((op & 0x00C0U) != 0x00C0U){ /* Register move */
+   (void)(rrpge_m_addr_read_table[op & 0x3FU](1U));
+   if ((op & 0x0080U) != 0U){ /* SP */
+    rrpge_m_info.awf(rrpge_m_info.sp);
+   }else{                     /* XM or XB in order by bit6 of opcode */
+    rrpge_m_info.awf(rrpge_m_info.xmb[((op >> 6) & 0x1U)]);
+   }
+   rrpge_m_info.pc += rrpge_m_info.oaw;
+   return rrpge_m_info.ocy + 3U;
+  }else{                      /* PSH */
+   t0 = 2U;                   /* Cycles */
+   op &= 0x3FU;
+   if (op == 0U){ op = 0x7FU; }   /* Push everything */
+   if ((op & 0x20U) != 0U){ rrpge_m_stk_push(rrpge_m_info.xr [0U]); t0 += 2U; }
+   if ((op & 0x10U) != 0U){ rrpge_m_stk_push(rrpge_m_info.xr [1U]); t0 += 2U; }
+   if ((op & 0x08U) != 0U){ rrpge_m_stk_push(rrpge_m_info.xr [6U]); t0 += 2U; }
+   if ((op & 0x04U) != 0U){ rrpge_m_stk_push(rrpge_m_info.xr [3U]); t0 += 2U; }
+   if ((op & 0x02U) != 0U){ rrpge_m_stk_push(rrpge_m_info.xr [4U]); t0 += 2U; }
+   if ((op & 0x01U) != 0U){ rrpge_m_stk_push(rrpge_m_info.xr [5U]); t0 += 2U; }
+   if ((op & 0x40U) != 0U){ rrpge_m_stk_push(rrpge_m_info.xmb[0U]); t0 += 2U;
+                            rrpge_m_stk_push(rrpge_m_info.xmb[1U]); t0 += 2U; }
+   rrpge_m_info.pc += 1U;
+   return t0;
   }
-  rrpge_m_info.pc += rrpge_m_info.oaw;
-  return rrpge_m_info.ocy + 3U;
  }else{
   if ((op & 0x0080U) != 0U){  /* MOV imx, SP (NOP) */
    rrpge_m_info.pc += 1U;
@@ -904,14 +920,30 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_mov_82(void)
  auint op = rrpge_m_info.opc;
  auint t0;
  if ((op & 0x0100U) == 0U){
-  t0 = rrpge_m_addr_read_table[op & 0x3FU](0U);
-  if ((op & 0x0080U) != 0U){  /* SP */
-   rrpge_m_info.sp = t0;
-  }else{                      /* XM or XB in order by bit6 of opcode */
-   rrpge_m_info.xmb[((op >> 6) & 0x1U)] = t0;
+  if ((op & 0x00C0U) != 0x00C0U){ /* Register move */
+   t0 = rrpge_m_addr_read_table[op & 0x3FU](0U);
+   if ((op & 0x0080U) != 0U){ /* SP */
+    rrpge_m_info.sp = t0;
+   }else{                     /* XM or XB in order by bit6 of opcode */
+    rrpge_m_info.xmb[((op >> 6) & 0x1U)] = t0;
+   }
+   rrpge_m_info.pc += rrpge_m_info.oaw;
+   return rrpge_m_info.ocy + 3U;
+  }else{                      /* POP */
+   t0 = 2U;                   /* Cycles */
+   op &= 0x3FU;
+   if (op == 0U){ op = 0x7FU; }   /* Pop everything */
+   if ((op & 0x40U) != 0U){ rrpge_m_info.xmb[1U] = rrpge_m_stk_pop(); t0 += 2U;
+                            rrpge_m_info.xmb[0U] = rrpge_m_stk_pop(); t0 += 2U; }
+   if ((op & 0x01U) != 0U){ rrpge_m_info.xr [5U] = rrpge_m_stk_pop(); t0 += 2U; }
+   if ((op & 0x02U) != 0U){ rrpge_m_info.xr [4U] = rrpge_m_stk_pop(); t0 += 2U; }
+   if ((op & 0x04U) != 0U){ rrpge_m_info.xr [3U] = rrpge_m_stk_pop(); t0 += 2U; }
+   if ((op & 0x08U) != 0U){ rrpge_m_info.xr [6U] = rrpge_m_stk_pop(); t0 += 2U; }
+   if ((op & 0x10U) != 0U){ rrpge_m_info.xr [1U] = rrpge_m_stk_pop(); t0 += 2U; }
+   if ((op & 0x20U) != 0U){ rrpge_m_info.xr [0U] = rrpge_m_stk_pop(); t0 += 2U; }
+   rrpge_m_info.pc += 1U;
+   return t0;
   }
-  rrpge_m_info.pc += rrpge_m_info.oaw;
-  return rrpge_m_info.ocy + 3U;
  }else{
   if ((op & 0x0080U) != 0U){  /* MOV SP, imx */
    rrpge_m_info.sp = op & 0x007FU;
