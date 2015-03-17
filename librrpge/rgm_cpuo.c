@@ -439,7 +439,7 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_jfr_44(void)
    t0 += rrpge_m_info.pc;
   }
   rrpge_m_info.pc += rrpge_m_info.oaw;
-  rrpge_m_stk_push(rrpge_m_info.pc);
+  rrpge_m_info.sp ++;                     /* For saving the return address */
   rrpge_m_stk_push(rrpge_m_info.bp);
   t1 = rrpge_m_info.bp + rrpge_m_info.sp; /* New base pointer */
   mx = 16U;                               /* Parameter limit */
@@ -450,6 +450,7 @@ RRPGE_M_FASTCALL static auint rrpge_m_op_jfr_44(void)
    rrpge_m_stk_push(rrpge_m_op_fpr(&cy));
    mx --;
   }while(mx);
+  rrpge_m_stk_set(t1 - 2U, rrpge_m_info.pc); /* Save return address */
   rrpge_m_info.bp = t1;
   rrpge_m_info.sp = 16U - mx;
   rrpge_m_info.pc = t0;

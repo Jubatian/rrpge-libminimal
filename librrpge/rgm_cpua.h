@@ -2,11 +2,11 @@
 **  \file
 **  \brief     CPU addressing unit
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2015.03.17
 */
 
 
@@ -35,6 +35,11 @@ RRPGE_M_FASTCALL auint rrpge_m_stk_pop(void);
 /* Pushes a value on the stack, sets halt cause if stack pointer is out of
 ** bounds (high). */
 RRPGE_M_FASTCALL void  rrpge_m_stk_push(auint val);
+
+
+/* Sets a value on the stack, sets halt cause if stack pointer is out of
+** bounds. This is used to save the return address for function calls. */
+RRPGE_M_FASTCALL void  rrpge_m_stk_set(auint off, auint val);
 
 
 #endif

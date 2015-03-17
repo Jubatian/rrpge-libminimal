@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.03.05
+**  \date      2015.03.17
 */
 
 
@@ -360,4 +360,20 @@ RRPGE_M_FASTCALL void  rrpge_m_stk_push(auint val)
   rrpge_m_info.hlt |= RRPGE_HLT_STACK;
  }
  rrpge_m_info.sp++;
+}
+
+
+
+/* Sets a value on the stack, sets halt cause if stack pointer is out of
+** bounds. This is used to save the return address for function calls. */
+RRPGE_M_FASTCALL void  rrpge_m_stk_set(auint off, auint val)
+{
+ auint t0;
+ t0 = (off & 0xFFFFU) | (rrpge_m_info.sbt & (~0xFFFFU));
+ if ( (t0 <  rrpge_m_info.stp) &&
+      (t0 >= rrpge_m_info.sbt) ){
+  rrpge_m_edat->st.dram[t0] = val & 0xFFFFU;
+ }else{
+  rrpge_m_info.hlt |= RRPGE_HLT_STACK;
+ }
 }
