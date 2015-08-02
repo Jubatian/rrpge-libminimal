@@ -52,3 +52,6 @@ A state interface is started, hopefully replacing direct access later.
 
 The CPU emulation component was refactored, giving up the non-reentrant
 optimization hack, encapsulating its data.
+
+The PRAM access component was partially refactored, the bus access cycle
+management still has to be solved in some manner (rrpge_m_info.cys).

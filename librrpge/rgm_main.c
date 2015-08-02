@@ -17,6 +17,7 @@
 #include "rgm_ser.h"
 #include "rgm_halt.h"
 #include "rgm_cpu.h"
+#include "rgm_pram.h"
 
 
 
@@ -27,6 +28,7 @@ void rrpge_init_lib(rrpge_malloc_t* alc, rrpge_free_t* fre)
  rrpge_m_free = fre;
 
  rrpge_m_cpu_init();
+ rrpge_m_pram_init();
 }
 
 

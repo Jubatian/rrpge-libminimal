@@ -56,7 +56,7 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_rd_data(rrpge_object_t* hnd, auint rmw
    ** access) since it is not possible for the pram component to signal this
    ** back. */
 
-   hnd->cpu.add = rrpge_m_pramread(hnd->cpu.ada, rmw);
+   hnd->cpu.add = rrpge_m_pramread(hnd, hnd->cpu.ada, rmw);
    if ((hnd->cpu.ada & 0x06U) == 0x6U){ hnd->cpu.ocy ++; }
 
   }
@@ -101,7 +101,7 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_wr_data(rrpge_object_t* hnd, auint val
     break;
 
    default:                        /* PRAM interface */
-    rrpge_m_pramwrite(hnd->cpu.ada, val);
+    rrpge_m_pramwrite(hnd, hnd->cpu.ada, val);
     break;
 
   }

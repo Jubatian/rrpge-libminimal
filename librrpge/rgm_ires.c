@@ -1161,35 +1161,35 @@ void rrpge_m_ires_initstat(rrpge_object_t* obj)
  /* Reset Application State */
 
  for (i = 0U; i < 0x400U; i++){
-  rrpge_m_stat_set(obj, i, 0U);
+  rrpge_m_stat_save(obj, i, 0U);
  }
 
  /* Populate nonzero members of Application State */
 
  /* Stuff in the VARS area */
  for (i = 0U; i < STANZ_CT; i++){
-  rrpge_m_stat_set(obj, rrpge_m_ires_stanz[i * 3U],
+  rrpge_m_stat_save(obj, rrpge_m_ires_stanz[i * 3U],
       ((rrpge_m_ires_stanz[(i * 3U) + 1U] & 0xFFU) << 8) +
       ((rrpge_m_ires_stanz[(i * 3U) + 2U] & 0xFFU)) );
  }
 
  /* Color palette */
  for (i = 0U; i < 256U; i++){
-  rrpge_m_stat_set(obj, RRPGE_STA_PAL + i, rrpge_m_ires_pal[i]);
+  rrpge_m_stat_save(obj, RRPGE_STA_PAL + i, rrpge_m_ires_pal[i]);
  }
 
 
  /* Add application header and descriptor elements */
 
  for (i = 0U; i < 64U; i++){
-  rrpge_m_stat_set(obj, i, obj->apph[i]);
+  rrpge_m_stat_save(obj, i, obj->apph[i]);
  }
- rrpge_m_stat_set(obj, RRPGE_STA_VARS + 0x18U, obj->appd[0x0U]);
- rrpge_m_stat_set(obj, RRPGE_STA_VARS + 0x19U, obj->appd[0x1U]);
- rrpge_m_stat_set(obj, RRPGE_STA_VARS + 0x1AU, obj->appd[0x8U]);
- rrpge_m_stat_set(obj, RRPGE_STA_VARS + 0x1BU, obj->appd[0x9U]);
- rrpge_m_stat_set(obj, RRPGE_STA_VARS + 0x1CU, obj->appd[0xAU]);
- rrpge_m_stat_set(obj, RRPGE_STA_VARS + 0x1DU, obj->appd[0xBU]);
+ rrpge_m_stat_save(obj, RRPGE_STA_VARS + 0x18U, obj->appd[0x0U]);
+ rrpge_m_stat_save(obj, RRPGE_STA_VARS + 0x19U, obj->appd[0x1U]);
+ rrpge_m_stat_save(obj, RRPGE_STA_VARS + 0x1AU, obj->appd[0x8U]);
+ rrpge_m_stat_save(obj, RRPGE_STA_VARS + 0x1BU, obj->appd[0x9U]);
+ rrpge_m_stat_save(obj, RRPGE_STA_VARS + 0x1CU, obj->appd[0xAU]);
+ rrpge_m_stat_save(obj, RRPGE_STA_VARS + 0x1DU, obj->appd[0xBU]);
 }
 
 

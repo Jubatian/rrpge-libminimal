@@ -27,6 +27,7 @@
 
 #include "rgm_type.h"
 #include "rgm_cput.h"
+#include "rgm_prmt.h"
 
 
 
@@ -57,6 +58,9 @@ struct rrpge_object_s{
  rrpge_cb_kcallfun_t* cb_fun[RRPGE_CB_IDRANGE]; /* Kernel function callbacks */
 
  rrpge_m_cpu_t cpu;  /* CPU emulation structure */
+ rrpge_m_prm_t prm;  /* PRAM emulation structure */
+
+ auint  hlt;         /* Halt causes (accessed using rgm_halt) */
 
  auint  rebr;        /* Receive data buffer read pointer */
  auint  rebw;        /* Receive data buffer write pointer */
@@ -74,8 +78,6 @@ struct rrpge_object_s{
                      ** Set if the according kernel task is already started,
                      ** cleared otherwise. The 16 kernel tasks are mapped from
                      ** bit 0 to bit 15. */
-
- auint  hlt;         /* Finalized halt causes (from the info struct) */
 
  auint  audp;        /* Audio double buffer next fill pointer */
  auint  aco;         /* Count of audio events needing service */
@@ -106,11 +108,6 @@ typedef struct{
                      ** 0: Cycles remaining from mixer op. (State: 0x062-0x063)
                      ** 1: Cycles remaining from video acc. op. (State: 0x06A-0x06B) */
  auint  cys;         /* PRAM Stall cycles collected during a run of CPU emulation */
-
- auint  pia;         /* Temporary values for Peripheral RAM interface */
- auint  pid;
- auint  pis;
- auint  pim;
 
 }rrpge_m_info_t;
 

@@ -23,6 +23,9 @@
 **  it can substitute many of those.
 **
 **  By default every location ignores writes and returns zero.
+**
+**  Note that it assumes at least one call to rrpge_m_stat_addhandler() before
+**  use, which should be utilized to initialize.
 */
 
 
@@ -55,9 +58,26 @@ auint rrpge_m_stat_get(rrpge_object_t* hnd, auint adr);
 auint rrpge_m_stat_set(rrpge_object_t* hnd, auint adr, auint val);
 
 
+/* Export the content of a cell in the state. The same as rrpge_m_stat_get()
+** except that it doesn't access memory mapped registers in the state. */
+auint rrpge_m_stat_load(rrpge_object_t* hnd, auint adr);
+
+
+/* Import the content of a cell in the state. The same as rrpge_m_stat_set()
+** except that it doesn't access memory mapped registers in the state. */
+auint rrpge_m_stat_save(rrpge_object_t* hnd, auint adr, auint val);
+
+
 /* Add a handler functions for a group of cells. */
-void  rrpge_m_stat_addhandler(rrpge_m_stat_geth_t* geth, rrpge_m_stat_seth_t* seth,
+void  rrpge_m_stat_addhandler(rrpge_m_stat_geth_t* geth,
+                              rrpge_m_stat_seth_t* seth,
                               auint adr, auint len);
+
+
+/* Set memory-mapped register cells in the state. These cells will be ignored
+** (not set, always read as zero) when using the rrpge_m_stat_load() and
+** rrpge_m_stat_save() functions on them. Nonzero sets memory-mapped. */
+void  rrpge_m_stat_setmmcell(auint adr, auint ismm);
 
 
 #endif
