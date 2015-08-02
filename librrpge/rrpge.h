@@ -2,11 +2,11 @@
 **  \file
 **  \brief     LibRRPGE standard header package - main header
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2015.08.02
 */
 
 
@@ -25,117 +25,107 @@
 
 
 /**
-**  \brief     Initializes emulator over a given application.
+**  \brief     Initializes the emulator library.
 **
-**  Attempts to initialize an instance of an RRPGE system loading the given
-**  application. Checks all it's input for validity, and will only succeed if
-**  all it's inputs are valid and consistent. Returns with a failure code if
-**  this is not successful. The emulation state is stored into a passed
-**  appropriately sized buffer (request the necessary size using
-**  rrpge_getdescription()) which buffer will be used as object handle
-**  further. It may be discarded any time later to terminate emulation: the
-**  library does not allocate any extra resource relating to instances.
+**  This must be called before any other RRPGE library function to set up the
+**  memory allocator. If omitted, every routine requiring allocation will
+**  return failure.
 **
-**  The function may return with RRPGE_ERR_WAIT which is not an error. This
-**  is returned if the host supports asynchronous application binary loads.
-**  This case the application binary load has to be serviced (notifying it's
-**  termination using rrpge_taskend()), and rrpge_init_run() has to be called
-**  until it either returns an error other than RRPGE_ERR_WAIT, or returns
-**  zero indicating a succesful init.
-**
-**  \param[in]   cb    Callback set filled with the callbacks.
-**  \param[out]  hnd   Emulation instance to initialize.
-**  \return            0 on success, failure code otherwise.
+**  \param[in]   alc   Allocator function.
+**  \param[in]   fre   Free function.
 */
-rrpge_iuint rrpge_init(rrpge_cbpack_t const* cb, rrpge_object_t* hnd);
+void rrpge_init_lib(rrpge_malloc_t* alc, rrpge_free_t* fre);
 
 
 
 /**
-**  \brief     Runs initialization.
+**  \brief     Deletes any emulator library allocated object
 **
-**  This function should be called if rrpge_init() returns RRPGE_ERR_WAIT,
-**  after servicing the application binary load. See rrpge_init() for further
-**  information.
+**  This should be used to free any object allocated by the library.
 **
-**  \param[in]   hnd   Emulation instance populated by rrpge_init().
-**  \return            0 on success, failure code otherwise.
+**  \param[in]   obj   The object to free.
 */
-rrpge_iuint rrpge_init_run(rrpge_object_t* hnd);
+void rrpge_delete(void* obj);
 
 
 
 /**
-**  \brief     Resets emulator instance.
+**  \brief     Initializes emulator over a given callback set.
 **
-**  Returns the given emulator instance to it's initial state, capable to
-**  restart the application from the beginning. The result of this is
-**  identical to the state obtained after an appropriate call to rrpge_init().
+**  Initializes the emulator instance over the passed set of callbacks. It
+**  only attempts to allocate memory for the instance, returning NULL if this
+**  is not possible. The initialization has to be completed by calling
+**  rrpge_init_run() until it finishes proper.
 **
-**  \param[in]   hnd   Emulation instance populated by rrpge_init().
+**  \param[in]   cb    Callback set filled with callbacks.
+**  \return            New emulator object or NULL if allocation failed.
+*/
+rrpge_object_t* rrpge_new_emu(rrpge_cbpack_t const* cb);
+
+
+
+/**
+**  \brief     Runs initialization to completion.
+**
+**  Using the RRPGE_CB_LOADBIN callback attempts to load the RRPGE application
+**  initializing for a proper reset state. May return RRPGE_ERR_WAIT which is
+**  normal if the host supports asynchronous binary loads. This case the
+**  function should be called again later when likely more of the binary
+**  becomes available. Other error codes may be returned if the application
+**  can not be loaded for some problem with its format or the host doesn't
+**  support all features it requests.
+**
+**  /param[in]   hnd   Emulator instance to work with.
+**  /param[in]   tg    Initialization target. See \ref init_levels.
+**  /return            0 on success, failure code otherwise.
+*/
+rrpge_iuint rrpge_init_run(rrpge_object_t* hnd, rrpge_iuint tg);
+
+
+
+/**
+**  \brief     Resets emulator.
+**
+**  Similar to calling rrpge_init_run() with RRPGE_INI_RESET, however this
+**  method doesn't reload the application header, neither clears breakpoints,
+**  only resuming the RRPGE system to the initial state. Only has effect if
+**  the emulator was sufficiently initialized (reached RRPGE_INI_RESET).
+**
+**  /param[in]   hnd   Emulator instance to work with.
 */
 void rrpge_reset(rrpge_object_t* hnd);
 
 
 
 /**
-**  \brief     Requests emulator state for reading.
+**  \brief     Exports emulator state.
 **
-**  Returns a pointer to the current emulator state for reading, such as for
-**  exporting it, or observing it for the purpose of debugging. The state is
-**  part of the emulation instance.
+**  Serializes the emulator's state as described by the specification.
+**  Allocates memory using the passed allocator, which should be freed after
+**  use with rrpge_delete(). The size of the data is 4392960 (0x430800)
+**  bytes.
 **
-**  \param[in]   hnd   Emulation instance populated by rrpge_init().
-**  \return            State information.
+**  /param[in]   hnd   Emulator instance to export.
+**  /return            Exported data or NULL if allocation failed.
 */
-rrpge_state_t const* rrpge_peekstate(rrpge_object_t* hnd);
+rrpge_uint8 rrpge_export(rrpge_object_t* hnd);
 
 
 
 /**
-**  \brief     Detaches emulator state for modifying.
+**  \brief     Imports emulator state.
 **
-**  Detaches the emulator state for writes, so it may be modified. The state
-**  is still a part of the emulation instance, however the emulator is not
-**  capable to operate on it until reattached. This may be used for debugging
-**  or importing state.
+**  Deserializes the passed emulator state. It can only succeed if the
+**  matching application is loaded and is sufficiently initialized. Apart from
+**  the requirement of initialization, the current state is irrelevant and
+**  will be overridden: emulation will continue wherever the emulator state
+**  was saved.
 **
-**  \param[in]   hnd   Emulation instance populated by rrpge_init().
-**  \return            State information.
+**  /param[in]   hnd   Emulator instance to import into.
+**  /param[in]   sta   Emulator state to import (4392960 bytes).
+**  /return            0 on success, failure code otherwise.
 */
-rrpge_state_t* rrpge_detachstate(rrpge_object_t* hnd);
-
-
-
-/**
-**  \brief     Reattaches emulator state.
-**
-**  Reattaches a previously detached state to it's emulation instance, so the
-**  emulation may continue. The reattach may fail if the state contains
-**  invalid information. Note that the state reattached is a part of the
-**  emulation instance. Clears all halt causes if succesful.
-**
-**  \param[in]   hnd   Emulation instance populated by rrpge_init().
-**  \return            0 on success, failure code otherwise.
-*/
-rrpge_iuint rrpge_attachstate(rrpge_object_t* hnd);
-
-
-
-/**
-**  \brief     Reattaches emulator state with compatibility check.
-**
-**  Reattaches a previously detached state to it's emulation instance, so the
-**  emulation may continue. The reattach may fail if the state contains
-**  invalid information. Note that the state reattached is a part of the
-**  emulation instance. Clears all halt causes if succesful. This variant also
-**  checks state compatibility with the application as it was before the last
-**  rrpge_detachstate() call.
-**
-**  \param[in]   hnd   Emulation instance populated by rrpge_init().
-**  \return            0 on success, failure code otherwise.
-*/
-rrpge_iuint rrpge_attachstatecomp(rrpge_object_t* hnd);
+rrpge_iuint rrpge_import(rrpge_object_t* hnd, rrpge_uint8 const* sta);
 
 
 

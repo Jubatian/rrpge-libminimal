@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.03.05
+**  \date      2015.08.01
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -71,7 +71,6 @@ typedef unsigned int auint;
 
 
 
-
 /* Emulation state structure. This is the structure of the data passed from
 ** the host for storing / managing the emulation instance. */
 /* (Maybe will be put somewhere else more appropriate) */
@@ -124,6 +123,7 @@ struct rrpge_object_s{
                      ** process takeovers. */
 
  auint  insm;        /* Initialization state machine */
+ auint  inss;        /* Current reached initialization state (rrpge_init defines) */
 
 };
 
@@ -197,6 +197,11 @@ typedef struct{
 
 extern rrpge_m_info_t  rrpge_m_info;
 extern rrpge_object_t* rrpge_m_edat;
+
+/* Allocator and deallocator */
+
+extern rrpge_malloc_t* rrpge_m_malloc;
+extern rrpge_free_t*   rrpge_m_free;
 
 
 #endif

@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.07.12
+**  \date      2015.08.02
 */
 
 
@@ -93,6 +93,14 @@ static void main_loadbin(rrpge_object_t* hnd, rrpge_iuint tsh, const void* par)
 
 
 
+/* Wrapper for malloc to fix type */
+static void* main_malloc(rrpge_iuint siz)
+{
+ return malloc(siz);
+}
+
+
+
 /* Prints error message according to the passed RRPGE error code */
 static void main_printrerr(auint e)
 {
@@ -145,50 +153,55 @@ static void main_printhalt(auint h)
 
 
 /* Prints some emulator state */
-static void main_printstats(rrpge_state_t const* sta)
+static void main_printstats(rrpge_object_t* obj)
 {
- uint16 const* stat = &(sta->stat[0]);
- uint16 const* sram = &(sta->dram[0]);
  auint  bp;
 
  /* CPU Registers */
 
  printf("A...: %04X; B...: %04X; C...: %04X; D...: %04X\n",
-        stat[RRPGE_STA_VARS + 0x0U], stat[RRPGE_STA_VARS + 0x1U],
-        stat[RRPGE_STA_VARS + 0x2U], stat[RRPGE_STA_VARS + 0x3U]);
+        rrpge_get_state(obj, RRPGE_STA_VARS + 0x0U),
+        rrpge_get_state(obj, RRPGE_STA_VARS + 0x1U),
+        rrpge_get_state(obj, RRPGE_STA_VARS + 0x2U),
+        rrpge_get_state(obj, RRPGE_STA_VARS + 0x3U));
  printf("X0..: %04X; X1..: %04X; X2..: %04X; X3..: %04X\n",
-        stat[RRPGE_STA_VARS + 0x4U], stat[RRPGE_STA_VARS + 0x5U],
-        stat[RRPGE_STA_VARS + 0x6U], stat[RRPGE_STA_VARS + 0x7U]);
+        rrpge_get_state(obj, RRPGE_STA_VARS + 0x4U),
+        rrpge_get_state(obj, RRPGE_STA_VARS + 0x5U),
+        rrpge_get_state(obj, RRPGE_STA_VARS + 0x6U),
+        rrpge_get_state(obj, RRPGE_STA_VARS + 0x7U));
  printf("XM..: %04X; XH..: %04X\n",
-        stat[RRPGE_STA_VARS + 0x8U], stat[RRPGE_STA_VARS + 0x9U]);
+        rrpge_get_state(obj, RRPGE_STA_VARS + 0x8U),
+        rrpge_get_state(obj, RRPGE_STA_VARS + 0x9U));
  printf("BP..: %04X; SP..: %04X\n",
-        stat[RRPGE_STA_VARS + 0xCU], stat[RRPGE_STA_VARS + 0xBU]);
+        rrpge_get_state(obj, RRPGE_STA_VARS + 0xCU),
+        rrpge_get_state(obj, RRPGE_STA_VARS + 0xBU));
  printf("PC..: %04X\n",
-        stat[RRPGE_STA_VARS + 0xAU]);
+        rrpge_get_state(obj, RRPGE_STA_VARS + 0xAU));
 
  /* Stack */
 
- bp = (auint)(stat[RRPGE_STA_VARS + 0xCU]);
- if (stat[RRPGE_STA_VARS + 0x1AU] == 0U){
-  bp += 0x10000U;
- }
+ bp = (auint)(rrpge_get_state(obj, RRPGE_STA_VARS + 0xCU));
 
  printf("BP+0: %04X; %04X; %04X; %04X; %04X; %04X; %04X; %04X\n",
-        sram[bp + 0x0U], sram[bp + 0x1U], sram[bp + 0x2U], sram[bp + 0x3U],
-        sram[bp + 0x4U], sram[bp + 0x5U], sram[bp + 0x6U], sram[bp + 0x7U]);
+        rrpge_get_stack(obj, bp + 0x0U), rrpge_get_stack(obj, bp + 0x1U),
+        rrpge_get_stack(obj, bp + 0x2U), rrpge_get_stack(obj, bp + 0x3U),
+        rrpge_get_stack(obj, bp + 0x4U), rrpge_get_stack(obj, bp + 0x5U),
+        rrpge_get_stack(obj, bp + 0x6U), rrpge_get_stack(obj, bp + 0x7U));
  printf("BP+8: %04X; %04X; %04X; %04X; %04X; %04X; %04X; %04X\n",
-        sram[bp + 0x8U], sram[bp + 0x9U], sram[bp + 0xAU], sram[bp + 0xBU],
-        sram[bp + 0xCU], sram[bp + 0xDU], sram[bp + 0xEU], sram[bp + 0xFU]);
+        rrpge_get_stack(obj, bp + 0x8U), rrpge_get_stack(obj, bp + 0x9U),
+        rrpge_get_stack(obj, bp + 0xAU), rrpge_get_stack(obj, bp + 0xBU),
+        rrpge_get_stack(obj, bp + 0xCU), rrpge_get_stack(obj, bp + 0xDU),
+        rrpge_get_stack(obj, bp + 0xEU), rrpge_get_stack(obj, bp + 0xFU));
 }
 
 
 
 /* Prints exit error message */
-static void main_errexit(auint h, rrpge_state_t const* sta)
+static void main_errexit(auint h, rrpge_object_t* obj)
 {
  printf("Emulation halted because of error in source program!\n");
  main_printhalt(h);
- main_printstats(sta);
+ main_printstats(obj);
 }
 
 
@@ -231,20 +244,20 @@ int main(int argc, char** argv)
 
 
 
- /* Allocate emulator state. This is temporary as is since the RRPGE library's
- ** rrpge_getdescription() is not implemented yet which would give the size of
- ** the emulator state. */
- emu = malloc(6U * 1024U * 1024U); /* Fits well in 6 megabytes. */
- if (emu == NULL){
-  printf("Failed to allocate emulator state\n");
-  goto loadfault;
- }
+ /* Initialize emulator library */
+ rrpge_init_lib(&main_malloc, &free);
+
+
 
  /* Attempt to initialize the emulator. Note that the app. binary load
  ** callback is blocking, so no need to implement any waiting here using
  ** rrpge_init_run(). */
- t = rrpge_init(&main_cbpack,         /* Callback set */
-                emu);                 /* Emulator object to fill in */
+ emu = rrpge_new_emu(&main_cbpack);
+ if (emu == NULL){
+  printf("Failed to allocate emulator state\n");
+  goto loadfault;
+ }
+ t = rrpge_init_run(emu, RRPGE_INI_RESET);
  if (t != RRPGE_ERR_OK){
   printf("Failed to initialize emulator\n");
   main_printrerr(t);
@@ -295,7 +308,7 @@ int main(int argc, char** argv)
        cdi = 0U;
        printf("Audio events: %08d\n", auc);
        printf("Cycles: %08d\n", j);
-       main_printstats(rrpge_peekstate(emu));
+       main_printstats(emu);
        main_printhalt(t);
       }
       /* Need proper exit point... */
@@ -335,7 +348,7 @@ int main(int argc, char** argv)
               RRPGE_HLT_FAULT |
               RRPGE_HLT_DETACHED |
               RRPGE_HLT_WAIT)) != 0U){
-     main_errexit(t, rrpge_peekstate(emu));
+     main_errexit(t, emu);
      break;                            /* Also exit, with error */
     }
 
@@ -375,6 +388,7 @@ int main(int argc, char** argv)
 
  printf("Trying to exit\n");
 
+ rrpge_delete(emu);
  audio_free();
  screen_free();
 

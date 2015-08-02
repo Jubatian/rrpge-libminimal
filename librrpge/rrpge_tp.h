@@ -2,11 +2,11 @@
 **  \file
 **  \brief     LibRRPGE standard header package - types
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2015.08.02
 */
 
 
@@ -49,6 +49,32 @@ typedef unsigned int rrpge_ibool; /**< Interface boolean, 0 for FALSE */
 
 
 /**
+**  \brief     Memory allocator
+**
+**  Memory allocator function interface. Usually if available malloc and free
+**  may be supplied. If not, depending on library use, simpler or more complex
+**  solutions may be provided. Allocation attempts are noted at each method
+**  which could use such: in general a stack allocator may be sufficient.
+**
+**  \param[in]   siz   Size of memory to allocate in bytes (uint8).
+**  \return            Pointer to memory allocated or NULL if not possible.
+*/
+typedef void* rrpge_malloc_t (rrpge_iuint siz);
+
+
+
+/**
+**  \brief     Memory deallocator
+**
+**  Complements the allocator, freeing previously allocated memory.
+**
+**  \param[in]   ptr   Memory to deallocate.
+*/
+typedef void  rrpge_free_t (void* ptr);
+
+
+
+/**
 **  \brief     Emulator instance object
 **
 **  Use for pointers (handles) to emulator instance objects. The RRPGE library
@@ -68,6 +94,24 @@ typedef struct{
  rrpge_uint16 dram[  98304U];  /**< CPU data & stack memory accessible to user (96K * 16 bits) */
  rrpge_uint16 stat[   1024U];  /**< Application state (and header) */
 }rrpge_state_t;
+
+
+
+/**
+**  \anchor    init_levels
+**  \name      Emulator initialization levels
+**
+**  These are the initialization levels which can be passed to
+**  rrpge_init_run() to control its behavior.
+**
+**  \{ */
+/** Blank state, no initialization */
+#define RRPGE_INI_BLANK    0x00U
+/** Application info state, not runnable, for info. query */
+#define RRPGE_INI_INFO     0x01U
+/** Reset state, runnable */
+#define RRPGE_INI_RESET    0x02U
+/** \} */
 
 
 
@@ -128,10 +172,10 @@ typedef struct{
 **  libraries which may fail for implementation related reasons may use this
 **  to indicate such a failure. */
 #define RRPGE_ERR_UNK  0x0002U
-/** Initialization data error. Returned only by rrpge_init(). Normally for
-**  Application Header or Descriptor problems, the RRPGE_ERR_STA or the
-**  RRPGE_ERR_DSC constant should be returned, this code is reserved for other
-**  problems specific to the initialization data which hinder loading it. */
+/** Initialization error. Returned if the emulator instance is not
+**  sufficiently initialized to perform a given task. In rrpge_init_run() it
+**  is returned if it is not possible to complete initialization for any
+**  problem other than reportable by other error codes. */
 #define RRPGE_ERR_INI  0x0003U
 /** Version mismatch. This can result when loading an application, indicating
 **  that it can not be ran since it was written according to a newer RRPGE
@@ -145,8 +189,8 @@ typedef struct{
 **  location containing the unsupported value is returned. */
 #define RRPGE_ERR_UNS  0x2000U
 /** Application descriptor contains invalid value. Returned only by
-**  rrpge_init(). In the low 4 bits the word location containing the erratic
-**  value is returned. */
+**  rrpge_init_run(). In the low 4 bits the word location containing the
+**  erratic value is returned. */
 #define RRPGE_ERR_DSC  0x3000U
 /** \} */
 

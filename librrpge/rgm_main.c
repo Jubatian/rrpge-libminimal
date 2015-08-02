@@ -2,11 +2,11 @@
 **  \file
 **  \brief     Collection of implementations for rrpge.h
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2015.08.02
 */
 
 
@@ -18,38 +18,78 @@
 
 
 
-/* Initialize emulator - implementation of RRPGE library function */
-rrpge_iuint rrpge_init(rrpge_cbpack_t const* cb, rrpge_object_t* hnd)
+/* Initialize library - implementation of RRPGE library function */
+void rrpge_init_lib(rrpge_malloc_t* alc, rrpge_free_t* fre)
 {
+ rrpge_m_malloc = alc;
+ rrpge_m_free = fre;
+}
+
+
+
+/* Delete library object - implementation of RRPGE library function */
+void rrpge_delete(void* obj)
+{
+ rrpge_m_free(obj);
+}
+
+
+
+/* Initialize emulator - implementation of RRPGE library function */
+rrpge_object_t* rrpge_new_emu(rrpge_cbpack_t const* cb)
+{
+ rrpge_object_t* hnd;
+
+ /* Allocate memory for emulator instance */
+
+ hnd = rrpge_m_malloc(sizeof(rrpge_object_t));
+ if (hnd == RRPGE_M_NULL){ return RRPGE_M_NULL; }
+
  /* Add callbacks */
 
  rrpge_m_cb_process(hnd, cb);
 
  /* Init halt cause and initialization state machine */
 
- hnd->insm = 0x1U;
+ hnd->insm = 0x0U;
+ hnd->inss = RRPGE_INI_BLANK;
  hnd->hlt  = RRPGE_HLT_WAIT;
 
- /* Pass over to the run function */
+ /* OK proper return */
 
- return rrpge_init_run(hnd);
+ return hnd;
 }
 
 
 
 /* Run initialization - implementation of RRPGE library function */
-rrpge_iuint rrpge_init_run(rrpge_object_t* hnd)
+rrpge_iuint rrpge_init_run(rrpge_object_t* hnd, rrpge_iuint tg)
 {
  auint   f;
  auint   i;
  uint16* p;
  rrpge_cbp_loadbin_t cbp_loadbin;
 
+ /* Select initialization target */
+
+ if (hnd->insm == 0U){    /* New initialization required */
+  hnd->insm = 0x1U;       /* Start initialization */
+  hnd->inss = RRPGE_INI_BLANK;
+ }
+
+
  /* Initialization state machine. Note that hnd->insm might be incremented by
  ** the callbacks if the host does not load the part asynchronously. */
 
 
  if (hnd->insm == 0x1U){  /* Initialization start */
+
+  hnd->inss = RRPGE_INI_BLANK; /* Blank state reached */
+
+  if (tg == RRPGE_INI_BLANK){ /* No initialization needed, return */
+   hnd->insm = 0x0U;
+   return RRPGE_ERR_OK;
+  }
 
   /* Load the application header */
   cbp_loadbin.buf = &(hnd->apph[0]);
@@ -91,6 +131,13 @@ rrpge_iuint rrpge_init_run(rrpge_object_t* hnd)
   rrpge_m_ires_initstat(hnd);
   f = rrpge_checkappstate(&(hnd->st.stat[0]));
   if (f != RRPGE_ERR_OK){ return f; }
+
+  hnd->inss = RRPGE_INI_INFO; /* Info state reached */
+
+  if (tg == RRPGE_INI_INFO){ /* No further initialization needed, return */
+   hnd->insm = 0x0U;
+   return RRPGE_ERR_OK;
+  }
 
   /* Load code area */
   rrpge_m_ires_initcode(hnd);
@@ -145,6 +192,9 @@ rrpge_iuint rrpge_init_run(rrpge_object_t* hnd)
   /* Clear all breakpoints */
   for (i = 0U; i < 2048U; i++){ hnd->brkp[i] = 0U; }
 
+  /* Reset state reached */
+  hnd->inss = RRPGE_INI_RESET;
+
   /* Do a reset to finish the initialization so emulation may start. */
   rrpge_reset(hnd);
 
@@ -168,10 +218,13 @@ rrpge_iuint rrpge_init_run(rrpge_object_t* hnd)
 /* Reset emulator instance - implementation of RRPGE library function */
 void rrpge_reset(rrpge_object_t* hnd)
 {
+ if (hnd->inss != RRPGE_INI_RESET){ return; } /* No sufficient initialization */
  rrpge_m_ires_init(hnd);
 }
 
 
+
+/* These are to be replaced to export / import... */
 
 /* Request emu. state for read - implementation of RRPGE library function */
 rrpge_state_t const* rrpge_peekstate(rrpge_object_t* hnd)

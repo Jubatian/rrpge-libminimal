@@ -1,0 +1,36 @@
+About the refactoring in progress
+
+
+While developing the oncoming 00.018.000 version of the specification, an
+important goal with the emulator library became refactoring it so it can get
+out of its experimental stage developing into a properly structured library.
+
+The first concerns lie at the RRPGE library itself which in the 00.017.000-00
+version can not support proper structuring due to providing direct interfaces
+to the internals.
+
+Although the emulator state is defined in the RRPGE specification, an emulator
+might not want to realize it as-is, especially not as a monolithic memory
+block with global access (contradicting the principle of information
+encapsulation).
+
+First and foremost so the emulator library is to be changed to allow for such
+decisions while retaining good performance even for debugging.
+
+
+Changes:
+
+
+2015.08.02
+
+Allocators can be supplied to the library. This allows for encapsulating some
+tasks within the library, exposing less of the structure, such as the size of
+the emulation object.
+
+The state attach / detact interface is removed, instead supplying a binary
+export and import interface. This removes dependency on the internal
+structure.
+
+For debugging, memory query and set functions are provided (partially
+implemented for now so the basic emulator works outputting some state to the
+console).
