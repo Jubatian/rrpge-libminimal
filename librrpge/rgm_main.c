@@ -15,6 +15,8 @@
 #include "rgm_chk.h"
 #include "rgm_cb.h"
 #include "rgm_ser.h"
+#include "rgm_halt.h"
+#include "rgm_cpu.h"
 
 
 
@@ -23,6 +25,8 @@ void rrpge_init_lib(rrpge_malloc_t* alc, rrpge_free_t* fre)
 {
  rrpge_m_malloc = alc;
  rrpge_m_free = fre;
+
+ rrpge_m_cpu_init();
 }
 
 
@@ -53,7 +57,7 @@ rrpge_object_t* rrpge_new_emu(rrpge_cbpack_t const* cb)
 
  hnd->insm = 0x0U;
  hnd->inss = RRPGE_INI_BLANK;
- hnd->hlt  = RRPGE_HLT_WAIT;
+ rrpge_m_halt_set(hnd, RRPGE_HLT_WAIT);
 
  /* OK proper return */
 
@@ -374,7 +378,7 @@ void rrpge_pushpacket(rrpge_object_t* hnd, rrpge_uint16 const* id,
 /* Request halt cause - implementation of RRPGE library function */
 rrpge_iuint rrpge_gethaltcause(rrpge_object_t* hnd)
 {
- return hnd->hlt;
+ return rrpge_m_halt_get(hnd);
 }
 
 

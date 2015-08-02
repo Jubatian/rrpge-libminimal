@@ -2,11 +2,11 @@
 **  \file
 **  \brief     Peripheral RAM interface.
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2015.08.02
 */
 
 
@@ -64,7 +64,6 @@ RRPGE_M_FASTCALL auint rrpge_m_pramread(auint adr, auint rmw)
  r = (r & m) >> s;
 
  rrpge_m_info.cys += 2U;      /* Add PRAM stall cycles to Peripheral bus stall */
- rrpge_m_info.ocy += 1U;      /* Add PRAM access stall to CPU stall */
 
  if ((adr & 0x7U) == 0x7U){   /* Post - increment */
   if (((stat[4] & 0x8U) == 0U) || rmw){

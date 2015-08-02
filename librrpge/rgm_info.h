@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.01
+**  \date      2015.08.02
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -25,49 +25,8 @@
 #define RRPGE_M_INFO_H
 
 
-#include "rrpge_tp.h"
-#include "rrpge_cb.h"
-
-
-/* Type defs. These are defines since they should be equivalent to the
-** appropriate RRPGE types, just shortening them */
-#define uint8  rrpge_uint8
-#define uint16 rrpge_uint16
-#define uint32 rrpge_uint32
-
-/* Architecture optimal unsigned integer, at least 32 bits. This definition
-** should be right for it, the program is not even guaranteed to work if the
-** size of "int" is less than 32 bits due to integer promotion quirks. This
-** may also cause auint to be 32 bits on a 64 bit machine if the compiler is
-** designed with a 32 bit integer size, however this case using the compiler's
-** native integer size is usually the best. */
-typedef unsigned int auint;
-
-
-
-/* Will be in rgm_type probably...
-** Main frequency. For the minimal specification use 12500000U. You may
-** increase it as a simple way to accelerate the emulated machine. Note that
-** video timing assumes this frequency to output according to VGA 70Hz, so
-** increasing it will also increase the video frequency. Audio frequency is
-** maintained for real time synchronization. */
-#define RRPGE_M_OSC 12500000U
-
-/* Number of video lines total. At least 449, resulting in 70Hz VGA. */
-#define RRPGE_M_VLN 449U
-
-/* Peripheral RAM size. */
-#define RRPGE_M_PRAMS (sizeof(((rrpge_state_t*)(0))->pram) / sizeof(((rrpge_state_t*)(0))->pram[0]))
-
-/* Null constant */
-#define RRPGE_M_NULL (0)
-
-/* Fastcall convention (only used internally within the library) */
-#if (defined (__GNUC__) && defined(__i386__))
-#define RRPGE_M_FASTCALL __attribute__((fastcall))
-#else
-#define RRPGE_M_FASTCALL
-#endif
+#include "rgm_type.h"
+#include "rgm_cput.h"
 
 
 
@@ -96,6 +55,8 @@ struct rrpge_object_s{
  rrpge_cb_kcalltsk_t* cb_tsk[RRPGE_CB_IDRANGE]; /* Kernel task callbacks */
  rrpge_cb_kcallsub_t* cb_sub[RRPGE_CB_IDRANGE]; /* Kernel subroutine callbacks */
  rrpge_cb_kcallfun_t* cb_fun[RRPGE_CB_IDRANGE]; /* Kernel function callbacks */
+
+ rrpge_m_cpu_t cpu;  /* CPU emulation structure */
 
  auint  rebr;        /* Receive data buffer read pointer */
  auint  rebw;        /* Receive data buffer write pointer */
@@ -129,13 +90,6 @@ struct rrpge_object_s{
 
 
 
-/* Addressing unit's function types. The read function's parameter is the
-** R-M-W signal: nonzero for the read of a R-M-W access. */
-typedef RRPGE_M_FASTCALL auint (rrpge_m_addr_read_t)(auint);
-typedef RRPGE_M_FASTCALL void (rrpge_m_addr_write_t)(auint);
-
-
-
 /* Global info structure. This is used to accelerate emulation. Note that
 ** preferably all globals are placed here to increase locality, and to have
 ** everything preventing threaded use in one place. */
@@ -153,44 +107,10 @@ typedef struct{
                      ** 1: Cycles remaining from video acc. op. (State: 0x06A-0x06B) */
  auint  cys;         /* PRAM Stall cycles collected during a run of CPU emulation */
 
- auint  hlt;         /* Collects halt cause if any. */
-
- auint  ocy;         /* Opcode address extra cycles. This is used by the
-                     ** addressing mode unit to mark if extra cycles were
-                     ** consumed for any reason stalling the CPU. */
- auint  oaw;         /* Opcode address extra word. This is used by the
-                     ** addressing mode unit to mark if an extra opcode word
-                     ** was consumed. */
- auint  opc;         /* Opcode first word cache / addressing cache. Normally
-                     ** the next opcode is loaded in this for faster access, in
-                     ** function parameters it is also used for passing the
-                     ** first word of the parameter components. */
-
- auint  xr[8];       /* CPU general registers (A-D, X0-X3) (State: 0x040-0x047) */
- auint  xmb[2];      /* CPU pointer mode/high registers (XM, XB) (State: 0x048-0x049) */
- auint  pc;          /* CPU program counter (State: 0x04A) */
- auint  sp;          /* CPU stack pointer (State: 0x04B) */
- auint  bp;          /* CPU base pointer (State: 0x04C) */
-
- auint  sbt;         /* Stack bottom, also high bit(s) for bp and sp */
- auint  stp;         /* Stack top */
-
  auint  pia;         /* Temporary values for Peripheral RAM interface */
  auint  pid;
  auint  pis;
  auint  pim;
-
- auint  ada;         /* Temporary values for the Addressing unit */
- auint  add;
- auint  ads;
- auint  adm;
-
- rrpge_m_addr_write_t* awf;
-                     /* Addressing mode specific write. Must be used with a
-                     ** corresponding addressing mode read to complete an
-                     ** R-M-W cycle. The read function sets this function
-                     ** pointer to the appropriate write function so it can be
-                     ** called. Increments rrpge_m_info.ocy if necessary. */
 
 }rrpge_m_info_t;
 

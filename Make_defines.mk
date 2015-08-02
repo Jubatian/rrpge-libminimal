@@ -3,7 +3,7 @@
 ######################
 #
 # Author    Sandor Zsuga (Jubatian)
-# Copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+# Copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 #           License) extended as RRPGEvt (temporary version of the RRPGE
 #           License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 #           root.
@@ -67,7 +67,7 @@ LINK= $(LINKB) -lSDLmain -lSDL
 OBB=_obj_
 OBD=$(OBB)$(DIRSP)
 
-CFLAGS+= -Wall -pipe -pedantic
+CFLAGS+= -Wall -pipe -pedantic -Wno-unused-function
 ifneq ($(CC_BIN),)
 CFLAGS+= -B$(CC_BIN)
 endif

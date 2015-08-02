@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.02.28
+**  \date      2015.08.02
 */
 
 
@@ -14,13 +14,14 @@
 #include "rgm_mix.h"
 #include "rgm_prng.h"
 #include "rgm_task.h"
+#include "rgm_halt.h"
 
 
 
-/* Finds empty kernel task slot and populates & allocates it. Fills in the CPU
-** X3 register (in info) according to the result. Returns nonzero if the
-** parameters don't make a valid task. (does not check parameter count!) */
-static auint rrpge_m_ktsalloc(uint16 const* par, auint n)
+/* Finds empty kernel task slot and populates & allocates it. Fills in resl
+** according to the result. Returns nonzero if the  parameters don't make a
+** valid task. (does not check parameter count!) */
+static auint rrpge_m_ktsalloc(uint16 const* par, auint n, auint* resl)
 {
  auint i;
  auint j;
@@ -32,11 +33,11 @@ static auint rrpge_m_ktsalloc(uint16 const* par, auint n)
    rrpge_m_edat->st.stat[i + 0xFU] = 0x0001U;
    j = ((i - 0xD80U) >> 4);
    rrpge_m_edat->tsfl &= ~((auint)(1U) << j); /* Task not started yet! */
-   rrpge_m_info.xr[7] = j;                    /* Fill in register 'x3' */
+   *resl = j;                                 /* Fill in result */
    return rrpge_m_taskcheck(&(rrpge_m_edat->st.stat[0]), j);
   }
  }
- rrpge_m_info.xr[7] = 0x8000U;
+ *resl = 0x8000U;
  return 0;
 }
 
@@ -46,9 +47,11 @@ static auint rrpge_m_ktsalloc(uint16 const* par, auint n)
 ** selects the call. The number of parameters are given in the second
 ** parameter: the array must be at least this long. The function sets the
 ** appropriate halt cause if necessary (as defined in the host callbacks of
-** the RRPGE library interface) Returns the number of cycles which were
-** necessary for performing the call. */
-auint rrpge_m_kcall(uint16 const* par, auint n)
+** the RRPGE library interface). Returns the number of cycles which were
+** necessary for performing the call. The return value is produced in
+** resh:resl (16 bits each), the original value retained if the specification
+** does not specify a return. */
+auint rrpge_m_kcall(uint16 const* par, auint n, auint* resh, auint* resl)
 {
  auint   i;
  auint   o;
@@ -84,7 +87,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
+   if (rrpge_m_ktsalloc(par, n, resl) != 0U){ goto fault_inv; }
    r = 800U;
    goto ret_callback;
 
@@ -95,7 +98,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
+   if (rrpge_m_ktsalloc(par, n, resl) != 0U){ goto fault_inv; }
    r = 800U;
    goto ret_callback;
 
@@ -106,7 +109,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
+   if (rrpge_m_ktsalloc(par, n, resl) != 0U){ goto fault_inv; }
    r = 800U;
    goto ret_callback;
 
@@ -117,7 +120,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
+   if (rrpge_m_ktsalloc(par, n, resl) != 0U){ goto fault_inv; }
    r = 800U;
    goto ret_callback;
 
@@ -128,7 +131,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
+   if (rrpge_m_ktsalloc(par, n, resl) != 0U){ goto fault_inv; }
    r = 800U;
    goto ret_callback;
 
@@ -185,8 +188,8 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    }
 
    cbp_getprops.dev = par[1] & 0xFU; /* Device to query */
-   rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETPROPS](rrpge_m_edat, &cbp_getprops);
-   stat[RRPGE_STA_VARS + 0x30U + (par[1] & 0xFU)] = rrpge_m_info.xr[7];
+   *resl = rrpge_m_edat->cb_fun[RRPGE_CB_GETPROPS](rrpge_m_edat, &cbp_getprops);
+   stat[RRPGE_STA_VARS + 0x30U + (par[1] & 0xFU)] = *resl;
 
    r = 800U;
    goto ret_callback;
@@ -221,9 +224,9 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     cbp_getdidesc.inp = ((par[2] & 0xFFFFU) << 4) + (par[3] & 0xFU); /* Input to query */
     cbp_getdidesc.ncw = par[5] & 0xFFFFU;
     cbp_getdidesc.nam = &(rrpge_m_edat->st.dram[par[4] & 0xFFFFU]);
-    rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETDIDESC](rrpge_m_edat, &cbp_getdidesc);
+    *resl = rrpge_m_edat->cb_fun[RRPGE_CB_GETDIDESC](rrpge_m_edat, &cbp_getdidesc);
    }else{
-    rrpge_m_info.xr[7] = 0U;
+    *resl = 0U;
    }
 
    r = 2400U;
@@ -245,9 +248,9 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     cbp_getaidesc.inp = par[2] & 0xFFFFU; /* Input to query */
     cbp_getaidesc.ncw = par[4] & 0xFFFFU;
     cbp_getaidesc.nam = &(rrpge_m_edat->st.dram[par[3] & 0xFFFFU]);
-    rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETAIDESC](rrpge_m_edat, &cbp_getaidesc);
+    *resl = rrpge_m_edat->cb_fun[RRPGE_CB_GETAIDESC](rrpge_m_edat, &cbp_getaidesc);
    }else{
-    rrpge_m_info.xr[7] = 0U;
+    *resl = 0U;
    }
 
    r = 2400U;
@@ -268,9 +271,9 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    if (stat[RRPGE_STA_VARS + 0x30U + cbp_getname.dev] != 0U){
     cbp_getname.ncw = par[4] & 0xFFFFU;
     cbp_getname.nam = &(rrpge_m_edat->st.dram[par[3] & 0xFFFFU]);
-    rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETNAME](rrpge_m_edat, &cbp_getname);
+    *resl = rrpge_m_edat->cb_fun[RRPGE_CB_GETNAME](rrpge_m_edat, &cbp_getname);
    }else{
-    rrpge_m_info.xr[7] = 0U;
+    *resl = 0U;
    }
 
    r = 2400U;
@@ -286,9 +289,9 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    cbp_getdi.dev = par[1] & 0xFU; /* Device to query */
    if (stat[RRPGE_STA_VARS + 0x30U + cbp_getdi.dev] != 0U){
     cbp_getdi.ing = par[2] & 0xFFFFU; /* Input group to query */
-    rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETDI](rrpge_m_edat, &cbp_getdi);
+    *resl = rrpge_m_edat->cb_fun[RRPGE_CB_GETDI](rrpge_m_edat, &cbp_getdi);
    }else{
-    rrpge_m_info.xr[7] = 0U;
+    *resl = 0U;
    }
 
    r = 800U;
@@ -304,9 +307,9 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    cbp_getai.dev = par[1] & 0xFU; /* Device to query */
    if (stat[RRPGE_STA_VARS + 0x30U + cbp_getai.dev] != 0U){
     cbp_getai.inp = par[2] & 0xFFFFU; /* Input to query */
-    rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETAI](rrpge_m_edat, &cbp_getai);
+    *resl = rrpge_m_edat->cb_fun[RRPGE_CB_GETAI](rrpge_m_edat, &cbp_getai);
    }else{
-    rrpge_m_info.xr[7] = 0U;
+    *resl = 0U;
    }
 
    r = 800U;
@@ -321,11 +324,11 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    cbp_popchar.dev = par[1] & 0xFU; /* Device to query */
    if (stat[RRPGE_STA_VARS + 0x30U + cbp_popchar.dev] != 0U){
-    rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_POPCHAR](rrpge_m_edat, &cbp_popchar);
+    *resl = rrpge_m_edat->cb_fun[RRPGE_CB_POPCHAR](rrpge_m_edat, &cbp_popchar);
    }else{
-    rrpge_m_info.xr[7] = 0U;
+    *resl = 0U;
    }
-   rrpge_m_info.xr[2] = rrpge_m_info.xr[7] >> 16;
+   *resh = *resl >> 16;
 
    r = 800U;
    goto ret_callback;
@@ -364,8 +367,8 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     cbp_checkarea.h = 400U - cbp_checkarea.y;
    }
 
-   rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_CHECKAREA](rrpge_m_edat, &cbp_checkarea);
-   rrpge_m_info.xr[2] = rrpge_m_info.xr[7] >> 16;
+   *resl = rrpge_m_edat->cb_fun[RRPGE_CB_CHECKAREA](rrpge_m_edat, &cbp_checkarea);
+   *resh = *resl >> 16;
 
    r = 1200U;
    goto ret_callback;
@@ -406,7 +409,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
+   if (rrpge_m_ktsalloc(par, n, resl) != 0U){ goto fault_inv; }
    r = 1200U;
    goto ret_callback;
 
@@ -418,8 +421,8 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    }
 
    cbp_getlang.lno = par[1] & 0xFFFFU;
-   rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETLANG](rrpge_m_edat, &cbp_getlang);
-   rrpge_m_info.xr[2] = rrpge_m_info.xr[7] >> 16;
+   *resl = rrpge_m_edat->cb_fun[RRPGE_CB_GETLANG](rrpge_m_edat, &cbp_getlang);
+   *resh = *resl >> 16;
 
    r = 2400U;
    goto ret_callback;
@@ -431,8 +434,8 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETCOLORS](rrpge_m_edat, RRPGE_M_NULL);
-   rrpge_m_info.xr[2] = rrpge_m_info.xr[7] >> 16;
+   *resl = rrpge_m_edat->cb_fun[RRPGE_CB_GETCOLORS](rrpge_m_edat, RRPGE_M_NULL);
+   *resh = *resl >> 16;
 
    r = 2400U;
    goto ret_callback;
@@ -444,7 +447,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   rrpge_m_info.xr[7] = rrpge_m_edat->cb_fun[RRPGE_CB_GETST3D](rrpge_m_edat, RRPGE_M_NULL) & 1U;
+   *resl = rrpge_m_edat->cb_fun[RRPGE_CB_GETST3D](rrpge_m_edat, RRPGE_M_NULL) & 1U;
 
    r = 2400U;
    goto ret_callback;
@@ -456,7 +459,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
+   if (rrpge_m_ktsalloc(par, n, resl) != 0U){ goto fault_inv; }
    r = 2400U;
    goto ret_callback;
 
@@ -485,7 +488,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
    if ((rrpge_m_edat->reir) == (rrpge_m_edat->reiw)){ /* No packet */
 
-    rrpge_m_info.xr[7] = 0U;
+    *resl = 0U;
 
    }else{                                             /* There are packets */
 
@@ -503,7 +506,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
      rrpge_m_edat->rebr = (rrpge_m_edat->rebr + 1U) & 0xFFFU;
     }
 
-    rrpge_m_info.xr[7] = r;     /* A: the length of the packet */
+    *resl = r;     /* A: the length of the packet */
 
     rrpge_m_edat->reir = (rrpge_m_edat->reir + 1U) & 0x3FU;
 
@@ -519,7 +522,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   if (rrpge_m_ktsalloc(par, n) != 0U){ goto fault_inv; }
+   if (rrpge_m_ktsalloc(par, n, resl) != 0U){ goto fault_inv; }
    r = 2400U;
    goto ret_callback;
 
@@ -546,7 +549,7 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
     goto fault_inv;
    }
 
-   rrpge_m_info.xr[7] = stat[RRPGE_STA_VARS + 0x1FU] = 1U;
+   *resl = stat[RRPGE_STA_VARS + 0x1FU] = 1U;
 
    r = 400U;
    break;
@@ -559,9 +562,9 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
    }
 
    if ((par[1] & 0xFFFFU) >= 0x10U){
-    rrpge_m_info.xr[7] = 0xFFFFU;
+    *resl = 0xFFFFU;
    }else{
-    rrpge_m_info.xr[7] = stat[RRPGE_STA_KTASK + 0xFU + (par[1] << 4)];
+    *resl = stat[RRPGE_STA_KTASK + 0xFU + (par[1] << 4)];
    }
 
    r = 400U;
@@ -597,12 +600,12 @@ auint rrpge_m_kcall(uint16 const* par, auint n)
 
 ret_callback:     /* Return after servicing a callback */
 
- rrpge_m_info.hlt |= RRPGE_HLT_CALLBACK;
+ rrpge_m_halt_set(rrpge_m_edat, RRPGE_HLT_CALLBACK);
  return r;
 
 fault_inv:        /* Return with invalid kernel call */
 
- rrpge_m_info.hlt |= RRPGE_HLT_INVKCALL;
+ rrpge_m_halt_set(rrpge_m_edat, RRPGE_HLT_INVKCALL);
  return 0;
 
 }

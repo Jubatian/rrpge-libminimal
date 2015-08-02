@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.03.17
+**  \date      2015.08.02
 */
 
 
@@ -14,6 +14,8 @@
 #include "rgm_fifo.h"
 #include "rgm_pram.h"
 #include "rgm_vid.h"
+#include "rgm_halt.h"
+#include "rgm_stat.h"
 
 
 
@@ -34,20 +36,29 @@ static const uint8  rrpge_m_addr_ash[16] = {
 
 
 /* Data RAM read operation for assisting Read accesses. Uses the Read / Write
-** offsets, returns in rrpge_m_info.add (only low 16 bits may be set). The
+** offsets, returns in hnd->cpu.add (only low 16 bits may be set). The
 ** parameter is the R-M-W signal: nonzero for the read of a R-M-W access. */
-RRPGE_M_FASTCALL static void rrpge_m_addr_rd_data(auint rmw)
+RRPGE_M_FASTCALL static void rrpge_m_addr_rd_data(rrpge_object_t* hnd, auint rmw)
 {
- if (rrpge_m_info.ada >= 0x0040U){ /* Normal RAM access */
+ if (hnd->cpu.ada >= 0x0040U){ /* Normal RAM access */
 
-  rrpge_m_info.add = (rrpge_m_edat->st.dram[rrpge_m_info.ada]) & 0xFFFFU;
+  hnd->cpu.add = (hnd->st.dram[hnd->cpu.ada]) & 0xFFFFU;
 
- }else{                            /* User Peripheral Area */
+ }else{                        /* User Peripheral Area */
 
-  if ((rrpge_m_info.ada & 0x20U) == 0U){
-   rrpge_m_info.add = (rrpge_m_edat->st.stat[RRPGE_STA_UPA + rrpge_m_info.ada]) & 0xFFFFU;
+  if ((hnd->cpu.ada & 0x20U) == 0U){
+
+   hnd->cpu.add = rrpge_m_stat_get(hnd, RRPGE_STA_UPA + hnd->cpu.ada);
+
   }else{
-   rrpge_m_info.add = rrpge_m_pramread(rrpge_m_info.ada, rmw);
+
+   /* PRAM access. The read stalls are generated here (1 cycle for any PRAM
+   ** access) since it is not possible for the pram component to signal this
+   ** back. */
+
+   hnd->cpu.add = rrpge_m_pramread(hnd->cpu.ada, rmw);
+   if ((hnd->cpu.ada & 0x06U) == 0x6U){ hnd->cpu.ocy ++; }
+
   }
 
  }
@@ -57,37 +68,40 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_rd_data(auint rmw)
 
 /* Data RAM write operation for assisting Write accesses. Uses the Read /
 ** Write offsets. */
-RRPGE_M_FASTCALL static void rrpge_m_addr_wr_data(auint val)
+RRPGE_M_FASTCALL static void rrpge_m_addr_wr_data(rrpge_object_t* hnd, auint val)
 {
- if (rrpge_m_info.ada >= 0x0040U){ /* Normal RAM access */
+ if (hnd->cpu.ada >= 0x0040U){ /* Normal RAM access */
 
-  rrpge_m_edat->st.dram[rrpge_m_info.ada] = val & 0xFFFFU;
+  hnd->st.dram[hnd->cpu.ada] = val & 0xFFFFU;
 
- }else{                            /* User Peripheral Area */
+ }else{                        /* User Peripheral Area */
 
-  switch (rrpge_m_info.ada & 0x3CU){
+  /* !!! The 0x00 - 0x1F range has to be written by rrpge_m_stat_set() once
+  ** the targets implement it properly */
+
+  switch (hnd->cpu.ada & 0x3CU){
 
    case 0x00U:                     /* Writes ignored */
     break;
 
    case 0x04U:                     /* Audio writable regs: Writes proceed */
-    rrpge_m_edat->st.stat[RRPGE_STA_UPA + rrpge_m_info.ada] = val & 0xFFFFU;
+    hnd->st.stat[RRPGE_STA_UPA + hnd->cpu.ada] = val & 0xFFFFU;
     break;
 
    case 0x08U:
    case 0x0CU:                     /* FIFO */
-    rrpge_m_fifowrite(rrpge_m_info.ada, val);
+    rrpge_m_fifowrite(hnd->cpu.ada, val);
     break;
 
    case 0x10U:
    case 0x14U:
    case 0x18U:
    case 0x1CU:                     /* Graphics */
-    rrpge_m_vidwrite(rrpge_m_info.ada, val);
+    rrpge_m_vidwrite(hnd->cpu.ada, val);
     break;
 
    default:                        /* PRAM interface */
-    rrpge_m_pramwrite(rrpge_m_info.ada, val);
+    rrpge_m_pramwrite(hnd->cpu.ada, val);
     break;
 
   }
@@ -100,13 +114,13 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_wr_data(auint val)
 /* Write functions */
 
 /* 00--: imm4 */
-RRPGE_M_FASTCALL static void rrpge_m_addr_wr_i4(auint val){}
+RRPGE_M_FASTCALL static void rrpge_m_addr_wr_i4(rrpge_object_t* hnd, auint val){}
 
 /* 01--: Stack: BP + imm4 */
-RRPGE_M_FASTCALL static void rrpge_m_addr_wr_si4(auint val)
+RRPGE_M_FASTCALL static void rrpge_m_addr_wr_si4(rrpge_object_t* hnd, auint val)
 {
- if ((rrpge_m_info.hlt & RRPGE_HLT_STACK) == 0U){ /* There was no error before (in read) */
-  rrpge_m_edat->st.dram[rrpge_m_info.ada] = val & 0xFFFFU;
+ if (!rrpge_m_halt_isset(hnd, RRPGE_HLT_STACK)){ /* There was no error before (in read) */
+  hnd->st.dram[hnd->cpu.ada] = val & 0xFFFFU;
  }
 }
 
@@ -123,25 +137,25 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_wr_si4(auint val)
 #define rrpge_m_addr_wr_si16 rrpge_m_addr_wr_si4
 
 /* 110-: xr */
-RRPGE_M_FASTCALL static void rrpge_m_addr_wr_xr(auint val)
+RRPGE_M_FASTCALL static void rrpge_m_addr_wr_xr(rrpge_object_t* hnd, auint val)
 {
- rrpge_m_info.xr[rrpge_m_info.opc & 0x7U] = val;
+ hnd->cpu.xr[hnd->cpu.opc & 0x7U] = val;
 }
 
 /* 1110: Data: x16 */
-RRPGE_M_FASTCALL static void rrpge_m_addr_wr_dx16(auint val)
+RRPGE_M_FASTCALL static void rrpge_m_addr_wr_dx16(rrpge_object_t* hnd, auint val)
 {
- rrpge_m_addr_wr_data( ((val << rrpge_m_info.ads) & rrpge_m_info.adm) |
-                       (rrpge_m_info.add & (~rrpge_m_info.adm)) );
+ rrpge_m_addr_wr_data(hnd, ((val << hnd->cpu.ads) & hnd->cpu.adm) |
+                           (hnd->cpu.add & (~hnd->cpu.adm)) );
 }
 
 /* 1111: Stack: BP + x16 */
-RRPGE_M_FASTCALL static void rrpge_m_addr_wr_sx16(auint val)
+RRPGE_M_FASTCALL static void rrpge_m_addr_wr_sx16(rrpge_object_t* hnd, auint val)
 {
- val = ((val << rrpge_m_info.ads) & rrpge_m_info.adm) |
-       (rrpge_m_info.add & (~rrpge_m_info.adm));
- if ((rrpge_m_info.hlt & RRPGE_HLT_STACK) == 0U){ /* There was no error before (in read) */
-  rrpge_m_edat->st.dram[rrpge_m_info.ada] = val & 0xFFFFU;
+ val = ((val << hnd->cpu.ads) & hnd->cpu.adm) |
+       (hnd->cpu.add & (~hnd->cpu.adm));
+ if (!rrpge_m_halt_isset(hnd, RRPGE_HLT_STACK)){ /* There was no error before (in read) */
+  hnd->st.dram[hnd->cpu.ada] = val & 0xFFFFU;
  }
 }
 
@@ -150,151 +164,151 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_wr_sx16(auint val)
 /* Read functions */
 
 /* 00--: imm4 */
-RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_i4(auint rmw)
+RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_i4(rrpge_object_t* hnd, auint rmw)
 {
- rrpge_m_info.awf = rrpge_m_addr_wr_i4;
- rrpge_m_info.ocy = 0U;
- rrpge_m_info.oaw = 1U;
- return (rrpge_m_info.opc & 0xFU);
+ hnd->cpu.awf = rrpge_m_addr_wr_i4;
+ hnd->cpu.ocy = 0U;
+ hnd->cpu.oaw = 1U;
+ return (hnd->cpu.opc & 0xFU);
 }
 
 /* 01--: Stack: BP + imm4 */
-RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_si4(auint rmw)
+RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_si4(rrpge_object_t* hnd, auint rmw)
 {
- rrpge_m_info.awf = rrpge_m_addr_wr_si4;
- rrpge_m_info.ocy = 1U;
- rrpge_m_info.oaw = 1U;
- rrpge_m_info.ada = (((rrpge_m_info.opc & 0xFU) + rrpge_m_info.bp) & 0xFFFFU) |
-                    (rrpge_m_info.sbt & (~0xFFFFU));
- if ( (rrpge_m_info.ada <  rrpge_m_info.stp) &&
-      (rrpge_m_info.ada >= rrpge_m_info.sbt) ){
-  return ((rrpge_m_edat->st.dram[rrpge_m_info.ada]) & 0xFFFFU);
+ hnd->cpu.awf = rrpge_m_addr_wr_si4;
+ hnd->cpu.ocy = 1U;
+ hnd->cpu.oaw = 1U;
+ hnd->cpu.ada = (((hnd->cpu.opc & 0xFU) + hnd->cpu.bp) & 0xFFFFU) |
+                (hnd->cpu.sbt & (~0xFFFFU));
+ if ( (hnd->cpu.ada <  hnd->cpu.stp) &&
+      (hnd->cpu.ada >= hnd->cpu.sbt) ){
+  return ((hnd->st.dram[hnd->cpu.ada]) & 0xFFFFU);
  }else{
-  rrpge_m_info.hlt |= RRPGE_HLT_STACK;
+  rrpge_m_halt_set(hnd, RRPGE_HLT_STACK);
   return 0U;
  }
 }
 
 /* 1000: imm16 */
-RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_i16(auint rmw)
+RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_i16(rrpge_object_t* hnd, auint rmw)
 {
- rrpge_m_info.awf = rrpge_m_addr_wr_i16;
- rrpge_m_info.ocy = 1U;
- rrpge_m_info.oaw = 2U;
- return ( ((rrpge_m_info.opc & 0x3U) << 14) +
-          (rrpge_m_edat->crom[(rrpge_m_info.pc + 1U) & 0xFFFFU] & 0x3FFFU) );
+ hnd->cpu.awf = rrpge_m_addr_wr_i16;
+ hnd->cpu.ocy = 1U;
+ hnd->cpu.oaw = 2U;
+ return ( ((hnd->cpu.opc & 0x3U) << 14) +
+          (hnd->crom[(hnd->cpu.pc + 1U) & 0xFFFFU] & 0x3FFFU) );
 }
 
 /* 1001: BP + imm16 */
-RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_bi16(auint rmw)
+RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_bi16(rrpge_object_t* hnd, auint rmw)
 {
- rrpge_m_info.awf = rrpge_m_addr_wr_bi16;
- rrpge_m_info.ocy = 1U;
- rrpge_m_info.oaw = 2U;
- return ( ( rrpge_m_info.bp +
-            ((rrpge_m_info.opc & 0x3U) << 14) +
-            (rrpge_m_edat->crom[(rrpge_m_info.pc + 1U) & 0xFFFFU] & 0x3FFFU) ) & 0xFFFFU);
+ hnd->cpu.awf = rrpge_m_addr_wr_bi16;
+ hnd->cpu.ocy = 1U;
+ hnd->cpu.oaw = 2U;
+ return ( ( hnd->cpu.bp +
+            ((hnd->cpu.opc & 0x3U) << 14) +
+            (hnd->crom[(hnd->cpu.pc + 1U) & 0xFFFFU] & 0x3FFFU) ) & 0xFFFFU);
 }
 
 /* 1010: Data: imm16 */
-RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_di16(auint rmw)
+RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_di16(rrpge_object_t* hnd, auint rmw)
 {
- rrpge_m_info.awf = rrpge_m_addr_wr_di16;
- rrpge_m_info.ocy = 2U;
- rrpge_m_info.oaw = 2U;
- rrpge_m_info.ada = ((rrpge_m_info.opc & 0x3U) << 14) +
-                    (rrpge_m_edat->crom[(rrpge_m_info.pc + 1U) & 0xFFFFU] & 0x3FFFU);
- rrpge_m_addr_rd_data(rmw);
- return rrpge_m_info.add;
+ hnd->cpu.awf = rrpge_m_addr_wr_di16;
+ hnd->cpu.ocy = 2U;
+ hnd->cpu.oaw = 2U;
+ hnd->cpu.ada = ((hnd->cpu.opc & 0x3U) << 14) +
+                (hnd->crom[(hnd->cpu.pc + 1U) & 0xFFFFU] & 0x3FFFU);
+ rrpge_m_addr_rd_data(hnd, rmw);
+ return hnd->cpu.add;
 }
 
 /* 1011: Stack: BP + imm16 */
-RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_si16(auint rmw)
+RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_si16(rrpge_object_t* hnd, auint rmw)
 {
- rrpge_m_info.awf = rrpge_m_addr_wr_si16;
- rrpge_m_info.ocy = 2U;
- rrpge_m_info.oaw = 2U;
- rrpge_m_info.ada = ( ( ((rrpge_m_info.opc & 0x3U) << 14) +
-                        (rrpge_m_edat->crom[(rrpge_m_info.pc + 1U) & 0xFFFFU] & 0x3FFFU) +
-                        rrpge_m_info.bp ) & 0xFFFFU) |
-                    (rrpge_m_info.sbt & (~0xFFFFU));
- if ( (rrpge_m_info.ada <  rrpge_m_info.stp) &&
-      (rrpge_m_info.ada >= rrpge_m_info.sbt) ){
-  return ((rrpge_m_edat->st.dram[rrpge_m_info.ada]) & 0xFFFFU);
+ hnd->cpu.awf = rrpge_m_addr_wr_si16;
+ hnd->cpu.ocy = 2U;
+ hnd->cpu.oaw = 2U;
+ hnd->cpu.ada = ( ( ((hnd->cpu.opc & 0x3U) << 14) +
+                    (hnd->crom[(hnd->cpu.pc + 1U) & 0xFFFFU] & 0x3FFFU) +
+                    hnd->cpu.bp ) & 0xFFFFU) |
+                (hnd->cpu.sbt & (~0xFFFFU));
+ if ( (hnd->cpu.ada <  hnd->cpu.stp) &&
+      (hnd->cpu.ada >= hnd->cpu.sbt) ){
+  return ((hnd->st.dram[hnd->cpu.ada]) & 0xFFFFU);
  }else{
-  rrpge_m_info.hlt |= RRPGE_HLT_STACK;
+  rrpge_m_halt_set(hnd, RRPGE_HLT_STACK);
   return 0U;
  }
 }
 
 /* 110-: xr */
-RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_xr(auint rmw)
+RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_xr(rrpge_object_t* hnd, auint rmw)
 {
- rrpge_m_info.awf = rrpge_m_addr_wr_xr;
- rrpge_m_info.ocy = 0U;
- rrpge_m_info.oaw = 1U;
- return (rrpge_m_info.xr[rrpge_m_info.opc & 0x7U] & 0xFFFFU);
+ hnd->cpu.awf = rrpge_m_addr_wr_xr;
+ hnd->cpu.ocy = 0U;
+ hnd->cpu.oaw = 1U;
+ return (hnd->cpu.xr[hnd->cpu.opc & 0x7U] & 0xFFFFU);
 }
 
 /* 1110: Data: x16 */
-RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_dx16(auint rmw)
+RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_dx16(rrpge_object_t* hnd, auint rmw)
 {
- auint s = rrpge_m_info.opc & 0x3U;            /* Pointer register select */
- auint t = (s << 2);                           /* 0, 4, 8 or 12, shift amount for xm & xb */
- auint m = (rrpge_m_info.xmb[0] >> t) & 0xFU;  /* Pointer mode */
- auint b = (rrpge_m_info.xmb[1] >> t) & 0xFU;  /* Pointer fraction */
- auint a;                                      /* Address */
+ auint s = hnd->cpu.opc & 0x3U;            /* Pointer register select */
+ auint t = (s << 2);                       /* 0, 4, 8 or 12, shift amount for xm & xb */
+ auint m = (hnd->cpu.xmb[0] >> t) & 0xFU;  /* Pointer mode */
+ auint b = (hnd->cpu.xmb[1] >> t) & 0xFU;  /* Pointer fraction */
+ auint a;                                  /* Address */
 
- rrpge_m_info.awf = rrpge_m_addr_wr_dx16;
- rrpge_m_info.oaw = 1U;
- rrpge_m_info.ocy = 1U;
+ hnd->cpu.awf = rrpge_m_addr_wr_dx16;
+ hnd->cpu.oaw = 1U;
+ hnd->cpu.ocy = 1U;
 
- rrpge_m_info.ads = (0xFU - b) & rrpge_m_addr_ams[m];
- rrpge_m_info.adm = rrpge_m_addr_dms[m] << rrpge_m_info.ads;
- rrpge_m_info.ada = rrpge_m_info.xr[s + 4U] & 0xFFFFU;
- a  = (rrpge_m_info.ada << 4) + b;
- a += ( ((0x0F40U >> m) & 1U) |                /* 1 if post-incrementing ptr. mode */
-        ((0xF080U >> m) & rmw) ) <<            /* 1 if post-incrementing on write only mode & rmw set (it is 1) */
+ hnd->cpu.ads = (0xFU - b) & rrpge_m_addr_ams[m];
+ hnd->cpu.adm = rrpge_m_addr_dms[m] << hnd->cpu.ads;
+ hnd->cpu.ada = hnd->cpu.xr[s + 4U] & 0xFFFFU;
+ a  = (hnd->cpu.ada << 4) + b;
+ a += ( ((0x0F40U >> m) & 1U) |            /* 1 if post-incrementing ptr. mode */
+        ((0xF080U >> m) & rmw) ) <<        /* 1 if post-incrementing on write only mode & rmw set (it is 1) */
       rrpge_m_addr_ash[m];
- rrpge_m_info.xr[s + 4U] = a >> 4;
- rrpge_m_info.xmb[1] = (rrpge_m_info.xmb[1] & (~(0xFU << t))) |
-                       ((a & 0xFU) << t);      /* Address write-back */
+ hnd->cpu.xr[s + 4U] = a >> 4;
+ hnd->cpu.xmb[1] = (hnd->cpu.xmb[1] & (~(0xFU << t))) |
+                   ((a & 0xFU) << t);      /* Address write-back */
 
- rrpge_m_addr_rd_data(rmw);
- return (rrpge_m_info.add & rrpge_m_info.adm) >> rrpge_m_info.ads;
+ rrpge_m_addr_rd_data(hnd, rmw);
+ return (hnd->cpu.add & hnd->cpu.adm) >> hnd->cpu.ads;
 }
 
 /* 1111: Stack: BP + x16 */
-RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_sx16(auint rmw)
+RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_sx16(rrpge_object_t* hnd, auint rmw)
 {
- auint s = rrpge_m_info.opc & 0x3U;            /* Pointer register select */
- auint t = (s << 2);                           /* 0, 4, 8 or 12, shift amount for xm & xb */
- auint m = (rrpge_m_info.xmb[0] >> t) & 0xFU;  /* Pointer mode */
- auint b = (rrpge_m_info.xmb[1] >> t) & 0xFU;  /* Pointer fraction */
- auint a;                                      /* Address */
+ auint s = hnd->cpu.opc & 0x3U;            /* Pointer register select */
+ auint t = (s << 2);                       /* 0, 4, 8 or 12, shift amount for xm & xb */
+ auint m = (hnd->cpu.xmb[0] >> t) & 0xFU;  /* Pointer mode */
+ auint b = (hnd->cpu.xmb[1] >> t) & 0xFU;  /* Pointer fraction */
+ auint a;                                  /* Address */
 
- rrpge_m_info.awf = rrpge_m_addr_wr_sx16;
- rrpge_m_info.oaw = 1U;
- rrpge_m_info.ocy = 1U;
+ hnd->cpu.awf = rrpge_m_addr_wr_sx16;
+ hnd->cpu.oaw = 1U;
+ hnd->cpu.ocy = 1U;
 
- rrpge_m_info.ads = (0xFU - b) & rrpge_m_addr_ams[m];
- rrpge_m_info.adm = rrpge_m_addr_dms[m] << rrpge_m_info.ads;
- rrpge_m_info.ada = rrpge_m_info.xr[s + 4U];
- a  = (rrpge_m_info.ada << 4) + b;
- a += ( ((0x0F40U >> m) & 1U) |                /* 1 if post-incrementing ptr. mode */
-        ((0xF080U >> m) & rmw) ) <<            /* 1 if post-incrementing on write only mode & rmw set (it is 1) */
+ hnd->cpu.ads = (0xFU - b) & rrpge_m_addr_ams[m];
+ hnd->cpu.adm = rrpge_m_addr_dms[m] << hnd->cpu.ads;
+ hnd->cpu.ada = hnd->cpu.xr[s + 4U];
+ a  = (hnd->cpu.ada << 4) + b;
+ a += ( ((0x0F40U >> m) & 1U) |            /* 1 if post-incrementing ptr. mode */
+        ((0xF080U >> m) & rmw) ) <<        /* 1 if post-incrementing on write only mode & rmw set (it is 1) */
       rrpge_m_addr_ash[m];
- rrpge_m_info.xr[s + 4U] = a >> 4;
- rrpge_m_info.xmb[1] = (rrpge_m_info.xmb[1] & (~(0xFU << t))) |
-                       ((a & 0xFU) << t);      /* Address write-back */
+ hnd->cpu.xr[s + 4U] = a >> 4;
+ hnd->cpu.xmb[1] = (hnd->cpu.xmb[1] & (~(0xFU << t))) |
+                   ((a & 0xFU) << t);      /* Address write-back */
 
- rrpge_m_info.ada = ((rrpge_m_info.ada + rrpge_m_info.bp) & 0xFFFFU) |
-                    (rrpge_m_info.sbt & (~0xFFFFU));
- if ( (rrpge_m_info.ada <  rrpge_m_info.stp) &&
-      (rrpge_m_info.ada >= rrpge_m_info.sbt) ){
-  return ((rrpge_m_edat->st.dram[rrpge_m_info.ada]) & rrpge_m_info.adm) >> rrpge_m_info.ads;
+ hnd->cpu.ada = ((hnd->cpu.ada + hnd->cpu.bp) & 0xFFFFU) |
+                (hnd->cpu.sbt & (~0xFFFFU));
+ if ( (hnd->cpu.ada <  hnd->cpu.stp) &&
+      (hnd->cpu.ada >= hnd->cpu.sbt) ){
+  return ((hnd->st.dram[hnd->cpu.ada]) & hnd->cpu.adm) >> hnd->cpu.ads;
  }else{
-  rrpge_m_info.hlt |= RRPGE_HLT_STACK;
+  rrpge_m_halt_set(hnd, RRPGE_HLT_STACK);
   return 0U;
  }
 }
@@ -302,9 +316,9 @@ RRPGE_M_FASTCALL static auint rrpge_m_addr_rd_sx16(auint rmw)
 
 
 /* Addressing mode specific read, function table by opcode bits 0-5. Uses
-** rrpge_m_info.opc for the addressing mode further on, assumes PC points here
-** too for fetching the second opcode word as needed. Sets rrpge_m_info.ocy
-** and rrpge_m_info.oaw (this latter to 1 or 2) depending on the requirements
+** hnd->cpu.opc for the addressing mode further on, assumes PC points here
+** too for fetching the second opcode word as needed. Sets hnd->cpu.ocy
+** and hnd->cpu.oaw (this latter to 1 or 2) depending on the requirements
 ** of the addressing operation. Only low 16 bits of the return value may be
 ** set. */
 rrpge_m_addr_read_t* const rrpge_m_addr_read_table[64] = {
@@ -331,16 +345,16 @@ rrpge_m_addr_read_t* const rrpge_m_addr_read_table[64] = {
 /* Pops off a value from the stack, sets halt cause if stack pointer is out of
 ** bounds (low). Returning to supervisor must be handled externally (this
 ** won't do that). Only low 16 bits of the return value may be set. */
-RRPGE_M_FASTCALL auint rrpge_m_stk_pop(void)
+RRPGE_M_FASTCALL auint rrpge_m_stk_pop(rrpge_object_t* hnd)
 {
  auint t0;
- rrpge_m_info.sp--;
- t0 = ((rrpge_m_info.sp + rrpge_m_info.bp) & 0xFFFFU) | (rrpge_m_info.sbt & (~0xFFFFU));
- if ( (t0 <  rrpge_m_info.stp) &&
-      (t0 >= rrpge_m_info.sbt) ){
-  return ((rrpge_m_edat->st.dram[t0]) & 0xFFFFU);
+ hnd->cpu.sp--;
+ t0 = ((hnd->cpu.sp + hnd->cpu.bp) & 0xFFFFU) | (hnd->cpu.sbt & (~0xFFFFU));
+ if ( (t0 <  hnd->cpu.stp) &&
+      (t0 >= hnd->cpu.sbt) ){
+  return ((hnd->st.dram[t0]) & 0xFFFFU);
  }else{
-  rrpge_m_info.hlt |= RRPGE_HLT_STACK;
+  rrpge_m_halt_set(hnd, RRPGE_HLT_STACK);
   return 0U;
  }
 }
@@ -349,31 +363,31 @@ RRPGE_M_FASTCALL auint rrpge_m_stk_pop(void)
 
 /* Pushes a value on the stack, sets halt cause if stack pointer is out of
 ** bounds (high). */
-RRPGE_M_FASTCALL void  rrpge_m_stk_push(auint val)
+RRPGE_M_FASTCALL void  rrpge_m_stk_push(rrpge_object_t* hnd, auint val)
 {
  auint t0;
- t0 = ((rrpge_m_info.sp + rrpge_m_info.bp) & 0xFFFFU) | (rrpge_m_info.sbt & (~0xFFFFU));
- if ( (t0 <  rrpge_m_info.stp) &&
-      (t0 >= rrpge_m_info.sbt) ){
-  rrpge_m_edat->st.dram[t0] = val & 0xFFFFU;
+ t0 = ((hnd->cpu.sp + hnd->cpu.bp) & 0xFFFFU) | (hnd->cpu.sbt & (~0xFFFFU));
+ if ( (t0 <  hnd->cpu.stp) &&
+      (t0 >= hnd->cpu.sbt) ){
+  hnd->st.dram[t0] = val & 0xFFFFU;
  }else{
-  rrpge_m_info.hlt |= RRPGE_HLT_STACK;
+  rrpge_m_halt_set(hnd, RRPGE_HLT_STACK);
  }
- rrpge_m_info.sp++;
+ hnd->cpu.sp++;
 }
 
 
 
 /* Sets a value on the stack, sets halt cause if stack pointer is out of
 ** bounds. This is used to save the return address for function calls. */
-RRPGE_M_FASTCALL void  rrpge_m_stk_set(auint off, auint val)
+RRPGE_M_FASTCALL void  rrpge_m_stk_set(rrpge_object_t* hnd, auint off, auint val)
 {
  auint t0;
- t0 = (off & 0xFFFFU) | (rrpge_m_info.sbt & (~0xFFFFU));
- if ( (t0 <  rrpge_m_info.stp) &&
-      (t0 >= rrpge_m_info.sbt) ){
-  rrpge_m_edat->st.dram[t0] = val & 0xFFFFU;
+ t0 = (off & 0xFFFFU) | (hnd->cpu.sbt & (~0xFFFFU));
+ if ( (t0 <  hnd->cpu.stp) &&
+      (t0 >= hnd->cpu.sbt) ){
+  hnd->st.dram[t0] = val & 0xFFFFU;
  }else{
-  rrpge_m_info.hlt |= RRPGE_HLT_STACK;
+  rrpge_m_halt_set(hnd, RRPGE_HLT_STACK);
  }
 }

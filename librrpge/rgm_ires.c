@@ -6,12 +6,14 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.03.06
+**  \date      2015.08.02
 */
 
 
 #include "rgm_ires.h"
 #include "rgm_ulib.h"
+#include "rgm_halt.h"
+#include "rgm_stat.h"
 
 
 /* State: Nonzero elements in the VARS area (address, data high, data low) */
@@ -1045,7 +1047,7 @@ static void rrpge_m_ires_initl(rrpge_object_t* obj)
  obj->tsfl = 0;
 
  /* No halt causes */
- obj->hlt = 0;
+ rrpge_m_halt_clrall(obj);
 
  /* No audio events waiting for servicing, double buffer empty */
  obj->aco = 0;
@@ -1155,39 +1157,39 @@ void rrpge_m_ires_initcode(rrpge_object_t* obj)
 void rrpge_m_ires_initstat(rrpge_object_t* obj)
 {
  auint   i;
- uint16 *s = &(obj->st.stat[0]);
 
  /* Reset Application State */
 
- for (i = 0U; i < (sizeof(obj->st.stat) / sizeof(obj->st.stat[0])); i++){
-  s[i] = 0U;
+ for (i = 0U; i < 0x400U; i++){
+  rrpge_m_stat_set(obj, i, 0U);
  }
 
  /* Populate nonzero members of Application State */
 
  /* Stuff in the VARS area */
  for (i = 0U; i < STANZ_CT; i++){
-  s[rrpge_m_ires_stanz[i * 3U]] = ((rrpge_m_ires_stanz[(i * 3U) + 1U] & 0xFFU) << 8) +
-                                  ((rrpge_m_ires_stanz[(i * 3U) + 2U] & 0xFFU));
+  rrpge_m_stat_set(obj, rrpge_m_ires_stanz[i * 3U],
+      ((rrpge_m_ires_stanz[(i * 3U) + 1U] & 0xFFU) << 8) +
+      ((rrpge_m_ires_stanz[(i * 3U) + 2U] & 0xFFU)) );
  }
 
  /* Color palette */
  for (i = 0U; i < 256U; i++){
-  s[RRPGE_STA_PAL + i] = rrpge_m_ires_pal[i];
+  rrpge_m_stat_set(obj, RRPGE_STA_PAL + i, rrpge_m_ires_pal[i]);
  }
 
 
  /* Add application header and descriptor elements */
 
  for (i = 0U; i < 64U; i++){
-  s[i] = obj->apph[i];
+  rrpge_m_stat_set(obj, i, obj->apph[i]);
  }
- s[RRPGE_STA_VARS + 0x18U] = obj->appd[0x0U];
- s[RRPGE_STA_VARS + 0x19U] = obj->appd[0x1U];
- s[RRPGE_STA_VARS + 0x1AU] = obj->appd[0x8U];
- s[RRPGE_STA_VARS + 0x1BU] = obj->appd[0x9U];
- s[RRPGE_STA_VARS + 0x1CU] = obj->appd[0xAU];
- s[RRPGE_STA_VARS + 0x1DU] = obj->appd[0xBU];
+ rrpge_m_stat_set(obj, RRPGE_STA_VARS + 0x18U, obj->appd[0x0U]);
+ rrpge_m_stat_set(obj, RRPGE_STA_VARS + 0x19U, obj->appd[0x1U]);
+ rrpge_m_stat_set(obj, RRPGE_STA_VARS + 0x1AU, obj->appd[0x8U]);
+ rrpge_m_stat_set(obj, RRPGE_STA_VARS + 0x1BU, obj->appd[0x9U]);
+ rrpge_m_stat_set(obj, RRPGE_STA_VARS + 0x1CU, obj->appd[0xAU]);
+ rrpge_m_stat_set(obj, RRPGE_STA_VARS + 0x1DU, obj->appd[0xBU]);
 }
 
 

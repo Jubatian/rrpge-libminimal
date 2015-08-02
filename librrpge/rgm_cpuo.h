@@ -2,11 +2,11 @@
 **  \file
 **  \brief     CPU opcode decoder & ALU
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2015.08.02
 */
 
 
@@ -19,7 +19,7 @@
 
 /* Function type definition for opcode services. Returns number of cycles
 ** consumed, they may alter the state at will. */
-typedef RRPGE_M_FASTCALL auint (rrpge_m_opf_t)(void);
+typedef RRPGE_M_FASTCALL auint (rrpge_m_opf_t)(rrpge_object_t* hnd);
 
 
 /* CPU opcode call table. The rrpge_m_info structure must be set up

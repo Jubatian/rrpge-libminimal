@@ -11,6 +11,7 @@
 
 
 #include "rgm_db.h"
+#include "rgm_stat.h"
 
 
 
@@ -82,9 +83,7 @@ rrpge_iuint rrpge_set_dram(rrpge_object_t* hnd, rrpge_iuint adr, rrpge_iuint val
 /* Gets a value from the State. - implementation of RRPGE library function */
 rrpge_iuint rrpge_get_state(rrpge_object_t* hnd, rrpge_iuint adr)
 {
- if (adr <  0x040U){ return 0U; }
- if (adr >= 0x400U){ return 0U; }
- return (rrpge_iuint)(hnd->st.stat[adr]);
+ return rrpge_m_stat_get(hnd, adr);
 }
 
 
@@ -92,8 +91,7 @@ rrpge_iuint rrpge_get_state(rrpge_object_t* hnd, rrpge_iuint adr)
 /* Sets a value in the State. - implementation of RRPGE library function */
 rrpge_iuint rrpge_set_state(rrpge_object_t* hnd, rrpge_iuint adr, rrpge_iuint val)
 {
- /* !!! Implement */
- return rrpge_get_state(hnd, adr);
+ return rrpge_m_stat_set(hnd, adr, val);
 }
 
 
@@ -104,12 +102,12 @@ rrpge_iuint rrpge_get_stack(rrpge_object_t* hnd, rrpge_iuint adr)
  /* !!! Temporary implementation, works for now */
  auint sbt;
  auint stp;
- if ((hnd->st.stat[RRPGE_STA_VARS + 0x1AU] & 0xFFFFU) == 0U){ /* Separate stack */
+ if (rrpge_m_stat_get(hnd, RRPGE_STA_VARS + 0x1AU) == 0U){ /* Separate stack */
   sbt = 0x10000U;
   stp = 0x18000U;
  }else{                   /* Data area stack */
-  sbt = (hnd->st.stat[RRPGE_STA_VARS + 0x1BU] & 0xFFFFU);
-  stp = (hnd->st.stat[RRPGE_STA_VARS + 0x1AU] & 0xFFFFU) + sbt;
+  sbt = rrpge_m_stat_get(hnd, RRPGE_STA_VARS + 0x1BU);
+  stp = rrpge_m_stat_get(hnd, RRPGE_STA_VARS + 0x1AU) + sbt;
  }
  if (adr >= (stp - sbt)){ return 0U; }
  return (rrpge_iuint)(hnd->st.dram[adr + sbt]);

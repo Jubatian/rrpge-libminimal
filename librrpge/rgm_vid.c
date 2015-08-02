@@ -2,17 +2,18 @@
 **  \file
 **  \brief     Graphics FIFO and display manager.
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2015.08.02
 */
 
 
 
 #include "rgm_vid.h"
 #include "rgm_grln.h"
+#include "rgm_halt.h"
 
 
 
@@ -62,7 +63,7 @@ void  rrpge_m_vidproc(auint cy)
    rrpge_m_info.vln = 0x10000U + 400U - RRPGE_M_VLN;
    rrpge_m_edat->rena = (rrpge_m_edat->rena & (~0x2U)) | /* Transfer requested render state */
                         ((rrpge_m_edat->rena & (0x1U)) << 1);
-   rrpge_m_info.hlt |= RRPGE_HLT_FRAME;
+   rrpge_m_halt_set(rrpge_m_edat, RRPGE_HLT_FRAME);
   }
 
   /* Before starting next frame (line counter is zero, so next iteration will

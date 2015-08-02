@@ -2,15 +2,16 @@
 **  \file
 **  \brief     Audio output manager, rrpge_getaudio() implementation.
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2015.08.02
 */
 
 
 #include "rgm_aud.h"
+#include "rgm_halt.h"
 
 
 
@@ -79,7 +80,7 @@ void rrpge_m_audproc(auint cy)
 
   if ((rrpge_m_edat->audp & 0x1FFU) == 0U){
    rrpge_m_edat->aco ++;
-   rrpge_m_info.hlt |= RRPGE_HLT_AUDIO;
+   rrpge_m_halt_set(rrpge_m_edat, RRPGE_HLT_AUDIO);
   }
 
  }
@@ -96,11 +97,11 @@ rrpge_iuint rrpge_getaudio(rrpge_object_t* hnd, rrpge_uint8* lbuf, rrpge_uint8* 
  uint8 const* pl;
  uint8 const* pr;
 
- if (((hnd->hlt) & RRPGE_HLT_AUDIO) == 0U){ return 0; } /* No audio event present */
+ if (!rrpge_m_halt_isset(hnd, RRPGE_HLT_AUDIO)){ return 0; } /* No audio event present */
 
  r = hnd->aco;
  hnd->aco = 0U;
- hnd->hlt &= ~(auint)(RRPGE_HLT_AUDIO);
+ rrpge_m_halt_clr(hnd, RRPGE_HLT_AUDIO);
 
  /* Fill in the 512 sample target buffers */
 

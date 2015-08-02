@@ -2,11 +2,11 @@
 **  \file
 **  \brief     Emulation execution manager (rrpge_run())
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2015.08.02
 */
 
 
@@ -18,6 +18,8 @@
 #include "rgm_prng.h"
 #include "rgm_task.h"
 #include "rgm_fifo.h"
+#include "rgm_halt.h"
+#include "rgm_cpu.h"
 
 
 
@@ -27,7 +29,6 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
  auint i;
  auint cy;                     /* Cycle counting work variable */
  auint r  = 0U;                /* Return number of cycles */
- auint fo = 1U;                /* Is this the first operation? (For breakpoints) */
  uint16* stat;
 
  rrpge_m_edat = hnd;
@@ -35,15 +36,15 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
 
  /* Check halt causes, break emulation if necessary. */
 
- if ( ( (rrpge_m_edat->hlt) &
-        (RRPGE_HLT_WAIT |      /* Need to finish initialization first */
-         RRPGE_HLT_AUDIO |     /* Need servicing audio event first */
-         RRPGE_HLT_EXIT |      /* Can not continue */
-         RRPGE_HLT_FAULT) )    /* Can not continue */
-      != 0U){
+ if (rrpge_m_halt_isset(hnd,
+        RRPGE_HLT_WAIT |       /* Need to finish initialization first */
+        RRPGE_HLT_AUDIO |      /* Need servicing audio event first */
+        RRPGE_HLT_EXIT |       /* Can not continue */
+        RRPGE_HLT_FAULT        /* Can not continue */
+    )){
   return 0U;
  }
- rrpge_m_info.hlt = 0U;        /* All other halt causes simply clear */
+ rrpge_m_halt_clrall(hnd);     /* All other halt causes simply clear */
 
  /* Export Application state data into info structure */
 
@@ -56,21 +57,6 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
                        ((stat[RRPGE_STA_VARS + 0x2BU] & 0xFFFFU));
  rrpge_m_info.cys = 0U;   /* Stall cycles are always consumed right away (no carry-over between runs) */
  rrpge_m_info.grr = 1U;   /* Reload recolor banks */
- for (i = 0U; i < 8U; i++){
-  rrpge_m_info.xr[i] = stat[RRPGE_STA_VARS + 0x00U + i] & 0xFFFFU;
- }
- rrpge_m_info.xmb[0] = stat[RRPGE_STA_VARS + 0x08U] & 0xFFFFU;
- rrpge_m_info.xmb[1] = stat[RRPGE_STA_VARS + 0x09U] & 0xFFFFU;
- rrpge_m_info.pc = stat[RRPGE_STA_VARS + 0x0AU] & 0xFFFFU;
- rrpge_m_info.sp = stat[RRPGE_STA_VARS + 0x0BU] & 0xFFFFU;
- rrpge_m_info.bp = stat[RRPGE_STA_VARS + 0x0CU] & 0xFFFFU;
- if ((stat[RRPGE_STA_VARS + 0x1AU] & 0xFFFFU) == 0U){ /* Separate stack */
-  rrpge_m_info.sbt = 0x10000U;
-  rrpge_m_info.stp = 0x18000U;
- }else{                   /* Data area stack */
-  rrpge_m_info.sbt = (stat[RRPGE_STA_VARS + 0x1BU] & 0xFFFFU);
-  rrpge_m_info.stp = (stat[RRPGE_STA_VARS + 0x1AU] & 0xFFFFU) + rrpge_m_info.sbt;
- }
 
 
  /* Enter main loop */
@@ -81,38 +67,7 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
   ** video line. Random kernel stall is only applied after this: it is
   ** irrelevant if it extends into more video lines. */
 
-  cy = 0U;                     /* Count of emulated cycles */
-
-  if       (rmod == RRPGE_RUN_SINGLE){ /* Single step: Process only one operation */
-
-   rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc & 0xFFFFU];
-   cy += rrpge_m_optable[rrpge_m_info.opc >> 9]();  /* Run opcode */
-
-  }else if (rmod == RRPGE_RUN_BREAK){  /* Breakpoint mode: after 1st op, halt on any breakpoints */
-
-   do{
-    if (fo != 0U){             /* First operation passed: check for breakpoints. */
-     if ( (rrpge_m_edat->brkp[rrpge_m_info.pc >> 5]) &
-          (0x80000000U >> (rrpge_m_info.pc & 0x1FU)) ){ /* Breakpoint hit */
-      rrpge_m_info.hlt |= RRPGE_HLT_BREAK;
-      break;
-     }
-    }
-    rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc & 0xFFFFU];
-    cy += rrpge_m_optable[rrpge_m_info.opc >> 9](); /* Run opcode */
-    fo = 0U;
-    if (rrpge_m_info.hlt != 0U){ break; }           /* Some halt event happened */
-   }while (cy <= rrpge_m_info.vlc);
-
-  }else{                               /* Normal mode: just run until halt */
-
-   do{
-    rrpge_m_info.opc = rrpge_m_edat->crom[rrpge_m_info.pc & 0xFFFFU];
-    cy += rrpge_m_optable[rrpge_m_info.opc >> 9](); /* Run opcode */
-    if (rrpge_m_info.hlt != 0U){ break; }           /* Some halt event happened */
-   }while (cy <= rrpge_m_info.vlc);
-
-  }
+  cy = rrpge_m_cpu_run(hnd, rmod, rrpge_m_info.vlc);
 
   /* Roll and add kernel internal task cycles if necessary. This is done here
   ** since it needs to produce CPU cycles. */
@@ -156,7 +111,7 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
   ** kernel tasks. Note that single stepping mode does not break here since
   ** if it did so, kernel tasks would never be processed. */
 
-  if (rrpge_m_info.hlt != 0){ break; }
+  if (rrpge_m_halt_isany(hnd)){ break; }
 
 
   /* Schedule kernel tasks if necessary. */
@@ -181,16 +136,6 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
  stat[RRPGE_STA_VARS + 0x23U] = (rrpge_m_info.cyf[0]      ) & 0xFFFFU;
  stat[RRPGE_STA_VARS + 0x2AU] = (rrpge_m_info.cyf[1] >> 16) & 0xFFFFU;
  stat[RRPGE_STA_VARS + 0x2BU] = (rrpge_m_info.cyf[1]      ) & 0xFFFFU;
- for (i = 0U; i < 8U; i++){
-  stat[RRPGE_STA_VARS + 0x00U + i] = (rrpge_m_info.xr[i]) & 0xFFFFU;
- }
- stat[RRPGE_STA_VARS + 0x08U] = (rrpge_m_info.xmb[0]) & 0xFFFFU;
- stat[RRPGE_STA_VARS + 0x09U] = (rrpge_m_info.xmb[1]) & 0xFFFFU;
- stat[RRPGE_STA_VARS + 0x0AU] = (rrpge_m_info.pc) & 0xFFFFU;
- stat[RRPGE_STA_VARS + 0x0BU] = (rrpge_m_info.sp) & 0xFFFFU;
- stat[RRPGE_STA_VARS + 0x0CU] = (rrpge_m_info.bp) & 0xFFFFU;
-
- rrpge_m_edat->hlt = rrpge_m_info.hlt; /* Update halt cause */
 
  /* OK, all done, return consumed cycles */
 

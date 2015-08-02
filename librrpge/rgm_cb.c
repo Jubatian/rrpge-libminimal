@@ -2,16 +2,17 @@
 **  \file
 **  \brief     Callback related components, default callbacks.
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.28
+**  \date      2015.08.02
 */
 
 
 #include "rgm_cb.h"
 #include "rrpge.h"
+#include "rgm_halt.h"
 
 
 
@@ -28,7 +29,7 @@ static void rrpge_m_cb_line(rrpge_object_t* hnd, rrpge_iuint ln, rrpge_uint32 co
 static void rrpge_m_cb_loadbin(rrpge_object_t* hnd, rrpge_iuint tsh, const void* par)
 {
  rrpge_taskend(hnd, tsh, 0x8000U);
- rrpge_m_info.hlt |= RRPGE_HLT_FAULT; /* This callback is mandatory */
+ rrpge_m_halt_set(hnd, RRPGE_HLT_FAULT); /* This callback is mandatory */
 }
 
 /* Task: Load page from file */

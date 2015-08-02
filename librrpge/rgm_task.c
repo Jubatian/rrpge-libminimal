@@ -2,15 +2,16 @@
 **  \file
 **  \brief     Task scheduling
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2015.08.02
 */
 
 
 #include "rgm_task.h"
+#include "rgm_halt.h"
 
 
 
@@ -122,7 +123,7 @@ void rrpge_m_tasksched(void)
                                     ** will clear this or any reset. */
 
    if (rrpge_m_taskcheck(&(rrpge_m_edat->st.stat[0]), i)){ /* Check if task has proper parameters */
-    rrpge_m_info.hlt |= RRPGE_HLT_FAULT;
+    rrpge_m_halt_set(rrpge_m_edat, RRPGE_HLT_FAULT);
 
    }else{
 
@@ -223,7 +224,7 @@ void rrpge_m_tasksched(void)
 
      default:      /* Not a valid kernel function for tasks - invalid! (Should not get here) */
 
-      rrpge_m_info.hlt |= RRPGE_HLT_FAULT;
+      rrpge_m_halt_set(rrpge_m_edat, RRPGE_HLT_FAULT);
       break;
 
     }

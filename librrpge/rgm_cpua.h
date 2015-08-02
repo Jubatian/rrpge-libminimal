@@ -29,17 +29,17 @@ extern rrpge_m_addr_read_t* const rrpge_m_addr_read_table[64];
 /* Pops off a value from the stack, sets halt cause if stack pointer is out of
 ** bounds (low). Returning to supervisor must be handled externally (this
 ** won't do that). Only low 16 bits of the return value may be set. */
-RRPGE_M_FASTCALL auint rrpge_m_stk_pop(void);
+RRPGE_M_FASTCALL auint rrpge_m_stk_pop(rrpge_object_t* hnd);
 
 
 /* Pushes a value on the stack, sets halt cause if stack pointer is out of
 ** bounds (high). */
-RRPGE_M_FASTCALL void  rrpge_m_stk_push(auint val);
+RRPGE_M_FASTCALL void  rrpge_m_stk_push(rrpge_object_t* hnd, auint val);
 
 
 /* Sets a value on the stack, sets halt cause if stack pointer is out of
 ** bounds. This is used to save the return address for function calls. */
-RRPGE_M_FASTCALL void  rrpge_m_stk_set(auint off, auint val);
+RRPGE_M_FASTCALL void  rrpge_m_stk_set(rrpge_object_t* hnd, auint off, auint val);
 
 
 #endif

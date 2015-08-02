@@ -18,6 +18,19 @@ First and foremost so the emulator library is to be changed to allow for such
 decisions while retaining good performance even for debugging.
 
 
+Technical constraints:
+
+Restructuring in an object-oriented manner would likely cripple parts,
+assuming the emulator should be constructed of a composition of objects. This
+demands many interfaces compared to what is in place now with no big benefits
+(the components won't be reused individually).
+
+The likely goal is only adding encapsulation wherever reasonable to isolate
+the components from each other. The object structure will remain monolithic,
+however maybe containing sub-structures for the individual components.
+
+
+
 Changes:
 
 
@@ -34,3 +47,8 @@ structure.
 For debugging, memory query and set functions are provided (partially
 implemented for now so the basic emulator works outputting some state to the
 console).
+
+A state interface is started, hopefully replacing direct access later.
+
+The CPU emulation component was refactored, giving up the non-reentrant
+optimization hack, encapsulating its data.
