@@ -6,8 +6,8 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.02
+**  \date      2015.08.03
 */
 
 
-#define EMULATOR_VERSION "00.017.000-01 (WIP)"
+#define EMULATOR_VERSION "00.017.000-01"

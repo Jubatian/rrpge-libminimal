@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.03.01
+**  \date      2015.08.03
 **
 **
 **  Contains the Graphics & Mixer FIFO's logic. The FIFOs operate detached
@@ -19,6 +19,7 @@
 #include "rgm_fifo.h"
 #include "rgm_grop.h"
 #include "rgm_mix.h"
+#include "rgm_pram.h"
 
 
 
@@ -77,12 +78,7 @@ void  rrpge_m_fifoproc(auint cy)
 
  /* Check stall cycles */
 
- if (cy <= rrpge_m_info.cys){
-  rrpge_m_info.cys -= cy;
-  return;                     /* Can not emulate anything (stalled) */
- }
- cy -= rrpge_m_info.cys;
- rrpge_m_info.cys = 0U;       /* Stall cycles consumed, rest can be used */
+ cy = rrpge_m_pram_cys_cons(rrpge_m_edat, cy);
 
  /* Run emulation (truly this is the asynchronous Peripheral bus' emulation
  ** task, excluding the Graphics Display Generator) */
@@ -183,7 +179,7 @@ void  rrpge_m_fifowrite(auint adr, auint val)
      ((stat[t] & 0xFFFFU) << 16) + (val & 0xFFFFU);
     u ++;
     stat[t - 4U] = u & 0xFFFFU;  /* Write ptr. increment */
-    rrpge_m_info.cys += 2U;   /* 2 stall cycles on the Peripheral bus */
+    rrpge_m_pram_cys_add(rrpge_m_edat, 2U); /* 2 stall cycles on the Peripheral bus */
 
    }
 

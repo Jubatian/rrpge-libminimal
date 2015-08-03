@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.02
+**  \date      2015.08.03
 */
 
 
@@ -79,7 +79,7 @@ void rrpge_m_pram_init(void)
 /* Operates the memory mapped Peripheral RAM interface for Reads. Only the
 ** low 5 bits of the address are used. Generates Peripheral bus stalls if
 ** necessary. */
-RRPGE_M_FASTCALL auint rrpge_m_pramread(rrpge_object_t* hnd, auint adr, auint rmw)
+RRPGE_M_FASTCALL auint rrpge_m_pram_read(rrpge_object_t* hnd, auint adr, auint rmw)
 {
  auint   r;
  auint   a;
@@ -109,9 +109,9 @@ RRPGE_M_FASTCALL auint rrpge_m_pramread(rrpge_object_t* hnd, auint adr, auint rm
  hnd->prm.pis = s;        /* Save shift amount for possible write */
  r = (r & m) >> s;
 
- rrpge_m_info.cys += 2U;      /* Add PRAM stall cycles to Peripheral bus stall */
+ rrpge_m_pram_cys_add(hnd, 2U); /* Add PRAM stall cycles to Peripheral bus stall */
 
- if ((adr & 0x7U) == 0x7U){   /* Post - increment */
+ if ((adr & 0x7U) == 0x7U){ /* Post - increment */
   if (((stat[4] & 0x8U) == 0U) || rmw){
    a += ((stat[2] & 0xFFFFU) << 16) + (stat[3] & 0xFFFFU);
    stat[0] = (a >> 16) & 0xFFFFU;
@@ -128,7 +128,7 @@ RRPGE_M_FASTCALL auint rrpge_m_pramread(rrpge_object_t* hnd, auint adr, auint rm
 ** low 5 bits of the address are used. Generates Peripheral bus stalls if
 ** necessary. Note that it assumes a Read (rrpge_m_pramread() call) happened
 ** before. */
-RRPGE_M_FASTCALL void  rrpge_m_pramwrite(rrpge_object_t* hnd, auint adr, auint val)
+RRPGE_M_FASTCALL void  rrpge_m_pram_write(rrpge_object_t* hnd, auint adr, auint val)
 {
  auint m;
  auint s;
@@ -147,5 +147,32 @@ RRPGE_M_FASTCALL void  rrpge_m_pramwrite(rrpge_object_t* hnd, auint adr, auint v
  val = (val << s);
  hnd->st.pram[hnd->prm.pia] = (hnd->prm.pid & (~m)) | (val & m);
 
- rrpge_m_info.cys += 2U;      /* Add PRAM stall cycles to Peripheral bus stall */
+ rrpge_m_pram_cys_add(hnd, 2U); /* Add PRAM stall cycles to Peripheral bus stall */
+}
+
+
+
+/* Peripheral bus: Consume stall cycles, returns remaining cycles of cy */
+auint rrpge_m_pram_cys_cons(rrpge_object_t* hnd, auint cy)
+{
+ if (hnd->prm.cys > cy){
+
+  hnd->prm.cys -= cy;
+  return 0U;
+
+ }else{
+
+  cy -= hnd->prm.cys;
+  hnd->prm.cys = 0U;
+  return cy;
+
+ }
+}
+
+
+
+/* Peripheral bus: Clear all stall cycles */
+void  rrpge_m_pram_cys_clr(rrpge_object_t* hnd)
+{
+ hnd->prm.cys = 0U;
 }

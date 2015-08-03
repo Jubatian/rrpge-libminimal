@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.02
+**  \date      2015.08.03
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -107,7 +107,6 @@ typedef struct{
  auint  cyf[2];      /* FIFO cycles:
                      ** 0: Cycles remaining from mixer op. (State: 0x062-0x063)
                      ** 1: Cycles remaining from video acc. op. (State: 0x06A-0x06B) */
- auint  cys;         /* PRAM Stall cycles collected during a run of CPU emulation */
 
 }rrpge_m_info_t;
 

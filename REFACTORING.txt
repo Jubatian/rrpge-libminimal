@@ -34,6 +34,14 @@ however maybe containing sub-structures for the individual components.
 Changes:
 
 
+2015.08.03
+
+Finalized the PRAM access component with integrating the stall cycles.
+
+For the 00.017.000 version no more refactoring will be done since there are
+several changes planned in 00.018.000, which components will be covered then.
+
+
 2015.08.02
 
 Allocators can be supplied to the library. This allows for encapsulating some

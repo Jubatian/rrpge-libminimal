@@ -13,13 +13,12 @@
 #include "rgm_run.h"
 #include "rgm_aud.h"
 #include "rgm_vid.h"
-#include "rgm_cpua.h"
-#include "rgm_cpuo.h"
 #include "rgm_prng.h"
 #include "rgm_task.h"
 #include "rgm_fifo.h"
 #include "rgm_halt.h"
 #include "rgm_cpu.h"
+#include "rgm_pram.h"
 
 
 
@@ -55,8 +54,8 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
                        ((stat[RRPGE_STA_VARS + 0x23U] & 0xFFFFU));
  rrpge_m_info.cyf[1] = ((stat[RRPGE_STA_VARS + 0x2AU] & 0xFFFFU) << 16) +
                        ((stat[RRPGE_STA_VARS + 0x2BU] & 0xFFFFU));
- rrpge_m_info.cys = 0U;   /* Stall cycles are always consumed right away (no carry-over between runs) */
- rrpge_m_info.grr = 1U;   /* Reload recolor banks */
+ rrpge_m_pram_cys_clr(hnd);    /* Stall cycles are always consumed right away (no carry-over between runs) */
+ rrpge_m_info.grr = 1U;        /* Reload recolor banks */
 
 
  /* Enter main loop */

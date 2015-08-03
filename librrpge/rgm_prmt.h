@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.02
+**  \date      2015.08.03
 */
 
 
@@ -22,6 +22,8 @@
 typedef struct{
 
  auint  sta[32U];    /* PRAM peripheral registers */
+
+ auint  cys;         /* PRAM stall cycles */
 
  auint  pia;         /* Temporary values for Peripheral RAM interface */
  auint  pid;
