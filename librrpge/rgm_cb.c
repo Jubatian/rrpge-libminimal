@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.02
+**  \date      2015.08.04
 */
 
 
@@ -60,14 +60,6 @@ static void rrpge_m_cb_move(rrpge_object_t* hnd, rrpge_iuint tsh, const void* pa
 
 /* Subroutine: Set palette entry */
 static void rrpge_m_cb_setpal(rrpge_object_t* hnd, const void* par)
-{
- /* This callback is normally mandatory, but the host may decide to not show
- ** graphics at all (audio playback only for music applications), so no fault
- ** if not implemented. */
-}
-
-/* Subroutine: Change video mode */
-static void rrpge_m_cb_mode(rrpge_object_t* hnd, const void* par)
 {
  /* This callback is normally mandatory, but the host may decide to not show
  ** graphics at all (audio playback only for music applications), so no fault
@@ -220,7 +212,6 @@ static auint rrpge_m_cbid_isvalid(auint id)
       (id == RRPGE_CB_SEND)      ||
       (id == RRPGE_CB_LISTUSERS) ||
       (id == RRPGE_CB_SETPAL)    ||
-      (id == RRPGE_CB_MODE)      ||
       (id == RRPGE_CB_SETST3D)   ||
       (id == RRPGE_CB_DROPDEV)   ||
       (id == RRPGE_CB_CHECKAREA) ||
@@ -258,7 +249,6 @@ void rrpge_m_cb_process(rrpge_object_t* obj, rrpge_cbpack_t const* cbp)
  obj->cb_tsk[RRPGE_CB_SEND]      = &rrpge_m_cb_send;
  obj->cb_tsk[RRPGE_CB_LISTUSERS] = &rrpge_m_cb_listusers;
  obj->cb_sub[RRPGE_CB_SETPAL]    = &rrpge_m_cb_setpal;
- obj->cb_sub[RRPGE_CB_MODE]      = &rrpge_m_cb_mode;
  obj->cb_sub[RRPGE_CB_SETST3D]   = &rrpge_m_cb_setst3d;
  obj->cb_sub[RRPGE_CB_DROPDEV]   = &rrpge_m_cb_dropdev;
  obj->cb_sub[RRPGE_CB_GETLOCAL]  = &rrpge_m_cb_getlocal;

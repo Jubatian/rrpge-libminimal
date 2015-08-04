@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.28
+**  \date      2015.08.04
 */
 
 
@@ -306,26 +306,6 @@ typedef struct{
  rrpge_iuint         id;  /**< Color index (0 - 255). */
  rrpge_iuint         col; /**< Color in 4-4-4 RGB (Red high) encoding. */
 }rrpge_cbp_setpal_t;
-
-
-
-/**
-**  \brief     Subroutine: Change video mode.
-**
-**  Sets the video mode (640x400; 4bit or 320x400; 8bit). Note that the
-**  callback only executes from rrpge_run() like the rest, and only when the
-**  running application explicitly asks for mode change through a kernel call.
-**  On init, state load, reset, application state update or any other (such as
-**  context switching) action the host has to set the appropriate mode on it's
-**  own using rrpge_getvidmode().
-*/
-#define RRPGE_CB_MODE          6U
-/**
-**  \brief     Extra parameters for Change video mode.
-*/
-typedef struct{
- rrpge_iuint         mod; /**< Requested video mode (0: 640x400; 4bit, 1: 320x400; 8bit). */
-}rrpge_cbp_mode_t;
 
 
 

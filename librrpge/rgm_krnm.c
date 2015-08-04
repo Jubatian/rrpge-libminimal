@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.02
+**  \date      2015.08.04
 */
 
 
@@ -58,7 +58,6 @@ auint rrpge_m_kcall(uint16 const* par, auint n, auint* resh, auint* resl)
  auint   r;       /* Return: Cycles consumed */
  uint16* stat = &(rrpge_m_edat->st.stat[0]);
  rrpge_cbp_setpal_t    cbp_setpal;
- rrpge_cbp_mode_t      cbp_mode;
  rrpge_cbp_setst3d_t   cbp_setst3d;
  rrpge_cbp_getprops_t  cbp_getprops;
  rrpge_cbp_dropdev_t   cbp_dropdev;
@@ -148,22 +147,6 @@ auint rrpge_m_kcall(uint16 const* par, auint n, auint* resh, auint* resl)
    rrpge_m_edat->cb_sub[RRPGE_CB_SETPAL](rrpge_m_edat, &cbp_setpal);
 
    r = 100U;
-   goto ret_callback;
-
-
-  case 0x09U:     /* Change video mode */
-
-   if (n != 2U){  /* Needs 1+1 parameters */
-    goto fault_inv;
-   }
-
-   if (par[1] > 3U){ cbp_mode.mod = 0U; }
-   else{             cbp_mode.mod = par[1]; }
-   stat[RRPGE_STA_UPA_G + 0x7U] = (stat[RRPGE_STA_UPA_G + 0x7U] & 0xCFFFU) |
-                                  (cbp_mode.mod << 12);
-   rrpge_m_edat->cb_sub[RRPGE_CB_MODE](rrpge_m_edat, &cbp_mode);
-
-   r = 100000U;
    goto ret_callback;
 
 

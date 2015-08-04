@@ -2,11 +2,11 @@
 **  \file
 **  \brief     Graphics accelerator
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.02.03
+**  \date      2015.08.04
 */
 
 
@@ -20,12 +20,10 @@
 
 
 /* Cell cycle multiplier table.
-** bit0: accelerated, bit1,2: blit mode, bit3,4: reindex, bit5: display mode */
-static uint8 const rrpge_m_grop_tc[64] = {
+** bit0: accelerated, bit1,2: blit mode, bit3,4: reindex */
+static uint8 const rrpge_m_grop_tc[32] = {
  6, 4, 4, 2, 4, 2, 0, 0, 8, 8, 8, 8, 4, 2, 0, 0,
- 6, 6, 4, 4, 4, 4, 0, 0, 8, 8, 8, 8, 4, 4, 0, 0,
- 6, 4, 4, 2, 4, 2, 0, 0, 6, 4, 4, 4, 4, 2, 0, 0,
- 6, 6, 4, 4, 4, 4, 0, 0, 6, 6, 4, 4, 4, 4, 0, 0};
+ 6, 6, 4, 4, 4, 4, 0, 0, 8, 8, 8, 8, 4, 4, 0, 0};
 
 
 
@@ -57,8 +55,8 @@ static void rrpge_m_grop_recbinit(void)
 static uint8 const* rrpge_m_grop_reb;
 
 
-/* Internal: Calculates reindex 32bit chunk for 4bit */
-RRPGE_M_FASTCALL static auint rrpge_m_grop_rec4(auint ps, auint pd)
+/* Internal: Calculates reindex 32bit chunk */
+RRPGE_M_FASTCALL static auint rrpge_m_grop_rec(auint ps, auint pd)
 {
  auint t0 = (ps & 0x0F0F0F0FU) | ((pd << 4) & 0xF0F0F0F0U);
  auint t1 = ((ps >> 4) & 0x0F0F0F0FU) | (pd & 0xF0F0F0F0U);
@@ -71,19 +69,6 @@ RRPGE_M_FASTCALL static auint rrpge_m_grop_rec4(auint ps, auint pd)
            ((auint)(rrpge_m_grop_reb[(t1 >> 16) & 0xFFU]) << 20) |
            ((auint)(rrpge_m_grop_reb[(t1 >> 24)        ]) << 28) ) & 0xF0F0F0F0U);
 }
-
-
-/* Internal: Calculates reindex 32bit chunk for 8bit */
-RRPGE_M_FASTCALL static auint rrpge_m_grop_rec8(auint ps, auint pd)
-{
- auint t0 = ( ps       & 0x000F000FU) | ((pd << 4) & 0x01F001F0U);
- auint t1 = ((ps >> 8) & 0x000F000FU) | ((pd >> 4) & 0x01F001F0U);
- return ((auint)(rrpge_m_grop_reb[t0 & 0xFFFFU])      ) |
-        ((auint)(rrpge_m_grop_reb[t1 & 0xFFFFU]) <<  8) |
-        ((auint)(rrpge_m_grop_reb[t0   >>   16]) << 16) |
-        ((auint)(rrpge_m_grop_reb[t1   >>   16]) << 24);
-}
-
 
 
 
@@ -190,51 +175,31 @@ auint rrpge_m_grop_accel(void)
  ** bit 12: VRE
  ** bit 11: VMD (h)
  ** bit 10: VMD (l)
- ** bit  9: VBT
  ** bit  0: VCK */
 
  flags = ((flags & 0xE000U) >> 1) +        /* VMR, VDR, VRE */
-         ((rotr  & 0x0070U) << 5) +        /* VMD (hl), VBT */
+         ((rotr  & 0x0060U) << 5) +        /* VMD (hl) */
          ((rotr  & 0x0008U) >> 3);         /* VCK */
  bmode = (flags & 0x0C00U) >> 10;          /* 0: BB, 1: FL, 2: SC, 3: LI */
 
- /* 4 / 8 bit mode specific calculations for all rows */
+ /* Prepare colorkey */
 
- if ((flags & 0x0200U) == 0U){        /* 4bit mode specific calculations */
+ ckey   = mandr & 0xFU;
+ ckey  |= ckey << 4;
+ mandr  = (mandr >> 8) & 0x0FU;
 
-  /* Prepare colorkey */
-  ckey   = mandr & 0xFU;
-  ckey  |= ckey << 4;
-  mandr  = (mandr >> 8) & 0x0FU;
+ /* Source read mask & barrel rotate calculation. In C a right and a left
+ ** shift has to be combined for the effect (no rotate operation). Used in
+ ** BB and SC modes. */
 
-  /* Source read mask & barrel rotate calculation. In C a right and a left
-  ** shift has to be combined for the effect (no rotate operation). Used in
-  ** BB and SC modes. */
-  rotr  &= 0x3U;
-  rotl   = 4U - rotr;
-  mandl  = mandr & (0xFU << rotl);
-  mandr  = mandr & (0xFU >> rotr);
-  mandl |= mandl << 4;
-  mandr |= mandr << 4;
-  mskor &= 0xFU;
-  mskor |= mskor << 4;
-
- }else{                               /* 8bit mode specific calculations */
-
-  /* Prepare colorkey */
-  ckey   = mandr & 0xFFU;
-  mandr  = (mandr >> 8) & 0xFFU;
-
-  /* Source read mask & barrel rotate calculation. In C a right and a left
-  ** shift has to be combined for the effect (no rotate operation). Used in
-  ** BB snd SC modes. */
-  rotr  &= 0x7U;
-  rotl   = 8U - rotr;
-  mandl  = mandr & (0xFFU << rotl);
-  mandr  = mandr & (0xFFU >> rotr);
-  mskor &= 0xFFU;
-
- }
+ rotr  &= 0x3U;
+ rotl   = 4U - rotr;
+ mandl  = mandr & (0xFU << rotl);
+ mandr  = mandr & (0xFU >> rotr);
+ mandl |= mandl << 4;
+ mandr |= mandr << 4;
+ mskor &= 0xFU;
+ mskor |= mskor << 4;
 
  /* Replicate colorkey & source read mask to the whole 32bit unit */
 
@@ -253,10 +218,10 @@ auint rrpge_m_grop_accel(void)
 
  /* Prepare the cycle count flags. bit 0: accelerated combine (will be
  ** generated in combine), bits 1-2: blit mode; bit 3: reindex, bit 4: by
- ** destination, bit 5: display mode. The accelerated combine starts set since
- ** it is easier to clear it with a xor at the combine. */
+ ** destination. The accelerated combine starts set since it is easier to
+ ** clear it with a xor at the combine. */
 
- cyf   = ((flags & 0x3C00U) >> 9) | ((flags & 0x0200) >> 4) | 1U;
+ cyf   = ((flags & 0x3C00U) >> 9) | 1U;
  cyr   = 20U + ((flags & 0x1000U) >> 9); /* Initial cycles: 20 or 28 depending on reindexing */
 
  /* Blit mode specific initializations */
@@ -305,42 +270,26 @@ auint rrpge_m_grop_accel(void)
   dsfrac = dsfrap;
   count  = counb;
 
-  /* Row specific mode specific calculations. "codst" is the count of
-  ** destination bits to produce, "count" is transformed to the count of
-  ** source pixels (depending on mode) to process. In line mode only "codst"
-  ** is used as a pixel count. */
+  /* Row specific calculations. "codst" is the count of destination bits to
+  ** produce, "count" is transformed to the count of source pixels to process.
+  ** In line mode only "codst" is used as a pixel count. */
 
-  if ((flags & 0x0200U) == 0U){       /* 4bit mode specific calculations */
+  /* Init right shift to destination. Used in Scaled & Block Blitter, and in
+  ** Filler to prepare the begin cell. */
 
-   /* Init right shift to destination. Used in Scaled & Block Blitter, and in
-   ** Filler to prepare the begin cell. */
-   dshfr  = (dsfrac & 0xE000U) >> 11;
+  dshfr  = (dsfrac & 0xE000U) >> 11;
 
-   /* Calculate count & codst */
-   if (bmode == 3U){                  /* Line mode: Just pixel count */
-    count >>= 16;
-    codst = count;
-   }else{                             /* Other modes: dest. bits & pixel count */
-    count = (count & 0x00FFE000U) >> 13;
-    codst = (count << 2) + dshfr;
-   }
+  /* Calculate count & codst */
 
-  }else{                              /* 8bit mode specific calculations */
-
-   /* Init right shift to destination. Used in Scaled & Block Blitter, and in
-   ** Filler to prepare the begin cell. */
-   dshfr  = (dsfrac & 0xC000U) >> 11;
-
-   /* Calculate count & codst */
-   if (bmode == 3U){                  /* Line mode: Just pixel count */
-    count >>= 16;
-    codst = count;
-   }else{                             /* Other modes: dest. bits & pixel count */
-    count = (count & 0x00FFC000U) >> 14;
-    codst = (count << 3) + dshfr;
-   }
-
+  if (bmode == 3U){                   /* Line mode: Just pixel count */
+   count >>= 16;
+   codst = count;
+  }else{                              /* Other modes: dest. bits & pixel count */
+   count = (count & 0x00FFE000U) >> 13;
+   codst = (count << 2) + dshfr;
   }
+
+  /* Render */
 
   if (count != 0U){                   /* Only render if there is something to render */
 
@@ -401,7 +350,7 @@ auint rrpge_m_grop_accel(void)
     ** generating the shift. */
 
     if (bmode != 3U){                        /* It is not Line mode, so cell based render rules */
-     if (codst < 32U){                       /* Fewer than 8 (4bit) destination pixels remaining */
+     if (codst < 32U){                       /* Fewer than 8 destination pixels remaining */
       bmems &= 0xFFFFFFFFU << (32U - codst); /* Generate an end mask */
       codst  = 0U;
      }else{
@@ -431,9 +380,7 @@ auint rrpge_m_grop_accel(void)
       sxfrac += sxincr;
 
       if ((flags & 0x4000U) != 0U){            /* Pixel order swap (VMR) */
-       if ((flags & 0x0200U) == 0U){           /* 4 bit mode */
-        sdata = ((sdata & 0xF0F0F0F0U) >> 4) | ((sdata & 0x0F0F0F0FU) << 4);
-       }
+       sdata = ((sdata & 0xF0F0F0F0U) >> 4) | ((sdata & 0x0F0F0F0FU) << 4);
        sdata = ((sdata & 0xFF00FF00U) >> 8) | ((sdata & 0x00FF00FFU) << 8);
        sdata = (sdata >> 16) | (sdata << 16);  /* Mirror source (BSWAP would be good here) */
       }
@@ -445,34 +392,16 @@ auint rrpge_m_grop_accel(void)
 
       sdata = 0U;
 
-      if ((flags & 0x0200U) == 0U){   /* 4bit mode */
-
-       i = 8U;
-       while ((count != 0U) && (i != 0U)){
-        count --;
-        i     --;
-        sdata |= ( ( pram[sxwhol |
-                          ((syfrac >> 16) & srpart) |
-                          ((sxfrac >> 16) & ssplit)] >>
-                     (28U - ((sxfrac & 0xE000U) >> 11)) ) &  0xFU ) << (i << 2);
-        sxfrac += sxincr;
-        syfrac += syincr;
-       }
-
-      }else{                          /* 8bit mode */
-
-       i = 4U;
-       while ((count != 0U) && (i != 0U)){
-        count --;
-        i     --;
-        sdata |= ( ( pram[sxwhol |
-                          ((syfrac >> 16) & srpart) |
-                          ((sxfrac >> 16) & ssplit)] >>
-                     (24U - ((sxfrac & 0xC000U) >> 11)) ) & 0xFFU ) << (i << 3);
-        sxfrac += sxincr;
-        syfrac += syincr;
-       }
-
+      i = 8U;
+      while ((count != 0U) && (i != 0U)){
+       count --;
+       i     --;
+       sdata |= ( ( pram[sxwhol |
+                         ((syfrac >> 16) & srpart) |
+                         ((sxfrac >> 16) & ssplit)] >>
+                    (28U - ((sxfrac & 0xE000U) >> 11)) ) &  0xFU ) << (i << 2);
+       sxfrac += sxincr;
+       syfrac += syincr;
       }
 
      }
@@ -487,21 +416,10 @@ auint rrpge_m_grop_accel(void)
 
      /* Rotate source pattern & create begin / mid / end mask */
 
-     if ((flags & 0x0200U) == 0U){    /* 4bit mode */
-
-      lpat >>= (lflp << 2);
-      sdata  = lpat & 0xFU;
-      i      = ((sxfrac & 0xE000U) >> 11);
-      bmems  =  0xFU << i;
-
-     }else{                           /* 8bit mode */
-
-      lpat >>= (lflp << 3);
-      sdata  = lpat & 0xFFU;
-      i      = ((sxfrac & 0xC000U) >> 11);
-      bmems  = 0xFFU << i;
-
-     }
+     lpat >>= (lflp << 2);
+     sdata  = lpat & 0xFU;
+     i      = ((sxfrac & 0xE000U) >> 11);
+     bmems  =  0xFU << i;
 
      codst--;                         /* One pixel less to go */
 
@@ -534,18 +452,10 @@ auint rrpge_m_grop_accel(void)
     t   = sdata ^ ckey;                  /* Prepare for colorkey calculation */
     sdata = sdata | mskor;               /* Apply OR mask after colorkey */
 
-    if ((flags & 0x0200U) == 0U){         /* 4 bit mode */
-     t = (((t & 0x77777777U) + 0x77777777U) | t) & 0x88888888U;
-     t = (t - (t >> 3)) + t;             /* Colorkey mask (0: background) */
-     if ((flags & 0x1000U) != 0U){       /* Reindexing is required */
-      sdata = rrpge_m_grop_rec4(sdata, u & reinm);
-     }
-    }else{                               /* 8 bit mode */
-     t = (((t & 0x7F7F7F7FU) + 0x7F7F7F7FU) | t) & 0x80808080U;
-     t = (t - (t >> 7)) + t;             /* Colorkey mask (0: background) */
-     if ((flags & 0x1000U) != 0U){       /* Reindexing is required */
-      sdata = rrpge_m_grop_rec8(sdata, u & reinm);
-     }
+    t = (((t & 0x77777777U) + 0x77777777U) | t) & 0x88888888U;
+    t = (t - (t >> 3)) + t;             /* Colorkey mask (0: background) */
+    if ((flags & 0x1000U) != 0U){       /* Reindexing is required */
+     sdata = rrpge_m_grop_rec(sdata, u & reinm);
     }
     bmems &= t | (~(0U - (flags & 1U))); /* Add colorkey to write mask if enabled */
 
@@ -578,11 +488,7 @@ auint rrpge_m_grop_accel(void)
   sxfrap += sxpadd;
   syfrap += sypadd;
   counb  += copadd;
-  if ((flags & 0x0200U) == 0U){       /* 4 bit mode */
-   sbase   = (sbase >> 4) | (sbase << 28);
-  }else{
-   sbase   = (sbase >> 8) | (sbase << 24);
-  }
+  sbase   = (sbase >> 4) | (sbase << 28);
 
  } /* End of row rendering loop */
 

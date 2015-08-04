@@ -92,15 +92,6 @@ void render_pal(rrpge_object_t* hnd, const void* par)
 
 
 /*
-** Mode change callback service routine.
-*/
-void render_mode(rrpge_object_t* hnd, const void* par)
-{
-}
-
-
-
-/*
 ** Initializes or resets rendering subsystem by the given emulator object.
 ** This sets the display mode (640x400x16) and the initial palette.
 */

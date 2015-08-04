@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.02
+**  \date      2015.08.04
 */
 
 
@@ -46,9 +46,8 @@ static char const* main_copyrig = "License: 2013 - 2015, GNU GPLv3 (version 3 of
 
 
 /* Subroutines */
-static const rrpge_cbd_sub_t main_cbsub[4] = {
+static const rrpge_cbd_sub_t main_cbsub[2] = {
  { RRPGE_CB_SETPAL,    &render_pal         },
- { RRPGE_CB_MODE,      &render_mode        },
  { RRPGE_CB_DROPDEV,   &inputcom_dropdev   }
 };
 /* Tasks */
