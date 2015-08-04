@@ -17,10 +17,10 @@
 
 
 /* State: Nonzero elements in the VARS area (address, data high, data low) */
-#define STANZ_CT 35U
+#define STANZ_CT 23U
 static const uint8  rrpge_m_ires_stanz[3U * STANZ_CT] = {
  0x48U, 0x66U, 0x66U, /* XM register */
- 0x55U, 0x07U, 0xF8U, /* GDG display list definition latch */
+ 0x55U, 0xF0U, 0x0FU, /* GDG display list definition latch */
  0x95U, 0x05U, 0x58U, /* Mixer partitioning */
  0x99U, 0x01U, 0x00U, /* Mixer amplitudo */
  0xA0U, 0xFFU, 0xFFU, /* Accelerator write mask high */
@@ -31,21 +31,10 @@ static const uint8  rrpge_m_ires_stanz[3U * STANZ_CT] = {
  0xC7U, 0x00U, 0x01U, /* Audio divider */
  0xC8U, 0x1FU, 0xFCU, /* Mixer FIFO location & size */
  0xCCU, 0x4FU, 0xE0U, /* Graphics FIFO location & size */
- 0xD0U, 0x01U, 0x02U, /* GDG mask / ckey 0 */
- 0xD1U, 0x04U, 0x08U, /* GDG mask / ckey 1 */
- 0xD2U, 0x10U, 0x20U, /* GDG mask / ckey 2 */
- 0xD3U, 0x40U, 0x80U, /* GDG mask / ckey 3 */
  0xD4U, 0x50U, 0x00U, /* GDG shift mode region A */
  0xD5U, 0x50U, 0x00U, /* GDG shift mode region B */
- 0xD7U, 0x37U, 0xF8U, /* GDG display list definition */
- 0xD8U, 0x00U, 0x82U, /* GDG source A0 */
- 0xD9U, 0x41U, 0x40U, /* GDG source A1 */
- 0xDAU, 0x81U, 0x40U, /* GDG source A2 */
- 0xDBU, 0xC1U, 0x40U, /* GDG source A3 */
- 0xDCU, 0x02U, 0x60U, /* GDG source B0 */
- 0xDDU, 0x82U, 0x60U, /* GDG source B1 */
- 0xDEU, 0x03U, 0x60U, /* GDG source B2 */
- 0xDFU, 0x83U, 0x60U, /* GDG source B3 */
+ 0xD6U, 0xF0U, 0x0FU, /* GDG display list definition */
+ 0xD8U, 0x00U, 0x50U, /* GDG source A0 */
  0xE3U, 0x00U, 0x01U, /* Pointer 0 increment */
  0xEBU, 0x00U, 0x04U, /* Pointer 1 increment */
  0xECU, 0x00U, 0x02U, /* Pointer 1 size */
@@ -1343,8 +1332,8 @@ void rrpge_m_ires_init(rrpge_object_t* obj)
  /* Populate Peripheral RAM with boot data blocks */
 
  /* 0xFF000 - 0xFF7FF: Display list (only first 1600 entries used) */
- for (i = 0U; i < 200U; i++){
-  p[0xFF000U + (i * 8U) + 1U] = 0x0000C000U + (i * 0x50000U);
+ for (i = 0U; i < 400U; i++){
+  p[0xFF000U + (i * 4U) + 1U] = 0x00008000U + (i * 0x500000U);
  }
 
  /* 0xFF800 - 0xFFBFF: Audio buffers (silence) */

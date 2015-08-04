@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.02
+**  \date      2015.08.04
 */
 
 
@@ -29,6 +29,7 @@
 void  rrpge_m_vidproc(auint cy)
 {
  auint a;
+ auint o;
  auint i;
  auint j;
  auint c;
@@ -76,41 +77,42 @@ void  rrpge_m_vidproc(auint cy)
 
    /* Prepare for clear */
 
-   i  = 9600U;
-   a  = stat[RRPGE_STA_VARS + 0x15U] & ((PRAMS - 1U) >> 9);
-   a  = a & (~(((auint)(4U) << (a & 3U)) - 4U)); /* Clear low bits of address part */
-   j  = 1600U << (a & 3U);                       /* Clear limit, also guarantees no overrun */
-   a  = (a & (~(auint)(3U))) << 9;
-   s  = stat[RRPGE_STA_UPA_G + 0x6U] >> 11; /* Initial skip */
+   i  = stat[RRPGE_STA_VARS + 0x15U];       /* Display list def. latch */
+   a  = ((i & 0xFU) << 16) & (PRAMS - 1U);  /* PRAM bank */
+   o  = i & 0xFFC0U;                        /* Start offset */
+   j  = 1600U << ((i >> 4) & 3U);           /* Display list size limit */
+   i  = stat[RRPGE_STA_UPA_G + 0x3U];       /* Display list clear controls */
+   s  = (i >> 11) & 0x1FU;                  /* Initial skip */
    j -= s;
-   a += s;
-   s  = (stat[RRPGE_STA_UPA_G + 0x6U] >> 6) & 0x1FU; /* Skip amount / streak */
-   c  = (stat[RRPGE_STA_UPA_G + 0x6U]     ) & 0x3FU; /* Clear amount / streak */
+   o += s;
+   s  = (i >> 6) & 0x1FU;                   /* Skip amount / streak */
+   c  = (i     ) & 0x3FU;                   /* Clear amount / streak */
+   i  = 9600U;                              /* Allowed cycles */
 
    /* Clear */
 
    if (c != 0U){
     do{
      for (t = 0U; t < c; t++){ /* Clear */
-      rrpge_m_edat->st.pram[a] = 0U;
-      a ++;
+      rrpge_m_edat->st.pram[a + o] = 0U;
+      o  = (o + 1U) & 0xFFFFU;
       i --;
       j --;
       if ((i == 0U) || (j == 0U)){ break; }
      }
      if (j <= s){              /* Skip */
-      j = 0U;
+      j  = 0U;
      }else{
       j -= s;
-      a += s;
+      o  = (o +  s) & 0xFFFFU;
      }
     }while ((i != 0U) && (j != 0U));
    }
 
-   /* Update latch, and clear flags (both flags together) */
+   /* Update latch, and clear flags */
 
-   stat[RRPGE_STA_UPA_G + 0x7U] &= ((PRAMS - 1U) >> 9); /* Clear flags */
-   stat[RRPGE_STA_VARS + 0x15U]  = stat[RRPGE_STA_UPA_G + 0x7U];
+   stat[RRPGE_STA_UPA_G + 0x7U] = 0U;       /* Clear flags */
+   stat[RRPGE_STA_VARS + 0x15U] = stat[RRPGE_STA_UPA_G + 0x6U];
 
    /* Clear FIFO suspend, so it may continue processing */
 
@@ -133,26 +135,38 @@ void  rrpge_m_vidwrite(auint adr, auint val)
 
  adr = adr & 0xFU;
 
- switch (adr & 0xCU){
+ switch (adr){
 
-  case 0x0U:                  /* Mask / Colorkey definitions */
+  case 0x0U:
+  case 0x1U:                  /* Unused */
+
+   break;
+
+  case 0x2U:                  /* Double scan split */
+
+   stat[RRPGE_STA_UPA_G + adr] = val & 0x00FFU;
+   break;
+
+  case 0x3U:                  /* Display list clear controls */
 
    stat[RRPGE_STA_UPA_G + adr] = val & 0xFFFFU;
    break;
 
-  case 0x4U:                  /* Shift mode region & Controls & Flags */
+  case 0x4U:
+  case 0x5U:                  /* Shift mode region */
 
-   if ((adr & 0x2U) == 0U){   /* Shift mode region */
-    stat[RRPGE_STA_UPA_G + adr] = val & 0x7F7FU;
-   }else{                     /* Controls & Flags */
-    if (adr == 0x6U){         /* Display list clear */
-     stat[RRPGE_STA_UPA_G + 0x6U] = val & 0xFFFFU;
-    }else{                    /* Display list definition & process flags (Flags become set) */
-     stat[RRPGE_STA_UPA_G + 0x7U] = (stat[RRPGE_STA_UPA_G + 0x7U] & 0x3000U) |
-                                    ((val & ((PRAMS - 1U) >> 9)) | 0xC000U);
-     stat[RRPGE_STA_UPA_GF + 0x1U] |= 2U; /* Graphics FIFO suspended */
-    }
-   }
+   stat[RRPGE_STA_UPA_G + adr] = val & 0x7F7FU;
+   break;
+
+  case 0x6U:                  /* Display list definition */
+
+   stat[RRPGE_STA_UPA_G + adr] = val & 0xFFFFU;
+   stat[RRPGE_STA_UPA_G +  7U] = 0x8000U; /* Frame not complete */
+   stat[RRPGE_STA_UPA_GF + 1U] |= 2U;     /* Graphics FIFO suspended */
+   break;
+
+  case 0x7U:                  /* Status flags */
+
    break;
 
   default:                    /* Source definitions */

@@ -2,11 +2,11 @@
 **  \file
 **  \brief     Graphics rendering
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2015.08.04
 **
 **
 ** Graphics rendering: produces the graphics output from the lines provided by
@@ -20,8 +20,6 @@
 #include "../host/screen.h"
 
 
-/* Display mode: 0: 640x480x16; 1: 320x400x256. */
-static auint  render_dm = 0U;
 
 /* Palette in -RGB format suitable for the display */
 static uint32 render_col[256U];
@@ -34,7 +32,6 @@ static uint32 render_col[256U];
 void render_line(rrpge_object_t* hnd, rrpge_iuint ln, rrpge_uint32 const* buf)
 {
  uint32* sln;
- uint32  t;
  auint   i;
  auint   j;
 
@@ -45,40 +42,17 @@ void render_line(rrpge_object_t* hnd, rrpge_iuint ln, rrpge_uint32 const* buf)
 
  sln += screen_pitch() * ln;  /* Position to the appropriate line */
 
- if (render_dm == 0U){        /* 16 color mode */
-
-  j = 0U;
-  for (i = 0U; i < 80U; i++){
-   sln[j + 0U] = render_col[(buf[i] >> 28) & 0xFU];
-   sln[j + 1U] = render_col[(buf[i] >> 24) & 0xFU];
-   sln[j + 2U] = render_col[(buf[i] >> 20) & 0xFU];
-   sln[j + 3U] = render_col[(buf[i] >> 16) & 0xFU];
-   sln[j + 4U] = render_col[(buf[i] >> 12) & 0xFU];
-   sln[j + 5U] = render_col[(buf[i] >>  8) & 0xFU];
-   sln[j + 6U] = render_col[(buf[i] >>  4) & 0xFU];
-   sln[j + 7U] = render_col[(buf[i]      ) & 0xFU];
-   j += 8U;
-  }
-
- }else{                       /* 256 color mode */
-
-  j = 0U;
-  for (i = 0U; i < 80U; i++){
-   t = render_col[(buf[i] >> 24) & 0xFFU];
-   sln[j + 0U] = t;
-   sln[j + 1U] = t;
-   t = render_col[(buf[i] >> 16) & 0xFFU];
-   sln[j + 2U] = t;
-   sln[j + 3U] = t;
-   t = render_col[(buf[i] >>  8) & 0xFFU];
-   sln[j + 4U] = t;
-   sln[j + 5U] = t;
-   t = render_col[(buf[i]      ) & 0xFFU];
-   sln[j + 6U] = t;
-   sln[j + 7U] = t;
-   j += 8U;
-  }
-
+ j = 0U;
+ for (i = 0U; i < 80U; i++){
+  sln[j + 0U] = render_col[(buf[i] >> 28) & 0xFU];
+  sln[j + 1U] = render_col[(buf[i] >> 24) & 0xFU];
+  sln[j + 2U] = render_col[(buf[i] >> 20) & 0xFU];
+  sln[j + 3U] = render_col[(buf[i] >> 16) & 0xFU];
+  sln[j + 4U] = render_col[(buf[i] >> 12) & 0xFU];
+  sln[j + 5U] = render_col[(buf[i] >>  8) & 0xFU];
+  sln[j + 6U] = render_col[(buf[i] >>  4) & 0xFU];
+  sln[j + 7U] = render_col[(buf[i]      ) & 0xFU];
+  j += 8U;
  }
 
  screen_unlock();
@@ -122,22 +96,17 @@ void render_pal(rrpge_object_t* hnd, const void* par)
 */
 void render_mode(rrpge_object_t* hnd, const void* par)
 {
- rrpge_cbp_mode_t const* mod = (rrpge_cbp_mode_t const*)(par);
- render_dm = (mod->mod) & 1U;
 }
 
 
 
 /*
 ** Initializes or resets rendering subsystem by the given emulator object.
-** This sets the display mode (640x400x16 or 320x400x256) and the initial
-** palette.
+** This sets the display mode (640x400x16) and the initial palette.
 */
 void render_reset(rrpge_object_t* hnd)
 {
  auint i;
-
- render_dm = rrpge_getvidmode(hnd);
 
  for (i = 0U; i < 256U; i++){
   render_col[i] = render_palconv(rrpge_getpalentry(hnd, i));

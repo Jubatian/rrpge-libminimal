@@ -2,11 +2,11 @@
 **  \file
 **  \brief     Graphics rendering
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2015.08.04
 **
 **
 ** Graphics rendering: produces the graphics output from the lines provided by
@@ -42,8 +42,7 @@ void render_mode(rrpge_object_t* hnd, const void* par);
 
 /*
 ** Initializes or resets rendering subsystem by the given emulator object.
-** This sets the display mode (640x400x16 or 320x400x256) and the initial
-** palette.
+** This sets the display mode (640x400x16) and the initial palette.
 */
 void render_reset(rrpge_object_t* hnd);
 
