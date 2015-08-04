@@ -157,7 +157,7 @@ void rrpge_m_grln(void)
       csd = sbnk[soff + spos];
      }else{                       /* X expanded load */
       csd = sbnk[soff + (spos >> 1)];
-      csd = (csd >> ((spos & 1U) << 4)) & 0xFFFFU; /* Select high / low half */
+      csd = (csd >> (((spos & 1U) ^ 1U) << 4)) & 0xFFFFU; /* Select high / low half */
       csd = ((csd & 0x000FU)      ) |
             ((csd & 0x00F0U) <<  4) |
             ((csd & 0x0F00U) <<  8) |
@@ -176,7 +176,7 @@ void rrpge_m_grln(void)
        csd = sbnk[soff + spos];
       }else{                         /* X expanded load */
        csd = sbnk[soff + (spos >> 1)];
-       csd = (csd >> ((spos & 1U) << 4)) & 0xFFFFU; /* Select high / low half */
+       csd = (csd >> (((spos & 1U) ^ 1U) << 4)) & 0xFFFFU; /* Select high / low half */
        csd = ((csd & 0x000FU)      ) |
              ((csd & 0x00F0U) <<  4) |
              ((csd & 0x0F00U) <<  8) |
@@ -194,7 +194,7 @@ void rrpge_m_grln(void)
       m    = psd ^ cky;              /* Prepare for colorkey */
       m    = (((m & 0x77777777U) + 0x77777777U) | m); /* Colorkey mask on the highest bit of pixel */
       m   &= 0x88888888U;            /* Mask out lower pixel bits */
-      m    = (m - (m >> 3)) + t;     /* Expand to lower pixels */
+      m    = (m - (m >> 3)) + m;     /* Expand to lower pixels */
 
       /* Combine destination */
 
@@ -238,7 +238,7 @@ void rrpge_m_grln(void)
         csd = sbnk[(soff + spos) & 0xFFFFU];
        }else{                        /* X expanded load */
         csd = sbnk[(soff + (spos >> 1)) & 0xFFFFU];
-        csd = (csd >> ((spos & 1U) << 4)) & 0xFFFFU; /* Select high / low half */
+        csd = (csd >> (((spos & 1U) ^ 1U) << 4)) & 0xFFFFU; /* Select high / low half */
         csd = ((csd & 0x000FU)      ) |
               ((csd & 0x00F0U) <<  4) |
               ((csd & 0x0F00U) <<  8) |
