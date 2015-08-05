@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.04
+**  \date      2015.08.05
 */
 
 
@@ -21,7 +21,7 @@
 ** immediate termination using rrpge_taskend() with the appropriate result. */
 
 /* Line renderer */
-static void rrpge_m_cb_line(rrpge_object_t* hnd, rrpge_iuint ln, rrpge_uint32 const* buf)
+static void rrpge_m_cb_line(rrpge_object_t* hnd, rrpge_iuint ln, rrpge_uint8 const* buf)
 {
 }
 

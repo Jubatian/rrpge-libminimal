@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.04
+**  \date      2015.08.05
 */
 
 
@@ -19,8 +19,12 @@
 
 
 /* Local buffer for rendering lines. Only first 80 cells are used for output,
-** however the full range is used for render. */
-static uint32 rrpge_m_grln_buf[128U];
+** however the full range is used for render. The low half is used to store
+** the low 3 bits of each pixel, the high half is for the high 3 bits, these
+** are combined together once the line is rendered. */
+static uint32 rrpge_m_grln_bufl[128];
+static uint32 rrpge_m_grln_bufh[128];
+static uint8  rrpge_m_grln_buf [640];
 
 
 
@@ -46,9 +50,11 @@ void rrpge_m_grln(void)
  auint  dshl;
  auint  spos;                  /* Position in source during blit */
  auint  spms;                  /* Position mask in shift mode */
+ auint  plh;                   /* High half-palette select expanded */
+ auint  pll;                   /* Low half-palette select expanded */
  auint  i;
  auint  t;
- auint  d;
+ auint  h;
  auint  m;
 
  /* Only draw line if within display area */
@@ -58,9 +64,9 @@ void rrpge_m_grln(void)
  /* Read display list offset & entry size */
 
  i = rrpge_m_edat->st.stat[RRPGE_STA_VARS + 0x15U]; /* Display list definition */
- dlin = &(rrpge_m_edat->st.pram[((i & 0x000FU) << 16) & (PRAMS - 1U)]);
- doff = i & 0xFFC0U;
- dsiz = ((i >> 4) & 3U) + 2U;
+ dlin = &(rrpge_m_edat->st.pram[((i & 0xF000U) << 4) & (PRAMS - 1U)]);
+ doff = (i & 0x0FFCU) << 4;
+ dsiz = (i & 3U) + 2U;
 
  /* Read output width & begin positions */
 
@@ -98,9 +104,21 @@ void rrpge_m_grln(void)
 
   /* Reset line buffer */
 
-  t    = dlin[0] & 0xFFFFFFFFU;
+  t    = dlin[0];
+  h    = dlin[0] & 0x88888888U;
+  h    = h - (h >> 3);
+  plh  = (rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x2U] >> 12) & 0x7U;
+  pll  = (rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x2U] >>  8) & 0x7U;
+  plh |= plh <<  4;
+  plh |= plh <<  8;
+  plh |= plh << 16;
+  pll |= pll <<  4;
+  pll |= pll <<  8;
+  pll |= pll << 16;
+  h    = (plh & h) | (pll & (~h));
   for (i = 0U; i < 80U; i++){
-   rrpge_m_grln_buf[i] = t;
+   rrpge_m_grln_bufl[i] = t;
+   rrpge_m_grln_bufh[i] = h;
   }
   doff = 1U;
 
@@ -111,21 +129,23 @@ void rrpge_m_grln(void)
 
    cmd  = dlin[doff] & 0xFFFFFFFFU;  /* Current command */
    doff ++;
-   csr  = rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x8U + ((cmd >> 12) & 7U)] & 0xFFFFU; /* Current source to use */
+   csr  = rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x8U + ((cmd >> 13) & 7U)] & 0xFFFFU; /* Current source to use */
+   csr |= ( rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x0U + ((cmd >> 15) & 1U)] <<
+            ((((cmd >> 13) & 3U) << 2) + 16U) ) & 0xF0000000U; /* X expand and Low half-palette */
    sbnk = &(rrpge_m_edat->st.pram[((csr & 0xF000U) << 4) & (PRAMS - 1U)]);
    soff = (cmd >> 16) & 0xFFFFU;
-   if       ((cmd & 0x8000U) == 0U){ /* Render command inactive */
+   if       ((cmd & 0x1C00U) == 0U){ /* Render command inactive */
     scy = 0U;
    }else if ((csr & 0x0080U) != 0U){ /* Shift source */
-    scy = opw[(cmd >> 14) & 1U] + 1U;
+    scy = opw[(cmd >> 15) & 1U] + 1U;
    }else{                            /* Positioned source (X expansion doubles width!) */
-    scy = (((csr - 1U) & 0x7FU) + 1U) << ((cmd >> 11) & 1U);
+    scy = (((csr - 1U) & 0x7FU) + 1U) << ((csr >> 31) & 1U);
    }
    cyr--;                         /* Cycle taken for display list entry fetch (cyr certain nonzero here) */
    if (scy > cyr){ scy = cyr; }
    cyr -= scy;                    /* Width to render & remaining cycles done */
 
-   if ((cmd & 0x8000U) != 0U){    /* Render command not inactive */
+   if ((cmd & 0x1C00U) != 0U){    /* Render command not inactive */
 
     /* Calculate colorkey */
 
@@ -133,6 +153,17 @@ void rrpge_m_grln(void)
     cky |= cky << 4;
     cky |= cky << 8;
     cky |= cky << 16;
+
+    /* Calculate half-palettes */
+
+    plh = (cmd >> 10) & 0x7U;
+    pll = (csr >> 28) & 0x7U;
+    plh |= plh <<  4;
+    plh |= plh <<  8;
+    plh |= plh << 16;
+    pll |= pll <<  4;
+    pll |= pll <<  8;
+    pll |= pll << 16;
 
     /* Do the blit */
 
@@ -148,14 +179,14 @@ void rrpge_m_grln(void)
 
      spms = (1U << (csr & 7U)) - 1U;
      soff = soff & (~spms);       /* Source offset base must be masked by nonexpanded */
-     if ((cmd & 0x0800U) != 0U){ spms = (spms << 1) | 1U; }
+     if ((csr & 0x80000000U) != 0U){ spms = (spms << 1) | 1U; }
      spos = ((cmd >> 3) & 0x7FU) & spms;
 
      /* Fetch first source */
 
-     if ((cmd & 0x0800U) == 0U){  /* Normal load */
+     if ((csr & 0x80000000U) == 0U){ /* Normal load */
       csd = sbnk[soff + spos];
-     }else{                       /* X expanded load */
+     }else{                          /* X expanded load */
       csd = sbnk[soff + (spos >> 1)];
       csd = (csd >> (((spos & 1U) ^ 1U) << 4)) & 0xFFFFU; /* Select high / low half */
       csd = ((csd & 0x000FU)      ) |
@@ -169,12 +200,12 @@ void rrpge_m_grln(void)
 
      /* Do the blitting loop */
 
-     i    = opb[(cmd >> 14) & 1U];
+     i    = opb[(cmd >> 15) & 1U];
      while (scy != 0U){
 
-      if ((cmd & 0x0800U) == 0U){    /* Normal load */
+      if ((csr & 0x80000000U) == 0U){  /* Normal load */
        csd = sbnk[soff + spos];
-      }else{                         /* X expanded load */
+      }else{                           /* X expanded load */
        csd = sbnk[soff + (spos >> 1)];
        csd = (csd >> (((spos & 1U) ^ 1U) << 4)) & 0xFFFFU; /* Select high / low half */
        csd = ((csd & 0x000FU)      ) |
@@ -187,8 +218,6 @@ void rrpge_m_grln(void)
       spos = (spos + 1U) & spms;
       psd |= (csd >> dshr) >> dshr;  /* Now 'psd' contains the destination aligned source */
 
-      d    = rrpge_m_grln_buf[i];
-
       /* Create mask from colorkey */
 
       m    = psd ^ cky;              /* Prepare for colorkey */
@@ -196,9 +225,17 @@ void rrpge_m_grln(void)
       m   &= 0x88888888U;            /* Mask out lower pixel bits */
       m    = (m - (m >> 3)) + m;     /* Expand to lower pixels */
 
+      /* Calculate low and high halves */
+
+      t    = psd;
+      h    = psd & 0x88888888U;
+      h    = h - (h >> 3);
+      h    = (plh & h) | (pll & (~h));
+
       /* Combine destination */
 
-      rrpge_m_grln_buf[i] = ((psd & m) | (d & (~m))) & 0xFFFFFFFFU;
+      rrpge_m_grln_bufl[i] = (t & m) | (rrpge_m_grln_bufl[i] & (~m));
+      rrpge_m_grln_bufh[i] = (h & m) | (rrpge_m_grln_bufh[i] & (~m));
       i    = (i + 1U) & 0x7FU;
 
       /* Done, finalize */
@@ -234,9 +271,9 @@ void rrpge_m_grln(void)
        csd  = 0U;
        m   &= (0xFFFFFFFFU << dshl) << dshl; /* End mask */
       }else{                         /* Not an end cell */
-       if ((cmd & 0x0800U) == 0U){   /* Normal load */
+       if ((csr & 0x80000000U) == 0U){  /* Normal load */
         csd = sbnk[(soff + spos) & 0xFFFFU];
-       }else{                        /* X expanded load */
+       }else{                           /* X expanded load */
         csd = sbnk[(soff + (spos >> 1)) & 0xFFFFU];
         csd = (csd >> (((spos & 1U) ^ 1U) << 4)) & 0xFFFFU; /* Select high / low half */
         csd = ((csd & 0x000FU)      ) |
@@ -252,10 +289,6 @@ void rrpge_m_grln(void)
 
       psd |= csd >> dshr;
 
-      /* Load destination for masks */
-
-      d    = rrpge_m_grln_buf[i];
-
       /* Create masks */
 
       t    = psd ^ cky;              /* Prepare for colorkey */
@@ -264,9 +297,17 @@ void rrpge_m_grln(void)
       t    = (t - (t >> 3)) + t;     /* Expand to lower pixels */
       m   &= t;                      /* Add to combined mask */
 
+      /* Calculate low and high halves */
+
+      t    = psd;
+      h    = psd & 0x88888888U;
+      h    = h - (h >> 3);
+      h    = (plh & h) | (pll & (~h));
+
       /* Combine destination */
 
-      rrpge_m_grln_buf[i] = ((psd & m) | (d & (~m))) & 0xFFFFFFFFU;
+      rrpge_m_grln_bufl[i] = (t & m) | (rrpge_m_grln_bufl[i] & (~m));
+      rrpge_m_grln_bufh[i] = (h & m) | (rrpge_m_grln_bufh[i] & (~m));
       i    = (i + 1U) & 0x7FU;
 
       /* Done, finalize */
@@ -287,6 +328,26 @@ void rrpge_m_grln(void)
    if (cyr  ==   0U){ break; }    /* Cycle budget exhausted */
    if (doff == dsiz){ break; }    /* Display list completed */
 
+  }
+
+  /* Line rendered in bufl & bufh, now combine the result to produce 6 bit
+  ** pixels. */
+
+  for (i = 0U; i < 80U; i++){
+   t = rrpge_m_grln_bufl[i];
+   h = rrpge_m_grln_bufh[i];
+   m = t;
+   t = ((t & 0x07070707U)     ) | ((h & 0x07070707U) << 3);
+   h = ((m & 0x70707070U) >> 4) | ((h & 0x70707070U) >> 1);
+   m = i << 3;
+   rrpge_m_grln_buf[m + 0U] = (uint8)((h >> 24)        );
+   rrpge_m_grln_buf[m + 1U] = (uint8)((t >> 24)        );
+   rrpge_m_grln_buf[m + 2U] = (uint8)((h >> 16) & 0xFFU);
+   rrpge_m_grln_buf[m + 3U] = (uint8)((t >> 16) & 0xFFU);
+   rrpge_m_grln_buf[m + 4U] = (uint8)((h >>  8) & 0xFFU);
+   rrpge_m_grln_buf[m + 5U] = (uint8)((t >>  8) & 0xFFU);
+   rrpge_m_grln_buf[m + 6U] = (uint8)((h      ) & 0xFFU);
+   rrpge_m_grln_buf[m + 7U] = (uint8)((t      ) & 0xFFU);
   }
 
  }

@@ -17,10 +17,10 @@
 
 
 /* State: Nonzero elements in the VARS area (address, data high, data low) */
-#define STANZ_CT 23U
+#define STANZ_CT 24U
 static const uint8  rrpge_m_ires_stanz[3U * STANZ_CT] = {
  0x48U, 0x66U, 0x66U, /* XM register */
- 0x55U, 0xF0U, 0x0FU, /* GDG display list definition latch */
+ 0x55U, 0xFFU, 0x00U, /* GDG display list definition latch */
  0x95U, 0x05U, 0x58U, /* Mixer partitioning */
  0x99U, 0x01U, 0x00U, /* Mixer amplitudo */
  0xA0U, 0xFFU, 0xFFU, /* Accelerator write mask high */
@@ -31,9 +31,10 @@ static const uint8  rrpge_m_ires_stanz[3U * STANZ_CT] = {
  0xC7U, 0x00U, 0x01U, /* Audio divider */
  0xC8U, 0x1FU, 0xFCU, /* Mixer FIFO location & size */
  0xCCU, 0x4FU, 0xE0U, /* Graphics FIFO location & size */
+ 0xD2U, 0x10U, 0x00U, /* GDG double scan split */
  0xD4U, 0x50U, 0x00U, /* GDG shift mode region A */
  0xD5U, 0x50U, 0x00U, /* GDG shift mode region B */
- 0xD6U, 0xF0U, 0x0FU, /* GDG display list definition */
+ 0xD6U, 0xFFU, 0x00U, /* GDG display list definition */
  0xD8U, 0x00U, 0x50U, /* GDG source A0 */
  0xE3U, 0x00U, 0x01U, /* Pointer 0 increment */
  0xEBU, 0x00U, 0x04U, /* Pointer 1 increment */
@@ -1298,7 +1299,7 @@ void rrpge_m_ires_init(rrpge_object_t* obj)
 
  /* 0xFF000 - 0xFF7FF: Display list (only first 1600 entries used) */
  for (i = 0U; i < 400U; i++){
-  p[0xFF000U + (i * 4U) + 1U] = 0x00008000U + (i * 0x500000U);
+  p[0xFF000U + (i * 4U) + 1U] = 0x00000400U + (i * 0x500000U);
  }
 
  /* 0xFF800 - 0xFFBFF: Audio buffers (silence) */

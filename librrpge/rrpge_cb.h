@@ -2,11 +2,11 @@
 **  \file
 **  \brief     LibRRPGE standard header package - callbacks and related
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.04
+**  \date      2015.08.05
 */
 
 
@@ -22,19 +22,17 @@
 **  \brief     Graphic line output.
 **
 **  This is called when a graphic line is completed and rendered. It is not
-**  called in frames where rendering is turned off. The pixel order within the
-**  lines is Big Endian, that is the leftmost pixel comes first in the highest
-**  bits of the first element. The timing of the calls may not match that of
-**  what might be deducted from the cycle counts or the exported state,
-**  however the order of lines and their occurence related to frame boundaries
-**  (RRPGE_HLT_FRAME halt causes) are strictly kept. Note that this callback
-**  does not produce halt cause on execution.
+**  called in frames where rendering is turned off. The timing of the calls
+**  may not match that of what might be deducted from the cycle counts or the
+**  exported state, however the order of lines and their occurence related to
+**  frame boundaries (RRPGE_HLT_FRAME halt causes) are strictly kept. Note
+**  that this callback does not produce halt cause on execution.
 **
 **  \param[in]   hnd   Emulation instance the callback is called for.
 **  \param[in]   ln    The number of the line rendered (0 - 399).
-**  \param[in]   buf   The contents of the line (80 elements).
+**  \param[in]   buf   The contents of the line (640 elements).
 */
-typedef void rrpge_cb_line_t (rrpge_object_t* hnd, rrpge_iuint ln, rrpge_uint32 const* buf);
+typedef void rrpge_cb_line_t (rrpge_object_t* hnd, rrpge_iuint ln, rrpge_uint8 const* buf);
 
 
 

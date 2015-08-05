@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.04
+**  \date      2015.08.05
 **
 **
 ** Graphics rendering: produces the graphics output from the lines provided by
@@ -29,10 +29,9 @@ static uint32 render_col[256U];
 /*
 ** Line callback service routine.
 */
-void render_line(rrpge_object_t* hnd, rrpge_iuint ln, rrpge_uint32 const* buf)
+void render_line(rrpge_object_t* hnd, rrpge_iuint ln, rrpge_uint8 const* buf)
 {
  uint32* sln;
- auint   i;
  auint   j;
 
  if (ln  >  399U){ return; }  /* Should not happen */
@@ -42,17 +41,15 @@ void render_line(rrpge_object_t* hnd, rrpge_iuint ln, rrpge_uint32 const* buf)
 
  sln += screen_pitch() * ln;  /* Position to the appropriate line */
 
- j = 0U;
- for (i = 0U; i < 80U; i++){
-  sln[j + 0U] = render_col[(buf[i] >> 28) & 0xFU];
-  sln[j + 1U] = render_col[(buf[i] >> 24) & 0xFU];
-  sln[j + 2U] = render_col[(buf[i] >> 20) & 0xFU];
-  sln[j + 3U] = render_col[(buf[i] >> 16) & 0xFU];
-  sln[j + 4U] = render_col[(buf[i] >> 12) & 0xFU];
-  sln[j + 5U] = render_col[(buf[i] >>  8) & 0xFU];
-  sln[j + 6U] = render_col[(buf[i] >>  4) & 0xFU];
-  sln[j + 7U] = render_col[(buf[i]      ) & 0xFU];
-  j += 8U;
+ for (j = 0U; j < 640U; j += 8U){
+  sln[j + 0U] = render_col[buf[j + 0U]];
+  sln[j + 1U] = render_col[buf[j + 1U]];
+  sln[j + 2U] = render_col[buf[j + 2U]];
+  sln[j + 3U] = render_col[buf[j + 3U]];
+  sln[j + 4U] = render_col[buf[j + 4U]];
+  sln[j + 5U] = render_col[buf[j + 5U]];
+  sln[j + 6U] = render_col[buf[j + 6U]];
+  sln[j + 7U] = render_col[buf[j + 7U]];
  }
 
  screen_unlock();
@@ -93,7 +90,7 @@ void render_pal(rrpge_object_t* hnd, const void* par)
 
 /*
 ** Initializes or resets rendering subsystem by the given emulator object.
-** This sets the display mode (640x400x16) and the initial palette.
+** This sets the initial palette.
 */
 void render_reset(rrpge_object_t* hnd)
 {
