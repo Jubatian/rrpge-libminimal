@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.04
+**  \date      2015.08.11
 */
 
 
@@ -155,7 +155,7 @@ void  rrpge_m_vidwrite(auint adr, auint val)
   case 0x4U:
   case 0x5U:                  /* Shift mode region */
 
-   stat[RRPGE_STA_UPA_G + adr] = val & 0x7F7FU;
+   stat[RRPGE_STA_UPA_G + adr] = val & 0xFFFFU;
    break;
 
   case 0x6U:                  /* Display list definition */

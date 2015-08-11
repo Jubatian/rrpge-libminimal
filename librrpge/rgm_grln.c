@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.05
+**  \date      2015.08.11
 */
 
 
@@ -18,6 +18,17 @@
 #define  PRAMS  RRPGE_M_PRAMS
 
 
+/* 4 bit to 32 bit expansion table */
+static const uint32 rrpge_m_grln_ex32[16] = {
+ 0x00000000U, 0x11111111U, 0x22222222U, 0x33333333U,
+ 0x44444444U, 0x55555555U, 0x66666666U, 0x77777777U,
+ 0x88888888U, 0x99999999U, 0xAAAAAAAAU, 0xBBBBBBBBU,
+ 0xCCCCCCCCU, 0xDDDDDDDDU, 0xEEEEEEEEU, 0xFFFFFFFFU
+};
+
+
+/* !!! These should be moved into the emulator object !!! */
+
 /* Local buffer for rendering lines. Only first 80 cells are used for output,
 ** however the full range is used for render. The low half is used to store
 ** the low 3 bits of each pixel, the high half is for the high 3 bits, these
@@ -26,6 +37,38 @@ static uint32 rrpge_m_grln_bufl[128];
 static uint32 rrpge_m_grln_bufh[128];
 static uint8  rrpge_m_grln_buf [640];
 
+/* Clipping buffers */
+static uint32 rrpge_m_grln_cbuf[3][128];
+static auint  rrpge_m_grln_cini[3] = {0x10000U, 0x10000U, 0x10000U};
+
+
+
+/* Updates a clipping buffer as needed. "tg" is the target state. */
+void rrpge_m_grln_cbup(auint id, auint tg)
+{
+ auint i;
+ auint beg;
+ auint owd;
+ auint end;
+
+ tg = tg & 0x7F7FU;
+
+ if (tg == rrpge_m_grln_cini[id]){ return; }
+
+ beg = tg & 0x7FU;
+ owd = (tg >> 8) & 0x7FU;
+ end = (beg + owd) & 0x7FU;
+
+ for (i = 0U; i < 128U; i++){
+  rrpge_m_grln_cbuf[id][i] = 0x00000000U;
+ }
+ for (i = beg; i != end; i = (i + 1U) & 0x7FU){
+  rrpge_m_grln_cbuf[id][i] = 0xFFFFFFFFU;
+ }
+
+ rrpge_m_grln_cini[id] = tg;
+}
+
 
 
 /* Renders current graphics line. Also performs callback to host. */
@@ -33,14 +76,19 @@ void rrpge_m_grln(void)
 {
  uint32 const* dlin;           /* Display list line */
  uint32 const* sbnk;           /* Source PRAM bank */
+ uint32 const* clpb;           /* Clipping buffer */
  auint  soff;                  /* Source base offset within PRAM bank */
  auint  doff;                  /* Offset within display list */
  auint  dsiz;                  /* Size of display list line */
- auint  opw[2];                /* Output width */
- auint  opb[2];                /* Output begin */
+ auint  opws[8];               /* Output widths */
+ auint  opbs[8];               /* Output begins */
+ auint  clps;                  /* Clipping settings */
+ auint  opw;                   /* Output width for current render (shift source) */
+ auint  opb;                   /* Output begin for current render (shift source) */
  auint  dbl;                   /* Double scan flag */
  auint  cyr;                   /* Cycles remaining */
  auint  cmd;                   /* Current display list command */
+ auint  ssl;                   /* Source select from command */
  auint  csr;                   /* Current source */
  auint  scy;                   /* Number of output cycles to produce */
  auint  cky;                   /* Colorkey value extended */
@@ -68,12 +116,34 @@ void rrpge_m_grln(void)
  doff = (i & 0x0FFCU) << 4;
  dsiz = (i & 3U) + 2U;
 
- /* Read output width & begin positions */
+ /* Read output width & begin positions and clipping settings */
+
+ clps = 0U;
+ rrpge_m_grln_cbup(2U, 0x5000U);
 
  for (i = 0U; i < 2U; i++){
-  opb[i] = rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x4U + i];
-  opw[i] = (opb[i] >> 8) & 0x7FU;
-  opb[i] = opb[i] & 0x7FU;
+
+  t = rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x4U + i];
+  rrpge_m_grln_cbup(i, t);
+
+  m = (t >> 8) & 0x7FU;
+  opws[(i << 2) + 0U] = m;
+  opws[(i << 2) + 1U] = m;
+  opws[(i << 2) + 2U] = m;
+  opws[(i << 2) + 3U] = m;
+
+  m = t & 0x7FU;
+  opbs[(i << 2) + 0U] = m;
+  opbs[(i << 2) + 1U] = m;
+  opbs[(i << 2) + 2U] = m;
+  opbs[(i << 2) + 3U] = m;
+
+  m = ((t & 0x8000U) >> 12) |
+      ((t & 0x8000U) >> 13) |
+      ((t & 0x0080U) >>  6) |
+      ((t & 0x0080U) >>  7);
+  clps |= m << (i << 2);
+
  }
 
  /* Double scan check and line offset calculation */
@@ -109,12 +179,8 @@ void rrpge_m_grln(void)
   h    = h - (h >> 3);
   plh  = (rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x2U] >> 12) & 0x7U;
   pll  = (rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x2U] >>  8) & 0x7U;
-  plh |= plh <<  4;
-  plh |= plh <<  8;
-  plh |= plh << 16;
-  pll |= pll <<  4;
-  pll |= pll <<  8;
-  pll |= pll << 16;
+  plh  = rrpge_m_grln_ex32[plh];
+  pll  = rrpge_m_grln_ex32[pll];
   h    = (plh & h) | (pll & (~h));
   for (i = 0U; i < 80U; i++){
    rrpge_m_grln_bufl[i] = t;
@@ -129,15 +195,25 @@ void rrpge_m_grln(void)
 
    cmd  = dlin[doff] & 0xFFFFFFFFU;  /* Current command */
    doff ++;
-   csr  = rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x8U + ((cmd >> 13) & 7U)] & 0xFFFFU; /* Current source to use */
-   csr |= ( rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x0U + ((cmd >> 15) & 1U)] <<
-            ((((cmd >> 13) & 3U) << 2) + 16U) ) & 0xF0000000U; /* X expand and Low half-palette */
+   ssl  = (cmd >> 13) & 7U;          /* Source select */
+
+   csr  = rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x8U + ssl] & 0xFFFFU; /* Current source to use */
+   csr |= ( rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x0U + (ssl >> 2)] <<
+            (((ssl & 3U) << 2) + 16U) ) & 0xF0000000U; /* X expand and Low half-palette */
    sbnk = &(rrpge_m_edat->st.pram[((csr & 0xF000U) << 4) & (PRAMS - 1U)]);
    soff = (cmd >> 16) & 0xFFFFU;
+   opw  = opws[ssl];
+   opb  = opbs[ssl];
+   if (((clps >> ssl) & 1U) != 0U){  /* Clipping requested */
+    clpb = &(rrpge_m_grln_cbuf[ssl >> 2][0]);
+   }else{                            /* No clipping, use permissive clipping buffer */
+    clpb = &(rrpge_m_grln_cbuf[2][0]);
+   }
+
    if       ((cmd & 0x1C00U) == 0U){ /* Render command inactive */
     scy = 0U;
    }else if ((csr & 0x0080U) != 0U){ /* Shift source */
-    scy = opw[(cmd >> 15) & 1U] + 1U;
+    scy = opw + 1U;
    }else{                            /* Positioned source (X expansion doubles width!) */
     scy = (((csr - 1U) & 0x7FU) + 1U) << ((csr >> 31) & 1U);
    }
@@ -150,20 +226,14 @@ void rrpge_m_grln(void)
     /* Calculate colorkey */
 
     cky = (csr >> 8) & 0xFU;
-    cky |= cky << 4;
-    cky |= cky << 8;
-    cky |= cky << 16;
+    cky = rrpge_m_grln_ex32[cky];
 
     /* Calculate half-palettes */
 
     plh = (cmd >> 10) & 0x7U;
     pll = (csr >> 28) & 0x7U;
-    plh |= plh <<  4;
-    plh |= plh <<  8;
-    plh |= plh << 16;
-    pll |= pll <<  4;
-    pll |= pll <<  8;
-    pll |= pll << 16;
+    plh  = rrpge_m_grln_ex32[plh];
+    pll  = rrpge_m_grln_ex32[pll];
 
     /* Do the blit */
 
@@ -189,18 +259,17 @@ void rrpge_m_grln(void)
      }else{                          /* X expanded load */
       csd = sbnk[soff + (spos >> 1)];
       csd = (csd >> (((spos & 1U) ^ 1U) << 4)) & 0xFFFFU; /* Select high / low half */
-      csd = ((csd & 0x000FU)      ) |
-            ((csd & 0x00F0U) <<  4) |
-            ((csd & 0x0F00U) <<  8) |
-            ((csd & 0xF000U) << 12);
-      csd = csd | (csd << 4);
+      csd = csd | (csd << 8);
+      csd = ((csd & 0x00FF00FFU) << 4) |
+            ((csd & 0x00F000F0U) << 8) |
+            ((csd & 0x000F000FU));
      }
      spos = (spos + 1U) & spms;
      psd  = csd << dshl;
 
      /* Do the blitting loop */
 
-     i    = opb[(cmd >> 15) & 1U];
+     i    = opb;
      while (scy != 0U){
 
       if ((csr & 0x80000000U) == 0U){  /* Normal load */
@@ -208,11 +277,10 @@ void rrpge_m_grln(void)
       }else{                           /* X expanded load */
        csd = sbnk[soff + (spos >> 1)];
        csd = (csd >> (((spos & 1U) ^ 1U) << 4)) & 0xFFFFU; /* Select high / low half */
-       csd = ((csd & 0x000FU)      ) |
-             ((csd & 0x00F0U) <<  4) |
-             ((csd & 0x0F00U) <<  8) |
-             ((csd & 0xF000U) << 12);
-       csd = csd | (csd << 4);
+       csd = csd | (csd << 8);
+       csd = ((csd & 0x00FF00FFU) << 4) |
+             ((csd & 0x00F000F0U) << 8) |
+             ((csd & 0x000F000FU));
       }
 
       spos = (spos + 1U) & spms;
@@ -276,11 +344,10 @@ void rrpge_m_grln(void)
        }else{                           /* X expanded load */
         csd = sbnk[(soff + (spos >> 1)) & 0xFFFFU];
         csd = (csd >> (((spos & 1U) ^ 1U) << 4)) & 0xFFFFU; /* Select high / low half */
-        csd = ((csd & 0x000FU)      ) |
-              ((csd & 0x00F0U) <<  4) |
-              ((csd & 0x0F00U) <<  8) |
-              ((csd & 0xF000U) << 12);
-        csd = csd | (csd << 4);
+        csd = csd | (csd << 8);
+        csd = ((csd & 0x00FF00FFU) << 4) |
+              ((csd & 0x00F000F0U) << 8) |
+              ((csd & 0x000F000FU));
        }
        spos ++;
       }
@@ -296,6 +363,7 @@ void rrpge_m_grln(void)
       t   &= 0x88888888U;            /* Mask out lower pixel bits */
       t    = (t - (t >> 3)) + t;     /* Expand to lower pixels */
       m   &= t;                      /* Add to combined mask */
+      m   &= clpb[i];                /* Add clipping mask to combined mask */
 
       /* Calculate low and high halves */
 
