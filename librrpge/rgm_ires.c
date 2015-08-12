@@ -84,9 +84,15 @@ static const uint32 rrpge_m_ires_ft[12] = {
 };
 
 /* Palette */
-static const uint16 rrpge_m_ires_pal[16] = {
+static const uint16 rrpge_m_ires_pal[64] = {
  0x000U, 0xAAAU, 0x555U, 0xFFFU, 0x229U, 0x593U, 0xA42U, 0xEDBU,
  0x35EU, 0x85FU, 0x430U, 0xCC4U, 0x6AFU, 0x073U, 0x730U, 0xA83U,
+ 0x000U, 0xCA8U, 0x754U, 0xFFCU, 0x134U, 0x783U, 0x953U, 0xFD9U,
+ 0x351U, 0xC74U, 0x520U, 0x9C5U, 0x7A2U, 0x471U, 0x443U, 0xA76U,
+ 0x211U, 0x332U, 0x443U, 0x456U, 0x666U, 0x877U, 0x998U, 0xCCCU,
+ 0xB64U, 0xC87U, 0x331U, 0xCB6U, 0x994U, 0x572U, 0x540U, 0x863U,
+ 0x38CU, 0x49DU, 0x5AEU, 0x7BFU, 0x9CFU, 0xADFU, 0xCEFU, 0xDFFU,
+ 0x56BU, 0xA8BU, 0x023U, 0x8CCU, 0x6A8U, 0x366U, 0x34AU, 0x58DU
 };
 
 /* User Library font */
@@ -1035,7 +1041,7 @@ void rrpge_m_ires_initdata(rrpge_object_t* obj)
  /* Populate it */
 
  /* Color palette */
- for (i = 0U; i < 16U; i++){
+ for (i = 0U; i < 64U; i++){
   d[0xFA00U + i] = rrpge_m_ires_pal[i];
  }
 
@@ -1129,7 +1135,7 @@ void rrpge_m_ires_initstat(rrpge_object_t* obj)
  }
 
  /* Color palette */
- for (i = 0U; i < 16U; i++){
+ for (i = 0U; i < 64U; i++){
   rrpge_m_stat_save(obj, RRPGE_STA_PAL + i, rrpge_m_ires_pal[i]);
  }
 
@@ -1158,8 +1164,6 @@ void rrpge_m_ires_init(rrpge_object_t* obj)
  auint   i;
  auint   j;
  auint   r;
- auint   v;
- auint   t;
  uint32 *p = &(obj->st.pram[0]);
 
 
@@ -1182,26 +1186,11 @@ void rrpge_m_ires_init(rrpge_object_t* obj)
  /* Populate Peripheral RAM with initial data blocks */
 
  /* 0xFC500 - 0xFDFFF: User Library font */
- for (i = 0U; i < 1536U; i += 24U){
+ for (i = 0U; i < 1536U; i += 12U){
   for (j = 0U; j < 12U; j++){
    r = rrpge_m_ires_font[i + j];
-   v = rrpge_m_ires_font[i + j + 12U];
    p[0xFC500U + i + j] =  r;
    p[0xFCBC0U + i + j] = ~r;
-   p[0xFC500U + i + j + 12U] =  v;
-   p[0xFCBC0U + i + j + 12U] = ~v;
-   t = ((r & 0xF0000000U) >>  4) | ((v & 0xF0000000U)      ) |
-       ((r & 0x0F000000U) >>  8) | ((v & 0x0F000000U) >>  4) |
-       ((r & 0x00F00000U) >> 12) | ((v & 0x00F00000U) >>  8) |
-       ((r & 0x000F0000U) >> 16) | ((v & 0x000F0000U) >> 12);
-   p[0xFD280U + i + (j << 1)] =  t;
-   p[0xFD940U + i + (j << 1)] = ~t;
-   t = ((r & 0x0000F000U) << 12) | ((v & 0x0000F000U) << 16) |
-       ((r & 0x00000F00U) <<  8) | ((v & 0x00000F00U) << 12) |
-       ((r & 0x000000F0U) <<  4) | ((v & 0x000000F0U) <<  8) |
-       ((r & 0x0000000FU)      ) | ((v & 0x0000000FU) <<  4);
-   p[0xFD280U + i + (j << 1) + 1U] =  t;
-   p[0xFD940U + i + (j << 1) + 1U] = ~t;
   }
  }
 

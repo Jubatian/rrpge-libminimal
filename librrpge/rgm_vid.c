@@ -78,9 +78,9 @@ void  rrpge_m_vidproc(auint cy)
    /* Prepare for clear */
 
    i  = stat[RRPGE_STA_VARS + 0x15U];       /* Display list def. latch */
-   a  = ((i & 0xFU) << 16) & (PRAMS - 1U);  /* PRAM bank */
-   o  = i & 0xFFC0U;                        /* Start offset */
-   j  = 1600U << ((i >> 4) & 3U);           /* Display list size limit */
+   a  = ((i & 0xF000U) << 4) & (PRAMS - 1U);   /* PRAM bank */
+   o  = ((i & 0x0FFCU) << 4);               /* Start offset */
+   j  = 1600U << (i & 3U);                  /* Display list size limit */
    i  = stat[RRPGE_STA_UPA_G + 0x3U];       /* Display list clear controls */
    s  = (i >> 11) & 0x1FU;                  /* Initial skip */
    j -= s;

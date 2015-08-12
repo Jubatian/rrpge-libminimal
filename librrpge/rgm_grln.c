@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.11
+**  \date      2015.08.12
 */
 
 
@@ -199,7 +199,7 @@ void rrpge_m_grln(void)
 
    csr  = rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x8U + ssl] & 0xFFFFU; /* Current source to use */
    csr |= ( rrpge_m_edat->st.stat[RRPGE_STA_UPA_G + 0x0U + (ssl >> 2)] <<
-            (((ssl & 3U) << 2) + 16U) ) & 0xF0000000U; /* X expand and Low half-palette */
+            (((ssl & 3U) << 2) + 16U) ) & 0xF0000000U; /* Colorkey */
    sbnk = &(rrpge_m_edat->st.pram[((csr & 0xF000U) << 4) & (PRAMS - 1U)]);
    soff = (cmd >> 16) & 0xFFFFU;
    opw  = opws[ssl];
@@ -215,7 +215,7 @@ void rrpge_m_grln(void)
    }else if ((csr & 0x0080U) != 0U){ /* Shift source */
     scy = opw + 1U;
    }else{                            /* Positioned source (X expansion doubles width!) */
-    scy = (((csr - 1U) & 0x7FU) + 1U) << ((csr >> 31) & 1U);
+    scy = (((csr - 1U) & 0x7FU) + 1U) << ((csr >> 11) & 1U);
    }
    cyr--;                         /* Cycle taken for display list entry fetch (cyr certain nonzero here) */
    if (scy > cyr){ scy = cyr; }
@@ -225,13 +225,13 @@ void rrpge_m_grln(void)
 
     /* Calculate colorkey */
 
-    cky = (csr >> 8) & 0xFU;
+    cky = (csr >> 28) & 0xFU;
     cky = rrpge_m_grln_ex32[cky];
 
     /* Calculate half-palettes */
 
     plh = (cmd >> 10) & 0x7U;
-    pll = (csr >> 28) & 0x7U;
+    pll = (csr >>  8) & 0x7U;
     plh  = rrpge_m_grln_ex32[plh];
     pll  = rrpge_m_grln_ex32[pll];
 
@@ -249,14 +249,14 @@ void rrpge_m_grln(void)
 
      spms = (1U << (csr & 7U)) - 1U;
      soff = soff & (~spms);       /* Source offset base must be masked by nonexpanded */
-     if ((csr & 0x80000000U) != 0U){ spms = (spms << 1) | 1U; }
+     if ((csr & 0x0800U) != 0U){ spms = (spms << 1) | 1U; }
      spos = ((cmd >> 3) & 0x7FU) & spms;
 
      /* Fetch first source */
 
-     if ((csr & 0x80000000U) == 0U){ /* Normal load */
+     if ((csr & 0x0800U) == 0U){  /* Normal load */
       csd = sbnk[soff + spos];
-     }else{                          /* X expanded load */
+     }else{                       /* X expanded load */
       csd = sbnk[soff + (spos >> 1)];
       csd = (csd >> (((spos & 1U) ^ 1U) << 4)) & 0xFFFFU; /* Select high / low half */
       csd = csd | (csd << 8);
@@ -266,15 +266,16 @@ void rrpge_m_grln(void)
      }
      spos = (spos + 1U) & spms;
      psd  = csd << dshl;
+     scy  --;                     /* (Note: scy was at least one at this point) */
 
      /* Do the blitting loop */
 
      i    = opb;
      while (scy != 0U){
 
-      if ((csr & 0x80000000U) == 0U){  /* Normal load */
+      if ((csr & 0x0800U) == 0U){ /* Normal load */
        csd = sbnk[soff + spos];
-      }else{                           /* X expanded load */
+      }else{                      /* X expanded load */
        csd = sbnk[soff + (spos >> 1)];
        csd = (csd >> (((spos & 1U) ^ 1U) << 4)) & 0xFFFFU; /* Select high / low half */
        csd = csd | (csd << 8);
@@ -339,9 +340,9 @@ void rrpge_m_grln(void)
        csd  = 0U;
        m   &= (0xFFFFFFFFU << dshl) << dshl; /* End mask */
       }else{                         /* Not an end cell */
-       if ((csr & 0x80000000U) == 0U){  /* Normal load */
+       if ((csr & 0x0800U) == 0U){   /* Normal load */
         csd = sbnk[(soff + spos) & 0xFFFFU];
-       }else{                           /* X expanded load */
+       }else{                        /* X expanded load */
         csd = sbnk[(soff + (spos >> 1)) & 0xFFFFU];
         csd = (csd >> (((spos & 1U) ^ 1U) << 4)) & 0xFFFFU; /* Select high / low half */
         csd = csd | (csd << 8);
