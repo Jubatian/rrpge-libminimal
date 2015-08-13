@@ -8,11 +8,11 @@
 
 OBJECTS+= $(OBD)rgm_aq.o   $(OBD)rgm_aud.o  $(OBD)rgm_cb.o   $(OBD)rgm_chk.o
 OBJECTS+= $(OBD)rgm_cpu.o  $(OBD)rgm_cpua.o $(OBD)rgm_cpuo.o $(OBD)rgm_db.o
-OBJECTS+= $(OBD)rgm_fifo.o $(OBD)rgm_grln.o $(OBD)rgm_grop.o $(OBD)rgm_halt.o
-OBJECTS+= $(OBD)rgm_info.o $(OBD)rgm_ires.o $(OBD)rgm_krnm.o $(OBD)rgm_main.o
-OBJECTS+= $(OBD)rgm_mix.o  $(OBD)rgm_pram.o $(OBD)rgm_prng.o $(OBD)rgm_run.o
-OBJECTS+= $(OBD)rgm_ser.o  $(OBD)rgm_stat.o $(OBD)rgm_task.o $(OBD)rgm_ulib.o
-OBJECTS+= $(OBD)rgm_vid.o
+OBJECTS+= $(OBD)rgm_fifo.o $(OBD)rgm_grop.o $(OBD)rgm_halt.o $(OBD)rgm_info.o
+OBJECTS+= $(OBD)rgm_ires.o $(OBD)rgm_krnm.o $(OBD)rgm_main.o $(OBD)rgm_mix.o
+OBJECTS+= $(OBD)rgm_pram.o $(OBD)rgm_prng.o $(OBD)rgm_run.o  $(OBD)rgm_ser.o
+OBJECTS+= $(OBD)rgm_stat.o $(OBD)rgm_task.o $(OBD)rgm_ulib.o $(OBD)rgm_vid.o
+OBJECTS+= $(OBD)rgm_vidl.o
 
 $(OBD)rgm_aq.o: librrpge/rgm_aq.c librrpge/*.h
 	$(CC) -c librrpge/rgm_aq.c -o $(OBD)rgm_aq.o $(CFSPD)
@@ -49,10 +49,6 @@ $(OBD)rgm_db.o: librrpge/rgm_db.c librrpge/*.h
 $(OBD)rgm_fifo.o: librrpge/rgm_fifo.c librrpge/*.h
 	$(CC) -c librrpge/rgm_fifo.c -o $(OBD)rgm_fifo.o $(CFSPD)
 	$(CC) -S librrpge/rgm_fifo.c -o $(OBD)rgm_fifo.asm $(CFSPD)
-
-$(OBD)rgm_grln.o: librrpge/rgm_grln.c librrpge/*.h
-	$(CC) -c librrpge/rgm_grln.c -o $(OBD)rgm_grln.o $(CFSPD)
-	$(CC) -S librrpge/rgm_grln.c -o $(OBD)rgm_grln.asm $(CFSPD)
 
 $(OBD)rgm_grop.o: librrpge/rgm_grop.c librrpge/*.h
 	$(CC) -c librrpge/rgm_grop.c -o $(OBD)rgm_grop.o $(CFSPD)
@@ -113,3 +109,7 @@ $(OBD)rgm_ulib.o: librrpge/rgm_ulib.c librrpge/*.h
 $(OBD)rgm_vid.o: librrpge/rgm_vid.c librrpge/*.h
 	$(CC) -c librrpge/rgm_vid.c -o $(OBD)rgm_vid.o $(CFSPD)
 	$(CC) -S librrpge/rgm_vid.c -o $(OBD)rgm_vid.asm $(CFSPD)
+
+$(OBD)rgm_vidl.o: librrpge/rgm_vidl.c librrpge/*.h
+	$(CC) -c librrpge/rgm_vidl.c -o $(OBD)rgm_vidl.o $(CFSPD)
+	$(CC) -S librrpge/rgm_vidl.c -o $(OBD)rgm_vidl.asm $(CFSPD)

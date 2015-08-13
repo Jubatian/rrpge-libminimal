@@ -18,6 +18,7 @@
 #include "rgm_halt.h"
 #include "rgm_cpu.h"
 #include "rgm_pram.h"
+#include "rgm_vid.h"
 
 
 
@@ -29,6 +30,7 @@ void rrpge_init_lib(rrpge_malloc_t* alc, rrpge_free_t* fre)
 
  rrpge_m_cpu_init();
  rrpge_m_pram_init();
+ rrpge_m_vid_init();
 }
 
 
@@ -381,13 +383,4 @@ void rrpge_pushpacket(rrpge_object_t* hnd, rrpge_uint16 const* id,
 rrpge_iuint rrpge_gethaltcause(rrpge_object_t* hnd)
 {
  return rrpge_m_halt_get(hnd);
-}
-
-
-
-/* Toggle graphics rendering - implementation of RRPGE library function */
-void rrpge_enarender(rrpge_object_t* hnd, rrpge_ibool tg)
-{
- if (tg){ hnd->rena = (hnd->rena) |   1U;  }
- else   { hnd->rena = (hnd->rena) & (~1U); }
 }

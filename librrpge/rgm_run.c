@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.02
+**  \date      2015.08.13
 */
 
 
@@ -47,8 +47,6 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
 
  /* Export Application state data into info structure */
 
- rrpge_m_info.vln = stat[RRPGE_STA_VARS + 0x10U] & 0xFFFFU;
- rrpge_m_info.vlc = stat[RRPGE_STA_VARS + 0x11U] & 0xFFFFU;
  rrpge_m_info.atc = stat[RRPGE_STA_VARS + 0x13U] & 0xFFFFU;
  rrpge_m_info.cyf[0] = ((stat[RRPGE_STA_VARS + 0x22U] & 0xFFFFU) << 16) +
                        ((stat[RRPGE_STA_VARS + 0x23U] & 0xFFFFU));
@@ -66,7 +64,7 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
   ** video line. Random kernel stall is only applied after this: it is
   ** irrelevant if it extends into more video lines. */
 
-  cy = rrpge_m_cpu_run(hnd, rmod, rrpge_m_info.vlc);
+  cy = rrpge_m_cpu_run(hnd, rmod, rrpge_m_vid_getremcy(hnd));
 
   /* Roll and add kernel internal task cycles if necessary. This is done here
   ** since it needs to produce CPU cycles. */
@@ -103,7 +101,7 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
   /* Video processing. Generates display output (including calling the line
   ** callback), and processes Display List clear. */
 
-  rrpge_m_vidproc(cy);
+  rrpge_m_vid_proc(hnd, cy);
 
 
   /* If halt causes were set, break out of the main loop before scheduling
@@ -128,8 +126,6 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
 
  /* Write-back Application state data from info structure */
 
- stat[RRPGE_STA_VARS + 0x10U] = (rrpge_m_info.vln) & 0xFFFFU;
- stat[RRPGE_STA_VARS + 0x11U] = (rrpge_m_info.vlc) & 0xFFFFU;
  stat[RRPGE_STA_VARS + 0x13U] = (rrpge_m_info.atc) & 0xFFFFU;
  stat[RRPGE_STA_VARS + 0x22U] = (rrpge_m_info.cyf[0] >> 16) & 0xFFFFU;
  stat[RRPGE_STA_VARS + 0x23U] = (rrpge_m_info.cyf[0]      ) & 0xFFFFU;

@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.02
+**  \date      2015.08.13
 */
 
 
@@ -17,8 +17,8 @@
 
 
 
-/* State: CPU registers (0x040 - 0x04F), getter */
-static auint rrpge_m_cpu_stat_get(rrpge_object_t* hnd, auint adr)
+/* State: CPU registers (0x040 - 0x04F), reader */
+RRPGE_M_FASTCALL static auint rrpge_m_cpu_stat_read(rrpge_object_t* hnd, auint adr, auint rmw)
 {
  switch (adr){
   case 0x00U:
@@ -40,8 +40,8 @@ static auint rrpge_m_cpu_stat_get(rrpge_object_t* hnd, auint adr)
 
 
 
-/* State: CPU registers (0x040 - 0x04F), setter */
-static auint rrpge_m_cpu_stat_set(rrpge_object_t* hnd, auint adr, auint val)
+/* State: CPU registers (0x040 - 0x04F), writer */
+RRPGE_M_FASTCALL static void rrpge_m_cpu_stat_write(rrpge_object_t* hnd, auint adr, auint val)
 {
  switch (adr){
   case 0x00U:
@@ -51,13 +51,13 @@ static auint rrpge_m_cpu_stat_set(rrpge_object_t* hnd, auint adr, auint val)
   case 0x04U:
   case 0x05U:
   case 0x06U:
-  case 0x07U: hnd->cpu.xr[adr] = val & 0xFFFFU; return (hnd->cpu.xr[adr]); break;
-  case 0x08U: hnd->cpu.xmb[0] = val & 0xFFFFU;  return (hnd->cpu.xmb[0]);  break;
-  case 0x09U: hnd->cpu.xmb[1] = val & 0xFFFFU;  return (hnd->cpu.xmb[1]);  break;
-  case 0x0AU: hnd->cpu.pc = val & 0xFFFFU;      return (hnd->cpu.pc);      break;
-  case 0x0BU: hnd->cpu.sp = val & 0xFFFFU;      return (hnd->cpu.sp);      break;
-  case 0x0CU: hnd->cpu.bp = val & 0xFFFFU;      return (hnd->cpu.bp);      break;
-  default:                                      return 0U;                 break;
+  case 0x07U: hnd->cpu.xr[adr] = val & 0xFFFFU; break;
+  case 0x08U: hnd->cpu.xmb[0] = val & 0xFFFFU;  break;
+  case 0x09U: hnd->cpu.xmb[1] = val & 0xFFFFU;  break;
+  case 0x0AU: hnd->cpu.pc = val & 0xFFFFU;      break;
+  case 0x0BU: hnd->cpu.sp = val & 0xFFFFU;      break;
+  case 0x0CU: hnd->cpu.bp = val & 0xFFFFU;      break;
+  default:                                      break;
  }
 }
 
@@ -67,7 +67,8 @@ static auint rrpge_m_cpu_stat_set(rrpge_object_t* hnd, auint adr, auint val)
 ** manager. */
 void rrpge_m_cpu_init(void)
 {
- rrpge_m_stat_addhandler(&rrpge_m_cpu_stat_get, &rrpge_m_cpu_stat_set, 0x040U, 16U);
+ rrpge_m_stat_add_rw_handler(&rrpge_m_cpu_stat_read, &rrpge_m_cpu_stat_write,
+                             RRPGE_STA_VARS + 0x00U, 16U);
 }
 
 

@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.03
+**  \date      2015.08.13
 **
 **
 **  Contains the Graphics & Mixer FIFO's logic. The FIFOs operate detached

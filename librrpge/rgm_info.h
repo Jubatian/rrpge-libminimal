@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.03
+**  \date      2015.08.13
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -28,6 +28,7 @@
 #include "rgm_type.h"
 #include "rgm_cput.h"
 #include "rgm_prmt.h"
+#include "rgm_vidt.h"
 
 
 
@@ -59,6 +60,7 @@ struct rrpge_object_s{
 
  rrpge_m_cpu_t cpu;  /* CPU emulation structure */
  rrpge_m_prm_t prm;  /* PRAM emulation structure */
+ rrpge_m_vid_t vid;  /* Video (GDG) emulation structure */
 
  auint  hlt;         /* Halt causes (accessed using rgm_halt) */
 
@@ -66,13 +68,6 @@ struct rrpge_object_s{
  auint  rebw;        /* Receive data buffer write pointer */
  auint  reir;        /* Receive ID & pk. length buffer read pointer */
  auint  reiw;        /* Receive ID & pk. length buffer write pointer */
-
- auint  rena;        /* Render Enable flags.
-                     ** bit0: Requested state
-                     ** bit1: Current state
-                     ** The current state copies the requested state when
-                     ** passing frame boundary. It controls whether graphic
-                     ** display is computed for the given display frame. */
 
  auint  tsfl;        /* Task started flags.
                      ** Set if the according kernel task is already started,
@@ -101,8 +96,6 @@ typedef struct{
  auint  grr;         /* Recolor bank load necessary flag: set on entry, will
                      ** ask for populating grb[] when it is needed. */
 
- auint  vln;         /* Video line count (State: 0x050) */
- auint  vlc;         /* Video remaining cycles within line (State: 0x051) */
  auint  atc;         /* Cycles until next audio tick (State: 0x053) */
  auint  cyf[2];      /* FIFO cycles:
                      ** 0: Cycles remaining from mixer op. (State: 0x062-0x063)

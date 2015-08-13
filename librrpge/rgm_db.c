@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.02
+**  \date      2015.08.13
 */
 
 
@@ -83,7 +83,7 @@ rrpge_iuint rrpge_set_dram(rrpge_object_t* hnd, rrpge_iuint adr, rrpge_iuint val
 /* Gets a value from the State. - implementation of RRPGE library function */
 rrpge_iuint rrpge_get_state(rrpge_object_t* hnd, rrpge_iuint adr)
 {
- return rrpge_m_stat_load(hnd, adr);
+ return rrpge_m_stat_get(hnd, adr);
 }
 
 
@@ -91,7 +91,8 @@ rrpge_iuint rrpge_get_state(rrpge_object_t* hnd, rrpge_iuint adr)
 /* Sets a value in the State. - implementation of RRPGE library function */
 rrpge_iuint rrpge_set_state(rrpge_object_t* hnd, rrpge_iuint adr, rrpge_iuint val)
 {
- return rrpge_m_stat_save(hnd, adr, val);
+ rrpge_m_stat_set(hnd, adr, val);
+ return rrpge_m_stat_get(hnd, adr);
 }
 
 
