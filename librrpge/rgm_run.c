@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.13
+**  \date      2015.08.15
 */
 
 
@@ -52,8 +52,8 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
                        ((stat[RRPGE_STA_VARS + 0x23U] & 0xFFFFU));
  rrpge_m_info.cyf[1] = ((stat[RRPGE_STA_VARS + 0x2AU] & 0xFFFFU) << 16) +
                        ((stat[RRPGE_STA_VARS + 0x2BU] & 0xFFFFU));
+
  rrpge_m_pram_cys_clr(hnd);    /* Stall cycles are always consumed right away (no carry-over between runs) */
- rrpge_m_info.grr = 1U;        /* Reload recolor banks */
 
 
  /* Enter main loop */

@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.13
+**  \date      2015.08.15
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -29,6 +29,7 @@
 #include "rgm_cput.h"
 #include "rgm_prmt.h"
 #include "rgm_vidt.h"
+#include "rgm_acct.h"
 
 
 
@@ -61,6 +62,7 @@ struct rrpge_object_s{
  rrpge_m_cpu_t cpu;  /* CPU emulation structure */
  rrpge_m_prm_t prm;  /* PRAM emulation structure */
  rrpge_m_vid_t vid;  /* Video (GDG) emulation structure */
+ rrpge_m_acc_t acc;  /* Graphic Accelerator emulation structure */
 
  auint  hlt;         /* Halt causes (accessed using rgm_halt) */
 
@@ -91,10 +93,6 @@ struct rrpge_object_s{
 ** preferably all globals are placed here to increase locality, and to have
 ** everything preventing threaded use in one place. */
 typedef struct{
-
- uint8  grb[512];    /* Recolor bank data extracted from the state */
- auint  grr;         /* Recolor bank load necessary flag: set on entry, will
-                     ** ask for populating grb[] when it is needed. */
 
  auint  atc;         /* Cycles until next audio tick (State: 0x053) */
  auint  cyf[2];      /* FIFO cycles:

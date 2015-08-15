@@ -6,11 +6,11 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.04
+**  \date      2015.08.15
 */
 
 
-#include "rgm_grop.h"
+#include "rgm_acco.h"
 
 
 /* Peripheral memory size in 32bit units.
@@ -21,112 +21,85 @@
 
 /* Cell cycle multiplier table.
 ** bit0: accelerated, bit1,2: blit mode, bit3,4: reindex */
-static uint8 const rrpge_m_grop_tc[32] = {
+static uint8 const rrpge_m_acco_tc[32] = {
  6, 4, 4, 2, 4, 2, 0, 0, 8, 8, 8, 8, 4, 2, 0, 0,
  6, 6, 4, 4, 4, 4, 0, 0, 8, 8, 8, 8, 4, 4, 0, 0};
 
 
 
-/* Internal: Rebuild reindex cache in info structure if necessary */
-static void rrpge_m_grop_recbinit(void)
-{
- auint i;
-
- if (rrpge_m_info.grr){ /* Need to rebuild */
-  rrpge_m_info.grr = 0;
-
-  i = 256U;
-  do{
-   i--;
-   rrpge_m_info.grb[(i << 1)     ] = (rrpge_m_edat->st.stat[RRPGE_STA_REIND + i] >> 8) & 0xFFU;
-   rrpge_m_info.grb[(i << 1) + 1U] = (rrpge_m_edat->st.stat[RRPGE_STA_REIND + i]     ) & 0xFFU;
-  }while(i);
-
- }
-}
-
-
-
-/* Reindex bank base pointer, pointing into the appropriate bank of
-** rrpge_m_info.grb[]. For destination based reindexing (blending) this is set
-** to the entry of the reindex array, for normal reindexing it is set to the
-** appropriate bank, and zero is supplied in the pd parameter of the reindex
-** functions. */
-static uint8 const* rrpge_m_grop_reb;
-
-
 /* Internal: Calculates reindex 32bit chunk */
-RRPGE_M_FASTCALL static auint rrpge_m_grop_rec(auint ps, auint pd)
+RRPGE_M_FASTCALL static auint rrpge_m_acco_rec(uint8 const* reb, auint ps, auint pd)
 {
  auint t0 = (ps & 0x0F0F0F0FU) | ((pd << 4) & 0xF0F0F0F0U);
  auint t1 = ((ps >> 4) & 0x0F0F0F0FU) | (pd & 0xF0F0F0F0U);
- return (( ((auint)(rrpge_m_grop_reb[(t0      ) & 0xFFU])      ) |
-           ((auint)(rrpge_m_grop_reb[(t0 >>  8) & 0xFFU]) <<  8) |
-           ((auint)(rrpge_m_grop_reb[(t0 >> 16) & 0xFFU]) << 16) |
-           ((auint)(rrpge_m_grop_reb[(t0 >> 24)        ]) << 24) ) & 0x0F0F0F0FU) |
-        (( ((auint)(rrpge_m_grop_reb[(t1      ) & 0xFFU]) <<  4) |
-           ((auint)(rrpge_m_grop_reb[(t1 >>  8) & 0xFFU]) << 12) |
-           ((auint)(rrpge_m_grop_reb[(t1 >> 16) & 0xFFU]) << 20) |
-           ((auint)(rrpge_m_grop_reb[(t1 >> 24)        ]) << 28) ) & 0xF0F0F0F0U);
+ return (( ((auint)(reb[(t0      ) & 0xFFU])      ) |
+           ((auint)(reb[(t0 >>  8) & 0xFFU]) <<  8) |
+           ((auint)(reb[(t0 >> 16) & 0xFFU]) << 16) |
+           ((auint)(reb[(t0 >> 24)        ]) << 24) ) & 0x0F0F0F0FU) |
+        (( ((auint)(reb[(t1      ) & 0xFFU]) <<  4) |
+           ((auint)(reb[(t1 >>  8) & 0xFFU]) << 12) |
+           ((auint)(reb[(t1 >> 16) & 0xFFU]) << 20) |
+           ((auint)(reb[(t1 >> 24)        ]) << 28) ) & 0xF0F0F0F0U);
 }
 
 
 
-/* Executes a Graphic accelerator operation. Rebuilds the recolor cache if
-** necessary (clearing rrpge_m_info.grr). Returns the number of cycles the
+/* Executes a Graphic accelerator operation. Returns the number of cycles the
 ** accelerator operation takes. */
-auint rrpge_m_grop_accel(void)
+auint rrpge_m_acco(rrpge_object_t* hnd)
 {
- /* Peripheral RAM & Accelerator regs shortcut */
- uint32* pram = &(rrpge_m_edat->st.pram[0]);
- uint16* stat = &(rrpge_m_edat->st.stat[RRPGE_STA_ACC]);
+ /* Peripheral RAM shortcut */
+ uint32* pram = &(hnd->st.pram[0]);
+
+ /* Reindex bank select */
+ uint8 const* reb;
 
  /* Destination fraction (incrementing), whole (stationary) and post-add */
- auint  dsfrap = ((stat[0x1CU] & 0xFFFFU) << 16) + (stat[0x1DU] & 0xFFFFU);
- auint  dswhol = ((stat[0x02U] & 0xFFFFU) << 16) + (stat[0x03U] & 0xFFFFU);
- auint  dspadd = ((stat[0x04U] & 0xFFFFU) << 16) + (stat[0x05U] & 0xFFFFU);
+ auint  dsfrap = hnd->acc.dof;
+ auint  dswhol = ((hnd->acc.dbp) << 16) + (hnd->acc.dps);
+ auint  dspadd = hnd->acc.dad;
  auint  dsfrac;
 
  /* Source (Pointer) X fraction (incrementing), whole (stationary), increment and post-add */
- auint  sxfrap = ((stat[0x1AU] & 0xFFFFU) << 16) + (stat[0x1BU] & 0xFFFFU);
- auint  sxwhol = ((stat[0x12U] & 0xFFFFU) << 16) + (stat[0x13U] & 0xFFFFU);
- auint  sxincr = ((stat[0x0EU] & 0xFFFFU) << 16) + (stat[0x0FU] & 0xFFFFU);
- auint  sxpadd = ((stat[0x0AU] & 0xFFFFU) << 16) + (stat[0x0BU] & 0xFFFFU);
+ auint  sxfrap = hnd->acc.xof;
+ auint  sxwhol = ((hnd->acc.sbn) << 16) + (hnd->acc.spt);
+ auint  sxincr = hnd->acc.xin;
+ auint  sxpadd = hnd->acc.xad;
  auint  sxfrac;
 
  /* Source (Pointer) Y fraction (incrementing), increment and post-add */
- auint  syfrap = ((stat[0x10U] & 0xFFFFU) << 16) + (stat[0x11U] & 0xFFFFU);
- auint  syincr = ((stat[0x0CU] & 0xFFFFU) << 16) + (stat[0x0DU] & 0xFFFFU);
- auint  sypadd = ((stat[0x08U] & 0xFFFFU) << 16) + (stat[0x09U] & 0xFFFFU);
+ auint  syfrap = hnd->acc.yof;
+ auint  syincr = hnd->acc.yin;
+ auint  sypadd = hnd->acc.yad;
  auint  syfrac;
 
  /* Count, and it's post-add */
- auint  counb  = ((stat[0x18U] & 0xFFFFU) << 16) + (stat[0x19U] & 0xFFFFU);
- auint  copadd = ((stat[0x06U] & 0xFFFFU) << 16) + (stat[0x07U] & 0xFFFFU);
+ auint  counb  = hnd->acc.cct;
+ auint  copadd = hnd->acc.cad;
  auint  count;
 
  /* Partitioning & X/Y split */
- auint  ssplit = stat[0x14U] & 0xFFFFU;
+ auint  ssplit = hnd->acc.sps;
  auint  srpart;      /* Partition mask for source - controls the sxwhol - sx/yfrac split */
  auint  dspart;      /* Partition mask for destination - controls the dswhol - dsfrac split */
 
- auint  wrmask = ((stat[0x00U] & 0xFFFFU) << 16) + (stat[0x01U] & 0xFFFFU);
+ auint  wrmask = hnd->acc.rwm;
 
- auint  counr  = stat[0x17U] & 0xFFFFU; /* Count of rows to copy */
+ auint  counr  = hnd->acc.rct; /* Count of rows to copy */
  auint  codst;       /* Destination oriented (bit) count */
  auint  ckey;
- auint  flags  = stat[0x1EU] & 0xFFFFU; /* VMR, Reindex & Read OR mask */
- auint  mandr  = stat[0x16U] & 0xFFFFU; /* Read AND mask, and colorkey exported later */
+ auint  flags  = hnd->acc.rpm; /* VMR, Reindex & Read OR mask */
+ auint  mandr  = hnd->acc.sms; /* Read AND mask, and colorkey exported later */
  auint  mandl;
  auint  mskor;       /* Read OR mask */
- auint  rotr   = stat[0x15U] & 0xFFFFU; /* Read rotation & some flags */
+ auint  rotr   = hnd->acc.bfl; /* Read rotation & some flags */
  auint  rotl;
  auint  dshfr;       /* Destination alignment shifts (Block Blitter) */
  auint  dshfl;
  auint  prevs  = 0U; /* Source -> destination aligning shifter memory */
  auint  bmems;       /* Begin / Mid / End mask */
  auint  reinm;       /* Reindex mask */
- auint  sbase  = stat[0x1FU] & 0xFFFFU; /* Source data preparation - line mode pattern */
+ auint  sbase  = hnd->acc.pat; /* Source data preparation - line mode pattern */
  auint  sdata  = 0U; /* !!! Only eliminates a bogus GCC warning, see line 353 !!! */
  auint  bmode;       /* Blit mode (BB / FL / SC / LI) */
  auint  cyr;         /* Return cycle count */
@@ -137,15 +110,11 @@ auint rrpge_m_grop_accel(void)
  auint  t;
  auint  u;
 
- /* If necessary inicialize the reindex bank cache */
-
- rrpge_m_grop_recbinit();
-
  /* Pre-calculate reindex bank pointer for reindex modes */
 
- rrpge_m_grop_reb = &rrpge_m_info.grb[0];
+ reb = &(hnd->acc.grb[0]);
  if ((flags & 0x6000U) != 0x6000U){   /* Not blending mode: init to requested bank */
-  rrpge_m_grop_reb += (flags & 0x1F00U) >> 4;
+  reb += (flags & 0x1F00U) >> 4;
   reinm = 0x00000000U;                /* Normal reindex mode masks destination */
  }else{
   reinm = wrmask;                     /* In blending reindex mode the destination passes the write mask */
@@ -455,7 +424,7 @@ auint rrpge_m_grop_accel(void)
     t = (((t & 0x77777777U) + 0x77777777U) | t) & 0x88888888U;
     t = (t - (t >> 3)) + t;             /* Colorkey mask (0: background) */
     if ((flags & 0x1000U) != 0U){       /* Reindexing is required */
-     sdata = rrpge_m_grop_rec(sdata, u & reinm);
+     sdata = rrpge_m_acco_rec(reb, sdata, u & reinm);
     }
     bmems &= t | (~(0U - (flags & 1U))); /* Add colorkey to write mask if enabled */
 
@@ -468,7 +437,7 @@ auint rrpge_m_grop_accel(void)
     /* Calculate combine cycle count. If bmems is zero, then may accelerate */
 
     bmems = (((bmems + 0x7FFFFFFFU) | bmems) >> 31) & 1U; /* becomes set if (low 32 bits) nonzero */
-    cyr  += rrpge_m_grop_tc[cyf ^ bmems];   /* Clears "accelerated" if it was nonzero */
+    cyr  += rrpge_m_acco_tc[cyf ^ bmems];   /* Clears "accelerated" if it was nonzero */
 
     /* The rendering loop ends when it ran out of destination to render. */
 
