@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.13
+**  \date      2015.09.04
 */
 
 
@@ -214,7 +214,7 @@ void  rrpge_m_vid_proc(rrpge_object_t* hnd, auint cy)
 
  /* Until the remaining cycle count is negative or zero, process lines. */
 
- while ( ((hnd->vid.vlc & 0x8000U) != 0U) ||
+ while ( ((hnd->vid.vlc & 0x80000000U) != 0U) ||
          (hnd->vid.vlc == 0U) ){
 
   /* A line worth of cycles will be consumed */

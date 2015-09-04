@@ -574,6 +574,7 @@ auint rrpge_m_dev_req(rrpge_object_t* hnd, auint id, auint typ)
  /* OK, device can be serviced, so bind it */
 
  hnd->dev.devb[id & 0xFU] |= typ | 0x10U;
+
  return 1U;
 }
 

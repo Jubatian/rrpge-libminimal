@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.15
+**  \date      2015.09.04
 */
 
 
@@ -19,6 +19,7 @@
 #include "rgm_halt.h"
 #include "rgm_cpu.h"
 #include "rgm_pram.h"
+#include "rgm_dev.h"
 
 
 
@@ -69,7 +70,7 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
   /* Roll and add kernel internal task cycles if necessary. This is done here
   ** since it needs to produce CPU cycles. */
 
-  if ((rrpge_m_edat->kfc & 0x80000000U) != 0U){ /* Free cycles exhausted */
+  while ((rrpge_m_edat->kfc & 0x80000000U) != 0U){ /* Free cycles exhausted */
    i   = (rrpge_m_prng() & 0x7FU) * 100U;
    i  += 400U * 32U;           /* 32 - 64 lines of free time */
    rrpge_m_edat->kfc += i + (i >> 2);
@@ -102,6 +103,11 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
   ** callback), and processes Display List clear. */
 
   rrpge_m_vid_proc(hnd, cy);
+
+  /* Event processing: Once for each display frame. Use the FRAME halt cause
+  ** for this. */
+
+  if (rrpge_m_halt_isset(hnd, RRPGE_HLT_FRAME)){ rrpge_m_dev_proc(hnd); }
 
 
   /* If halt causes were set, break out of the main loop before scheduling
