@@ -8,7 +8,8 @@
 
 OBJECTS+= $(OBD)rgm_acc.o  $(OBD)rgm_acco.o $(OBD)rgm_aq.o   $(OBD)rgm_aud.o
 OBJECTS+= $(OBD)rgm_cb.o   $(OBD)rgm_chk.o  $(OBD)rgm_cpu.o  $(OBD)rgm_cpua.o
-OBJECTS+= $(OBD)rgm_cpuo.o $(OBD)rgm_db.o   $(OBD)rgm_fifo.o $(OBD)rgm_halt.o
+OBJECTS+= $(OBD)rgm_cpuo.o $(OBD)rgm_db.o   $(OBD)rgm_dev.o  $(OBD)rgm_devk.o
+OBJECTS+= $(OBD)rgm_devx.o $(OBD)rgm_fifo.o $(OBD)rgm_halt.o
 OBJECTS+= $(OBD)rgm_info.o $(OBD)rgm_ires.o $(OBD)rgm_krnm.o $(OBD)rgm_main.o
 OBJECTS+= $(OBD)rgm_mix.o  $(OBD)rgm_pram.o $(OBD)rgm_prng.o $(OBD)rgm_run.o
 OBJECTS+= $(OBD)rgm_ser.o  $(OBD)rgm_stat.o $(OBD)rgm_task.o $(OBD)rgm_ulib.o
@@ -53,6 +54,18 @@ $(OBD)rgm_cpuo.o: librrpge/rgm_cpuo.c librrpge/*.h
 $(OBD)rgm_db.o: librrpge/rgm_db.c librrpge/*.h
 	$(CC) -c librrpge/rgm_db.c -o $(OBD)rgm_db.o $(CFSPD)
 	$(CC) -S librrpge/rgm_db.c -o $(OBD)rgm_db.asm $(CFSPD)
+
+$(OBD)rgm_dev.o: librrpge/rgm_dev.c librrpge/*.h
+	$(CC) -c librrpge/rgm_dev.c -o $(OBD)rgm_dev.o $(CFSPD)
+	$(CC) -S librrpge/rgm_dev.c -o $(OBD)rgm_dev.asm $(CFSPD)
+
+$(OBD)rgm_devk.o: librrpge/rgm_devk.c librrpge/*.h
+	$(CC) -c librrpge/rgm_devk.c -o $(OBD)rgm_devk.o $(CFSIZ)
+	$(CC) -S librrpge/rgm_devk.c -o $(OBD)rgm_devk.asm $(CFSIZ)
+
+$(OBD)rgm_devx.o: librrpge/rgm_devx.c librrpge/*.h
+	$(CC) -c librrpge/rgm_devx.c -o $(OBD)rgm_devx.o $(CFSIZ)
+	$(CC) -S librrpge/rgm_devx.c -o $(OBD)rgm_devx.asm $(CFSIZ)
 
 $(OBD)rgm_fifo.o: librrpge/rgm_fifo.c librrpge/*.h
 	$(CC) -c librrpge/rgm_fifo.c -o $(OBD)rgm_fifo.o $(CFSPD)

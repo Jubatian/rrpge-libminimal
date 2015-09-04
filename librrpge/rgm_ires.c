@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.13
+**  \date      2015.09.04
 */
 
 
@@ -15,6 +15,7 @@
 #include "rgm_halt.h"
 #include "rgm_stat.h"
 #include "rgm_vid.h"
+#include "rgm_dev.h"
 
 
 /* State: Nonzero elements in the VARS area (address, data high, data low) */
@@ -1016,8 +1017,9 @@ static void rrpge_m_ires_initl(rrpge_object_t* obj)
  ** free time first. */
  obj->kfc = 400U * 64U;              /* 64 lines */
 
- /* Video */
+ /* Components needing object init */
  rrpge_m_vid_initres(obj);
+ rrpge_m_dev_initres(obj);
 }
 
 

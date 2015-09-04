@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.05
+**  \date      2015.09.04
 */
 
 
@@ -71,53 +71,6 @@ static void rrpge_m_cb_setst3d(rrpge_object_t* hnd, const void* par)
 {
 }
 
-/* Function: Get device properties */
-static rrpge_iuint rrpge_m_cb_getprops(rrpge_object_t* hnd, const void* par)
-{
- return 0;
-}
-
-/* Subroutine: Drop device */
-static void rrpge_m_cb_dropdev(rrpge_object_t* hnd, const void* par)
-{
-}
-
-/* Function: Get digital input descriptor */
-static rrpge_iuint rrpge_m_cb_getdidesc(rrpge_object_t* hnd, const void* par)
-{
- return 0;
-}
-
-/* Function: Get analog input descriptor */
-static rrpge_iuint rrpge_m_cb_getaidesc(rrpge_object_t* hnd, const void* par)
-{
- return 0;
-}
-
-/* Function: Get device name */
-static rrpge_iuint rrpge_m_cb_getname(rrpge_object_t* hnd, const void* par)
-{
- return 0;
-}
-
-/* Function: Get digital inputs */
-static rrpge_iuint rrpge_m_cb_getdi(rrpge_object_t* hnd, const void* par)
-{
- return 0;
-}
-
-/* Function: Get analog inputs */
-static rrpge_iuint rrpge_m_cb_getai(rrpge_object_t* hnd, const void* par)
-{
- return 0;
-}
-
-/* Function: Pop text FIFO */
-static rrpge_iuint rrpge_m_cb_popchar(rrpge_object_t* hnd, const void* par)
-{
- return 0;
-}
-
 /* Subroutine: Get local users */
 static void rrpge_m_cb_getlocal(rrpge_object_t* hnd, const void* par)
 {
@@ -159,45 +112,6 @@ static void rrpge_m_cb_listusers(rrpge_object_t* hnd, rrpge_iuint tsh, const voi
  rrpge_taskend(hnd, tsh, 0x8000U);    /* No users found. */
 }
 
-/* Function: Return area activity. This is public (RRPGE library interface) */
-rrpge_iuint rrpge_cb_checkarea(rrpge_object_t* hnd, const void* par)
-{
- rrpge_cbp_checkarea_t const* p = par;
- rrpge_cbp_getdi_t sdi;
- rrpge_cbp_getai_t sai;
- auint x;
- auint y;
- auint b;
- auint t;
-
- t = (hnd->st.stat[RRPGE_STA_VARS + 0x30U + ((p->dev) & 0xFU)]) & 0xF800U;
-
- if ( (t != ((RRPGE_INPT_MOUSE << 12) | 0x0800U)) &&
-      (t != ((RRPGE_INPT_TOUCH << 12) | 0x0800U)) ){ return 0; }
-
- sdi.dev = p->dev;
- sdi.ing = 0U;
- b = hnd->cb_fun[RRPGE_CB_GETDI](hnd, &sdi);
-
- if (t == ((RRPGE_INPT_TOUCH << 12) | 0x0800U)){
-  if ((b & 0x1010U) == 0U){ return 0; } /* Neither touch, neither hover */
- }else{
-  b |= b >> 1;                          /* Mouse: Also active for right button press */
- }
- b = (b >> 4) & 1U;                     /* Button / Press activity */
-
- sai.dev = p->dev;
- sai.inp = 0U;
- x = hnd->cb_fun[RRPGE_CB_GETAI](hnd, &sai);
- sai.inp = 1U;
- y = hnd->cb_fun[RRPGE_CB_GETAI](hnd, &sai);
-
- if ( (x >= (p->x)) && (x < ((p->x) + (p->w))) &&
-      (y >= (p->y)) && (y < ((p->y) + (p->h))) ){ return (2U + b); }
-
- return 0;
-}
-
 
 
 /* Check ID for validity. Returns nonzero if valid, 0 otherwise. */
@@ -213,16 +127,7 @@ static auint rrpge_m_cbid_isvalid(auint id)
       (id == RRPGE_CB_LISTUSERS) ||
       (id == RRPGE_CB_SETPAL)    ||
       (id == RRPGE_CB_SETST3D)   ||
-      (id == RRPGE_CB_DROPDEV)   ||
-      (id == RRPGE_CB_CHECKAREA) ||
       (id == RRPGE_CB_GETLOCAL)  ||
-      (id == RRPGE_CB_GETPROPS)  ||
-      (id == RRPGE_CB_GETDIDESC) ||
-      (id == RRPGE_CB_GETAIDESC) ||
-      (id == RRPGE_CB_GETNAME)   ||
-      (id == RRPGE_CB_GETDI)     ||
-      (id == RRPGE_CB_GETAI)     ||
-      (id == RRPGE_CB_POPCHAR)   ||
       (id == RRPGE_CB_GETLANG)   ||
       (id == RRPGE_CB_GETCOLORS) ||
       (id == RRPGE_CB_GETST3D)   ){ return 1; }
@@ -250,16 +155,7 @@ void rrpge_m_cb_process(rrpge_object_t* obj, rrpge_cbpack_t const* cbp)
  obj->cb_tsk[RRPGE_CB_LISTUSERS] = &rrpge_m_cb_listusers;
  obj->cb_sub[RRPGE_CB_SETPAL]    = &rrpge_m_cb_setpal;
  obj->cb_sub[RRPGE_CB_SETST3D]   = &rrpge_m_cb_setst3d;
- obj->cb_sub[RRPGE_CB_DROPDEV]   = &rrpge_m_cb_dropdev;
  obj->cb_sub[RRPGE_CB_GETLOCAL]  = &rrpge_m_cb_getlocal;
- obj->cb_fun[RRPGE_CB_GETPROPS]  = &rrpge_m_cb_getprops;
- obj->cb_fun[RRPGE_CB_GETDIDESC] = &rrpge_m_cb_getdidesc;
- obj->cb_fun[RRPGE_CB_GETAIDESC] = &rrpge_m_cb_getaidesc;
- obj->cb_fun[RRPGE_CB_GETNAME]   = &rrpge_m_cb_getname;
- obj->cb_fun[RRPGE_CB_GETDI]     = &rrpge_m_cb_getdi;
- obj->cb_fun[RRPGE_CB_GETAI]     = &rrpge_m_cb_getai;
- obj->cb_fun[RRPGE_CB_POPCHAR]   = &rrpge_m_cb_popchar;
- obj->cb_fun[RRPGE_CB_CHECKAREA] = &rrpge_cb_checkarea;
  obj->cb_fun[RRPGE_CB_GETLANG]   = &rrpge_m_cb_getlang;
  obj->cb_fun[RRPGE_CB_GETCOLORS] = &rrpge_m_cb_getcolors;
  obj->cb_fun[RRPGE_CB_GETST3D]   = &rrpge_m_cb_getst3d;

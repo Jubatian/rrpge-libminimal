@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.02
+**  \date      2015.08.26
 */
 
 
@@ -150,6 +150,44 @@ typedef struct{
 /** Accelerator reindex table */
 #define RRPGE_STA_REIND    0x300U
 /** \} */
+
+
+
+/**
+**  \anchor    device_types
+**  \name      Input device types
+**
+**  These are the input devices supported by RRPGE.
+**
+**  \{ */
+/** Pointing device */
+#define RRPGE_DEV_POINT    0x0U
+/** Touch device */
+#define RRPGE_DEV_TOUCH    0x1U
+/** Digital gamepad */
+#define RRPGE_DEV_PAD      0x2U
+/** Analog joystick */
+#define RRPGE_DEV_STICK    0x3U
+/** Text input */
+#define RRPGE_DEV_TEXT     0x4U
+/** Keyboard */
+#define RRPGE_DEV_KEYB     0x5U
+/** \} */
+
+
+
+/**
+**  \andor     device_types_kbflag
+**  \name      Keyboard text input separation flag
+**
+**  This flag is provided for rrpge_dev_add(), to be OR-ed with a keyboard
+**  device type. It indicates that the library shouldn't attempt to use the
+**  keyboard events to provide a text input device by the keyboard, rather
+**  use text input events (message types 0x8 and 0x9) from the same device for
+**  this purpose. This is useful for advanced text input (international or
+**  independent of the key mapping) for hosts supporting such.
+*/
+#define RRPGE_DEV_KBTXT    0x10U
 
 
 

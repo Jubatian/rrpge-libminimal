@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.05
+**  \date      2015.09.04
 */
 
 
@@ -332,171 +332,6 @@ typedef struct{
 
 
 /**
-**  \brief     Function: Get device properties.
-**
-**  Returns the properties of the given input device. The return value has to
-**  be formatted according to the specification (returning the device type and
-**  optionally the device it maps to if any).
-*/
-#define RRPGE_CB_GETPROPS      8U
-/**
-**  \brief     Extra parameters for Get device properties.
-*/
-typedef struct{
- rrpge_iuint         dev; /**< The device to query. */
-}rrpge_cbp_getprops_t;
-
-
-
-/**
-**  \brief     Subroutine: Drop device.
-**
-**  Drops a device indicating the application no longer uses it.
-*/
-#define RRPGE_CB_DROPDEV      9U
-/**
-**  \brief     Extra parameters for Drop device.
-*/
-typedef struct{
- rrpge_iuint         dev; /**< The device to drop. */
-}rrpge_cbp_dropdev_t;
-
-
-
-/**
-**  \brief     Function: Get digital input descriptor.
-**
-**  Returns a description for the given digital input as an UTF-8 string. May
-**  return 0 indicating the input does not exist.
-*/
-#define RRPGE_CB_GETDIDESC     10U
-/**
-**  \brief     Extra parameters for Get digital input descriptor.
-*/
-typedef struct{
- rrpge_iuint         dev; /**< The device to query. */
- rrpge_iuint         inp; /**< Input number to query (group * 16 + input id). */
- rrpge_uint16*       nam; /**< The name of the input (Big Endian byte order). */
- rrpge_iuint         ncw; /**< Size of name in words. */
-}rrpge_cbp_getdidesc_t;
-
-
-
-/**
-**  \brief     Function: Get analog input descriptor.
-**
-**  Returns a description for the given analog input as an UTF-8 string. May
-**  return 0 indicating the input does not exist.
-*/
-#define RRPGE_CB_GETAIDESC     11U
-/**
-**  \brief     Extra parameters for Get analog input descriptor.
-*/
-typedef struct{
- rrpge_iuint         dev; /**< The device to query. */
- rrpge_iuint         inp; /**< Input number to query. */
- rrpge_uint16*       nam; /**< The name of the input (Big Endian byte order). */
- rrpge_iuint         ncw; /**< Size of name in words. */
-}rrpge_cbp_getaidesc_t;
-
-
-
-/**
-**  \brief     Function: Get device name.
-**
-**  Returns a description for the given device as an UTF-8 string. May return
-**  0 indicating the description (or the device) does not exist.
-*/
-#define RRPGE_CB_GETNAME       12U
-/**
-**  \brief     Extra parameters for Get device name.
-*/
-typedef struct{
- rrpge_iuint         dev; /**< The device to query. */
- rrpge_uint16*       nam; /**< The name of the input (Big Endian byte order). */
- rrpge_iuint         ncw; /**< Size of name in words. */
-}rrpge_cbp_getname_t;
-
-
-
-/**
-**  \brief     Function: Get digital inputs.
-**
-**  Returns digital input states for an input group of a given device (16
-**  digital inputs per group).
-*/
-#define RRPGE_CB_GETDI         13U
-/**
-**  \brief     Extra parameters for Get digital inputs.
-*/
-typedef struct{
- rrpge_iuint         dev; /**< The device to query. */
- rrpge_iuint         ing; /**< Input group to query. */
-}rrpge_cbp_getdi_t;
-
-
-
-/**
-**  \brief     Function: Get analog inputs.
-**
-**  Returns analog input state for an analog input of a given device. The
-**  return is 16 bits 2's complement.
-*/
-#define RRPGE_CB_GETAI         14U
-/**
-**  \brief     Extra parameters for Get analog inputs.
-*/
-typedef struct{
- rrpge_iuint         dev; /**< The device to query. */
- rrpge_iuint         inp; /**< Input to query. */
-}rrpge_cbp_getai_t;
-
-
-
-/**
-**  \brief     Function: Pop text FIFO.
-**
-**  Pops the last UTF32 character or control code off the text FIFO of a text
-**  input device.
-*/
-#define RRPGE_CB_POPCHAR       15U
-/**
-**  \brief     Extra parameters for Pop text FIFO.
-*/
-typedef struct{
- rrpge_iuint         dev; /**< The device to query. */
-}rrpge_cbp_popchar_t;
-
-
-
-/**
-**  \brief     Function: Return area activity.
-**
-**  Requests checking whether the given input device is activating the passed
-**  area. The return must be formatted according with the 0x0425: Return area
-**  activity kernel call's return (lowest bit: set if activated; next bit: set
-**  if the device hovers over the area).
-**
-**  A default implementation for this function is provided in the library
-**  which is capable to request this information for mice and touch devices
-**  using the appropriate get digital inputs and get analog input calls. It
-**  only needs to be implemented if multi-touch support is desired.
-*/
-#define RRPGE_CB_CHECKAREA     16U
-/**
-**  \brief     Extra parameters for Define touch sensitive area.
-*/
-typedef struct{
- rrpge_iuint         dev; /**< The device to query. */
- rrpge_iuint           x; /**< Upper left X (0 - 639). */
- rrpge_iuint           y; /**< Upper left Y (0 - 399). */
- rrpge_iuint           w; /**< Width (0 - 639). */
- rrpge_iuint           h; /**< Height (0 - 399). */
-}rrpge_cbp_checkarea_t;
-
-
-
-/**
 **  \brief     Subroutine: Get local users.
 **
 **  Requests local users (user using the device), up to four. A 32 word target
@@ -609,21 +444,6 @@ typedef struct{
  rrpge_iuint         bcu; /**< Maximal number of user ID's to receive (8 words each). */
  rrpge_uint16*       buf; /**< The memory to fill in. */
 }rrpge_cbp_listusers_t;
-
-
-
-/**
-**  \brief     Default implementation for Return area activity.
-**
-**  The default implementation of Return area activity (RRPGE_CB_CHECKAREA).
-**  When implementing a handler for supporting multi-touch, this may be called
-**  from that handler to process any other device.
-**
-**  \param[in]   hnd   Emulation instance the callback is called for.
-**  \param[in]   par   Extra parameters (rrpge_cbp_checkarea_t).
-**  \return            Result of function to be written into C:X3.
-*/
-rrpge_iuint rrpge_cb_checkarea(rrpge_object_t* hnd, const void* par);
 
 
 #endif

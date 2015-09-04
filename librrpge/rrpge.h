@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.02
+**  \date      2015.09.03
 */
 
 
@@ -140,7 +140,7 @@ rrpge_iuint rrpge_import(rrpge_object_t* hnd, rrpge_uint8 const* sta);
 **  calling this, that breakpoint will be skipped (this allows continuing
 **  emulation after hitting a breakpoint).
 **
-**  \param[in]   hnd   Emulation instance populated by rrpge_init().
+**  \param[in]   hnd   Emulation instance.
 **  \param[in]   rmod  Running mode. See \ref rrpge_run_modes.
 **  \return            Number of cycles emulated.
 */
@@ -159,11 +159,65 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod);
 **  Bit 15 is set by the library if necessary. Other out of range values are
 **  transformed to a valid value by implementation defined means.
 **
-**  \param[in]   hnd   Emulation instance populated by rrpge_init().
+**  \param[in]   hnd   Emulation instance.
 **  \param[in]   tsh   Task handle acquired from the callback (0-15).
 **  \param[in]   res   Result of task (low 15 bits used, bit 15 always set).
 */
 void rrpge_taskend(rrpge_object_t* hnd, rrpge_iuint tsh, rrpge_iuint res);
+
+
+
+/**
+**  \brief     Register new input device.
+**
+**  Adds a new input device for serving the given device type, and return
+**  identifier for it. Subsequently events from the device can be sent using
+**  this identifier. Never fails: if too many devices are provided, it simply
+**  ignores the excess ones (supports at least 16 devices), never forwarding
+**  their events. Device substitution and combining is done by the emulator
+**  library in accordance with the specification (so for example a keyboard
+**  will provide a digital gamepad and text input device for requesting
+**  applications).
+**
+**  \param[in]   hnd   Emulation instance.
+**  \param[in]   typ   Types the new device serves (see \ref device_types).
+**  \return            Device ID.
+*/
+rrpge_iuint rrpge_dev_add(rrpge_object_t* hnd, rrpge_iuint typ);
+
+
+
+/**
+**  \brief     Removes an input device.
+**
+**  Removes an input device from the pool of available devices. This may be
+**  called for implementing hotplugging or dynamic emulator configuration
+**  where a devices may be added or removed during runtime.
+**
+**  \param[in]   hnd   Emulation instance.
+**  \param[in]   dev   Device ID (from rrpge_dev_add()).
+*/
+void rrpge_dev_rem(rrpge_object_t* hnd, rrpge_iuint dev);
+
+
+
+/**
+**  \brief     Pushes an input event.
+**
+**  Submits an input event to the input event queue which might be consumed by
+**  the application if it enabled the reception of the event. The event
+**  message may have up to 8 members, which should be populated as defined by
+**  the specification. For mice, press coordinates may be omitted: this case
+**  the last sent coordinates will be used.
+**
+**  \param[in]   hnd   Emulation instance.
+**  \param[in]   dev   Device ID (from rrpge_dev_add()).
+**  \param[in]   emt   Event message type (as defined in the specification).
+**  \param[in]   cnt   Count of data members (up to 8).
+**  \param[in]   msg   Event message contents.
+*/
+void rrpge_dev_push(rrpge_object_t* hnd, rrpge_iuint dev,
+                    rrpge_iuint emt, rrpge_iuint cnt, rrpge_uint16 const* msg);
 
 
 
@@ -176,7 +230,7 @@ void rrpge_taskend(rrpge_object_t* hnd, rrpge_iuint tsh, rrpge_iuint res);
 **  for network connections. (The availability flag is only used to note that
 **  the user is available for new connections).
 **
-**  \param[in]   hnd   Emulation instance populated by rrpge_init().
+**  \param[in]   hnd   Emulation instance.
 **  \param[in]   id    User ID of the packet's sender (8 words).
 **  \param[in]   buf   Packet contents.
 **  \param[in]   len   Size of packet in word units.
@@ -195,7 +249,7 @@ void rrpge_pushpacket(rrpge_object_t* hnd, rrpge_uint16 const* id,
 **  resetting it, or reattaching state. Note that not all causes allow
 **  continuing emulation without specific handling.
 **
-**  \param[in]   hnd   Emulation instance populated by rrpge_init().
+**  \param[in]   hnd   Emulation instance.
 **  \return            Halt causes (see defines at \ref halt_causes).
 */
 rrpge_iuint rrpge_gethaltcause(rrpge_object_t* hnd);
@@ -220,7 +274,7 @@ rrpge_iuint rrpge_gethaltcause(rrpge_object_t* hnd);
 **  zero, and it is implementation defined whether the buffers receive any
 **  data.
 **
-**  \param[in]   hnd   Emulation instance populated by rrpge_init().
+**  \param[in]   hnd   Emulation instance.
 **  \param[out]  lbuf  8bit audio buffer to receive left sample data.
 **  \param[out]  rbuf  8bit audio buffer to receive right sample data.
 **  \return            Number of audio events pending.
@@ -241,7 +295,7 @@ rrpge_iuint rrpge_getaudio(rrpge_object_t* hnd, rrpge_uint8* lbuf, rrpge_uint8* 
 **  systems. Disabling has no effect on the emulation state as seen through
 **  rrpge_peekstate().
 **
-**  \param[in]   hnd   Emulation instance populated by rrpge_init().
+**  \param[in]   hnd   Emulation instance.
 **  \param[in]   tg    0: Rendering OFF, nonzero: Rendering ON.
 */
 void rrpge_enarender(rrpge_object_t* hnd, rrpge_ibool tg);

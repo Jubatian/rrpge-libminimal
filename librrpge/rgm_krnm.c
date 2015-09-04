@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.04
+**  \date      2015.09.04
 */
 
 
@@ -15,6 +15,7 @@
 #include "rgm_prng.h"
 #include "rgm_task.h"
 #include "rgm_halt.h"
+#include "rgm_dev.h"
 
 
 
@@ -59,15 +60,6 @@ auint rrpge_m_kcall(uint16 const* par, auint n, auint* resh, auint* resl)
  uint16* stat = &(rrpge_m_edat->st.stat[0]);
  rrpge_cbp_setpal_t    cbp_setpal;
  rrpge_cbp_setst3d_t   cbp_setst3d;
- rrpge_cbp_getprops_t  cbp_getprops;
- rrpge_cbp_dropdev_t   cbp_dropdev;
- rrpge_cbp_getdidesc_t cbp_getdidesc;
- rrpge_cbp_getaidesc_t cbp_getaidesc;
- rrpge_cbp_getname_t   cbp_getname;
- rrpge_cbp_getdi_t     cbp_getdi;
- rrpge_cbp_getai_t     cbp_getai;
- rrpge_cbp_popchar_t   cbp_popchar;
- rrpge_cbp_checkarea_t cbp_checkarea;
  rrpge_cbp_getlocal_t  cbp_getlocal;
  rrpge_cbp_getlang_t   cbp_getlang;
 
@@ -164,18 +156,20 @@ auint rrpge_m_kcall(uint16 const* par, auint n, auint* resh, auint* resl)
    goto ret_callback;
 
 
-  case 0x10U:     /* Get device properties */
+  case 0x10U:     /* Request device */
 
-   if (n != 2U){  /* Needs 1+1 parameters */
+   if (n != 3U){  /* Needs 1+2 parameters */
     goto fault_inv;
    }
 
-   cbp_getprops.dev = par[1] & 0xFU; /* Device to query */
-   *resl = rrpge_m_edat->cb_fun[RRPGE_CB_GETPROPS](rrpge_m_edat, &cbp_getprops);
-   stat[RRPGE_STA_VARS + 0x30U + (par[1] & 0xFU)] = *resl;
+   if (rrpge_m_dev_req(rrpge_m_edat, par[1] & 0xFU, par[2] & 0xFU) == 0U){
+    *resl = 0U;
+   }else{
+    *resl = 1U;
+   }
 
    r = 800U;
-   goto ret_callback;
+   break;
 
 
   case 0x11U:     /* Drop device */
@@ -184,177 +178,50 @@ auint rrpge_m_kcall(uint16 const* par, auint n, auint* resh, auint* resl)
     goto fault_inv;
    }
 
-   cbp_dropdev.dev = par[1] & 0xFU; /* Device to drop */
-   rrpge_m_edat->cb_sub[RRPGE_CB_DROPDEV](rrpge_m_edat, &cbp_dropdev);
-   stat[RRPGE_STA_VARS + 0x30U + (par[1] & 0xFU)] = 0U;
+   rrpge_m_dev_drop(rrpge_m_edat, par[1] & 0xFU);
 
    r = 800U;
-   goto ret_callback;
+   break;
 
 
-  case 0x12U:     /* Get digital input descriptor */
+  case 0x12U:     /* Pop input event queue */
 
-   if (n != 6U){  /* Needs 1+5 parameters */
+   if (n != 1U){  /* Needs 1+0 parameters */
     goto fault_inv;
    }
 
-   if (rrpge_m_task_chkdata(par[4] & 0xFFFFU, par[5] & 0xFFFFU)){ /* Not in Data area */
-    goto fault_inv;
-   }
-
-   cbp_getdidesc.dev = par[1] & 0xFU; /* Device to query */
-   if (stat[RRPGE_STA_VARS + 0x30U + cbp_getdidesc.dev] != 0U){
-    cbp_getdidesc.inp = ((par[2] & 0xFFFFU) << 4) + (par[3] & 0xFU); /* Input to query */
-    cbp_getdidesc.ncw = par[5] & 0xFFFFU;
-    cbp_getdidesc.nam = &(rrpge_m_edat->st.dram[par[4] & 0xFFFFU]);
-    *resl = rrpge_m_edat->cb_fun[RRPGE_CB_GETDIDESC](rrpge_m_edat, &cbp_getdidesc);
-   }else{
-    *resl = 0U;
-   }
-
-   r = 2400U;
-   goto ret_callback;
-
-
-  case 0x13U:     /* Get analog input descriptor */
-
-   if (n != 5U){  /* Needs 1+4 parameters */
-    goto fault_inv;
-   }
-
-   if (rrpge_m_task_chkdata(par[3] & 0xFFFFU, par[4] & 0xFFFFU)){ /* Not in Data area */
-    goto fault_inv;
-   }
-
-   cbp_getaidesc.dev = par[1] & 0xFU; /* Device to query */
-   if (stat[RRPGE_STA_VARS + 0x30U + cbp_getaidesc.dev] != 0U){
-    cbp_getaidesc.inp = par[2] & 0xFFFFU; /* Input to query */
-    cbp_getaidesc.ncw = par[4] & 0xFFFFU;
-    cbp_getaidesc.nam = &(rrpge_m_edat->st.dram[par[3] & 0xFFFFU]);
-    *resl = rrpge_m_edat->cb_fun[RRPGE_CB_GETAIDESC](rrpge_m_edat, &cbp_getaidesc);
-   }else{
-    *resl = 0U;
-   }
-
-   r = 2400U;
-   goto ret_callback;
-
-
-  case 0x14U:     /* Get device name */
-
-   if (n != 4U){  /* Needs 1+3 parameters */
-    goto fault_inv;
-   }
-
-   if (rrpge_m_task_chkdata(par[2] & 0xFFFFU, par[3] & 0xFFFFU)){ /* Not in Data area */
-    goto fault_inv;
-   }
-
-   cbp_getname.dev = par[1] & 0xFU; /* Device to query */
-   if (stat[RRPGE_STA_VARS + 0x30U + cbp_getname.dev] != 0U){
-    cbp_getname.ncw = par[4] & 0xFFFFU;
-    cbp_getname.nam = &(rrpge_m_edat->st.dram[par[3] & 0xFFFFU]);
-    *resl = rrpge_m_edat->cb_fun[RRPGE_CB_GETNAME](rrpge_m_edat, &cbp_getname);
-   }else{
-    *resl = 0U;
-   }
-
-   r = 2400U;
-   goto ret_callback;
-
-
-  case 0x16U:     /* Get digital inputs */
-
-   if (n != 3U){  /* Needs 1+2 parameters */
-    goto fault_inv;
-   }
-
-   cbp_getdi.dev = par[1] & 0xFU; /* Device to query */
-   if (stat[RRPGE_STA_VARS + 0x30U + cbp_getdi.dev] != 0U){
-    cbp_getdi.ing = par[2] & 0xFFFFU; /* Input group to query */
-    *resl = rrpge_m_edat->cb_fun[RRPGE_CB_GETDI](rrpge_m_edat, &cbp_getdi);
-   }else{
-    *resl = 0U;
-   }
+   i = rrpge_m_dev_pop(rrpge_m_edat);
+   *resh = (i >> 16) & 0xFFFFU;
+   *resl = (i      ) & 0xFFFFU;
 
    r = 800U;
-   goto ret_callback;
+   break;
 
 
-  case 0x17U:     /* Get analog inputs */
+  case 0x13U:     /* Peek input event queue */
 
-   if (n != 3U){  /* Needs 1+2 parameters */
+   if (n != 1U){  /* Needs 1+0 parameters */
     goto fault_inv;
    }
 
-   cbp_getai.dev = par[1] & 0xFU; /* Device to query */
-   if (stat[RRPGE_STA_VARS + 0x30U + cbp_getai.dev] != 0U){
-    cbp_getai.inp = par[2] & 0xFFFFU; /* Input to query */
-    *resl = rrpge_m_edat->cb_fun[RRPGE_CB_GETAI](rrpge_m_edat, &cbp_getai);
-   }else{
-    *resl = 0U;
-   }
+   i = rrpge_m_dev_peek(rrpge_m_edat);
+   *resh = (i >> 16) & 0xFFFFU;
+   *resl = (i      ) & 0xFFFFU;
 
    r = 800U;
-   goto ret_callback;
+   break;
 
 
-  case 0x18U:     /* Pop text FIFO */
+  case 0x14U:     /* Flush input event queue */
 
-   if (n != 2U){  /* Needs 1+1 parameters */
+   if (n != 1U){  /* Needs 1+0 parameters */
     goto fault_inv;
    }
 
-   cbp_popchar.dev = par[1] & 0xFU; /* Device to query */
-   if (stat[RRPGE_STA_VARS + 0x30U + cbp_popchar.dev] != 0U){
-    *resl = rrpge_m_edat->cb_fun[RRPGE_CB_POPCHAR](rrpge_m_edat, &cbp_popchar);
-   }else{
-    *resl = 0U;
-   }
-   *resh = *resl >> 16;
+   rrpge_m_dev_flush(rrpge_m_edat);
 
    r = 800U;
-   goto ret_callback;
-
-
-  case 0x19U:     /* Return area activity */
-
-   if (n != 6U){  /* Needs 1+5 parameters */
-    goto fault_inv;
-   }
-
-   cbp_checkarea.dev = par[1] & 0xFU; /* Device to query */
-   cbp_checkarea.x   = par[2] & 0xFFFFU;
-   cbp_checkarea.y   = par[3] & 0xFFFFU;
-   cbp_checkarea.w   = par[4] & 0xFFFFU;
-   cbp_checkarea.h   = par[5] & 0xFFFFU;
-
-   if ((cbp_checkarea.x & 0x8000U) != 0U){ /* Negative X */
-    cbp_checkarea.w = (cbp_checkarea.w + cbp_checkarea.x) & 0xFFFFU;
-    cbp_checkarea.x = 0U;
-   }
-   if ((cbp_checkarea.y & 0x8000U) != 0U){ /* Negative Y */
-    cbp_checkarea.h = (cbp_checkarea.h + cbp_checkarea.y) & 0xFFFFU;
-    cbp_checkarea.y = 0U;
-   }
-   if ((cbp_checkarea.x >= 640U) || (cbp_checkarea.x >= 400U)){
-    cbp_checkarea.x = 0U;                  /* Off - screen */
-    cbp_checkarea.y = 0U;
-    cbp_checkarea.w = 0U;
-    cbp_checkarea.h = 0U;
-   }
-   if ((cbp_checkarea.x + cbp_checkarea.w) >= 640U){
-    cbp_checkarea.w = 640U - cbp_checkarea.x;
-   }
-   if ((cbp_checkarea.y + cbp_checkarea.h) >= 400U){
-    cbp_checkarea.h = 400U - cbp_checkarea.y;
-   }
-
-   *resl = rrpge_m_edat->cb_fun[RRPGE_CB_CHECKAREA](rrpge_m_edat, &cbp_checkarea);
-   *resh = *resl >> 16;
-
-   r = 1200U;
-   goto ret_callback;
+   break;
 
 
   case 0x1FU:     /* Delay some cycles */

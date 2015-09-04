@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.15
+**  \date      2015.09.04
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -30,6 +30,7 @@
 #include "rgm_prmt.h"
 #include "rgm_vidt.h"
 #include "rgm_acct.h"
+#include "rgm_devt.h"
 
 
 
@@ -63,6 +64,7 @@ struct rrpge_object_s{
  rrpge_m_prm_t prm;  /* PRAM emulation structure */
  rrpge_m_vid_t vid;  /* Video (GDG) emulation structure */
  rrpge_m_acc_t acc;  /* Graphic Accelerator emulation structure */
+ rrpge_m_dev_t dev;  /* Input device emulation structure */
 
  auint  hlt;         /* Halt causes (accessed using rgm_halt) */
 
@@ -91,7 +93,9 @@ struct rrpge_object_s{
 
 /* Global info structure. This is used to accelerate emulation. Note that
 ** preferably all globals are placed here to increase locality, and to have
-** everything preventing threaded use in one place. */
+** everything preventing threaded use in one place. TODO: This will be removed
+** as part of the refactoring process once everything adapts the new
+** structure. */
 typedef struct{
 
  auint  atc;         /* Cycles until next audio tick (State: 0x053) */
