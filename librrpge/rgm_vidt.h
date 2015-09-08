@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.13
+**  \date      2015.09.08
 */
 
 
@@ -22,7 +22,7 @@
 ** rgm_vid*.c sources. */
 typedef struct{
 
- uint32 cbuf[3][128];    /* Clipping buffers */
+ uint32 cbuf[3][64];     /* Clipping buffers (cell pairs) */
 
  auint sdef[8];          /* Source definitions (0x0018 - 0x001F) */
  auint ckey[2];          /* Colorkey registers (0x0010 - 0x0011) */
