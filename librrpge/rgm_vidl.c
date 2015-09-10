@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.09.08
+**  \date      2015.09.10
 */
 
 
@@ -116,7 +116,7 @@ void rrpge_m_vidl(rrpge_object_t* hnd)
  /* Read output width & begin positions and clipping settings */
 
  clps = 0U;
- rrpge_m_vidl_cbup(hnd, 2U, 0x5000U);
+ rrpge_m_vidl_cbup(hnd, 2U, 0x2800U);
 
  for (i = 0U; i < 2U; i++){
 
@@ -151,7 +151,7 @@ void rrpge_m_vidl(rrpge_object_t* hnd)
  }else{
   dbl = 0U;
   cyr = 192U;
-  doff = (doff + (((hnd->vid.vln)  - i) << dsiz)) & 0xFFFFU;
+  doff = (doff + (((hnd->vid.vln) - t0) << dsiz)) & 0xFFFFU;
  }
 
  /* Rebase display list offset (no risk of crossing out of bank from now) */
@@ -222,7 +222,7 @@ void rrpge_m_vidl(rrpge_object_t* hnd)
    if       ((cmd & 0x1C00U) == 0U){ /* Render command inactive */
     cnt = 0U;
    }else if ((csr & 0x0040U) != 0U){ /* Tiled mode */
-    cnt = (((csr - 1U) & 0x7FU) + 1U);
+    cnt = (((csr - 1U) & 0x3FU) + 1U);
     if (cyr != 0U){ cyr --; }        /* 1 "overhead" cycle */
     if ((csr & 0x0800) == 0U){
      ccy = 3U;                       /* 3 cycles for a cell pair if no X expansion */
@@ -238,7 +238,7 @@ void rrpge_m_vidl(rrpge_object_t* hnd)
     if (cyr != 0U){ cyr --; }
     ccy = 2U;                        /* 2 cycles for a cell pair */
    }else{                            /* Positioned source */
-    cnt = (((csr - 1U) & 0x7FU) + 1U);
+    cnt = (((csr - 1U) & 0x3FU) + 1U);
     if (cyr != 0U){ cyr --; }        /* 1 "overhead" cycle */
     ccy = 2U;                        /* 2 cycles for a cell pair */
    }
@@ -530,7 +530,7 @@ void rrpge_m_vidl(rrpge_object_t* hnd)
       if (cnt == 0U){ break; }       /* End of render */
       m0   = 0xFFFFFFFFU;            /* Clear (all enabled) mask */
       m1   = 0xFFFFFFFFU;
-      i    = (i + 1U) & 0x7FU;
+      i    = (i + 1U) & 0x3FU;
       shr[0] = shr[2];
       shr[1] = shr[3];
       cnt --;

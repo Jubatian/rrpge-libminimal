@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.09.04
+**  \date      2015.09.10
 */
 
 
@@ -34,10 +34,10 @@ static const uint8  rrpge_m_ires_stanz[3U * STANZ_CT] = {
  0xC8U, 0x1FU, 0xFCU, /* Mixer FIFO location & size */
  0xCCU, 0x4FU, 0xE0U, /* Graphics FIFO location & size */
  0xD2U, 0x10U, 0x00U, /* GDG double scan split */
- 0xD4U, 0x50U, 0x00U, /* GDG shift mode region A */
- 0xD5U, 0x50U, 0x00U, /* GDG shift mode region B */
+ 0xD4U, 0x28U, 0x00U, /* GDG shift mode region A */
+ 0xD5U, 0x28U, 0x00U, /* GDG shift mode region B */
  0xD6U, 0xFFU, 0x00U, /* GDG display list definition */
- 0xD8U, 0x00U, 0x50U, /* GDG source A0 */
+ 0xD8U, 0x00U, 0x28U, /* GDG source A0 */
  0xE3U, 0x00U, 0x01U, /* Pointer 0 increment */
  0xEBU, 0x00U, 0x04U, /* Pointer 1 increment */
  0xECU, 0x00U, 0x02U, /* Pointer 1 size */
