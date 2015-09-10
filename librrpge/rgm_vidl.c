@@ -146,11 +146,11 @@ void rrpge_m_vidl(rrpge_object_t* hnd)
  t0 = (hnd->vid.dscn) & 0xFFU;
  if ((hnd->vid.vln) <= (t0 << 1)){
   dbl = 1U;
-  cyr = 392U;
+  cyr = 368U;
   doff = (doff + (((hnd->vid.vln) >> 1) << dsiz)) & 0xFFFFU;
  }else{
   dbl = 0U;
-  cyr = 192U;
+  cyr = 184U;
   doff = (doff + (((hnd->vid.vln) - t0) << dsiz)) & 0xFFFFU;
  }
 
@@ -416,6 +416,8 @@ void rrpge_m_vidl(rrpge_object_t* hnd)
      spos = 0U;
      i    = (cmd >> 4) & 0x3FU;   /* Cell pair offset */
      tds  = 0U;                   /* (Just shuts up a bogus uninitialized warning, GCC doesn't see that cnt is nonzero here) */
+     shr[0] = 0U;                 /* Empty shift register's left (output cells) */
+     shr[1] = 0U;                 /* Necessary since OR further below does not replace contents over the necessary bit range! */
      while (1){
 
       /* Determine if end cell pair, if so, do an end mask, otherwise fetch

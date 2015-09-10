@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.09.04
+**  \date      2015.09.10
 */
 
 
@@ -258,7 +258,6 @@ void  rrpge_m_vid_proc(rrpge_object_t* hnd, auint cy)
    o += s;
    s  = (i >> 6) & 0x1FU;                   /* Skip amount / streak */
    c  = (i     ) & 0x3FU;                   /* Clear amount / streak */
-   i  = 9600U;                              /* Allowed cycles */
 
    /* Clear */
 
@@ -267,9 +266,8 @@ void  rrpge_m_vid_proc(rrpge_object_t* hnd, auint cy)
      for (t = 0U; t < c; t++){ /* Clear */
       hnd->st.pram[a + o] = 0U;
       o  = (o + 1U) & 0xFFFFU;
-      i --;
       j --;
-      if ((i == 0U) || (j == 0U)){ break; }
+      if (j == 0U){ break; }
      }
      if (j <= s){              /* Skip */
       j  = 0U;
@@ -277,7 +275,7 @@ void  rrpge_m_vid_proc(rrpge_object_t* hnd, auint cy)
       j -= s;
       o  = (o +  s) & 0xFFFFU;
      }
-    }while ((i != 0U) && (j != 0U));
+    }while (j != 0U);
    }
 
    /* Update latch, and clear flags */

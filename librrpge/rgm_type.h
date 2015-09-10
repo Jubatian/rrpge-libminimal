@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.02
+**  \date      2015.09.10
 */
 
 
@@ -40,8 +40,8 @@ typedef unsigned int auint;
 ** maintained for real time synchronization. */
 #define RRPGE_M_OSC 12500000U
 
-/* Number of video lines total. At least 449, resulting in 70Hz VGA. */
-#define RRPGE_M_VLN 449U
+/* Number of video lines total. 60Hz VGA. */
+#define RRPGE_M_VLN 525U
 
 /* Peripheral RAM size. */
 #define RRPGE_M_PRAMS (sizeof(((rrpge_state_t*)(0))->pram) / sizeof(((rrpge_state_t*)(0))->pram[0]))
