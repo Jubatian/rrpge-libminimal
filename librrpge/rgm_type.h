@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.09.10
+**  \date      2015.09.11
 */
 
 
@@ -33,12 +33,9 @@
 typedef unsigned int auint;
 
 
-/* Main frequency. For the minimal specification use 12500000U. You may
-** increase it as a simple way to accelerate the emulated machine. Note that
-** video timing assumes this frequency to output according to VGA 70Hz, so
-** increasing it will also increase the video frequency. Audio frequency is
-** maintained for real time synchronization. */
-#define RRPGE_M_OSC 12500000U
+/* Default main frequency. 12587500U, derived from 25.175MHz used for standard
+** 640x480@60Hz VGA mode. */
+#define RRPGE_M_OSC 12587500U
 
 /* Number of video lines total. 60Hz VGA. */
 #define RRPGE_M_VLN 525U

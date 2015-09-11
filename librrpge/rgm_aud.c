@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.02
+**  \date      2015.09.11
 */
 
 
@@ -47,7 +47,12 @@ void rrpge_m_audproc(auint cy)
 
   /* One audio tick will be processed */
 
-  rrpge_m_info.atc += (RRPGE_M_OSC + 24000U) / 48000U;
+  rrpge_m_info.atc += (rrpge_m_edat->clk) / 48000U;
+  rrpge_m_edat->clkf += (rrpge_m_edat->clk) % 48000U;
+  if (rrpge_m_edat->clkf >= 48000U){
+   rrpge_m_edat->clkf -= 48000U;
+   rrpge_m_info.atc ++;
+  }
 
   /* Load samples from data memory into the internal double buffer */
 

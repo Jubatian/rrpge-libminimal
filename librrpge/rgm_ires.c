@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.09.10
+**  \date      2015.09.11
 */
 
 
@@ -1016,6 +1016,10 @@ static void rrpge_m_ires_initl(rrpge_object_t* obj)
  /* Kernel internal task cycles: set up to start with a reasonable amount of
  ** free time first. */
  obj->kfc = 400U * 64U;              /* 64 lines */
+
+ /* Main clock frequency: Use default rate. */
+ obj->clk  = RRPGE_M_OSC;
+ obj->clkf = 0U;
 
  /* Components needing object init */
  rrpge_m_vid_initres(obj);

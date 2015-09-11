@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.09.04
+**  \date      2015.09.11
 */
 
 
@@ -232,6 +232,15 @@ void rrpge_reset(rrpge_object_t* hnd)
 {
  if (hnd->inss != RRPGE_INI_RESET){ return; } /* No sufficient initialization */
  rrpge_m_ires_init(hnd);
+}
+
+
+
+/* Sets main clock frequency - implementation of RRPGE library function */
+void rrpge_set_clock(rrpge_object_t* hnd, rrpge_iuint clk)
+{
+ if (clk < 1000000U){ clk = 1000000U; } /* Don't allow below 1 MHz */
+ hnd->clk = clk;
 }
 
 

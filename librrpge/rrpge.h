@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.09.03
+**  \date      2015.09.11
 */
 
 
@@ -94,6 +94,23 @@ rrpge_iuint rrpge_init_run(rrpge_object_t* hnd, rrpge_iuint tg);
 **  /param[in]   hnd   Emulator instance to work with.
 */
 void rrpge_reset(rrpge_object_t* hnd);
+
+
+
+/**
+**  \brief     Change main clock frequency.
+**
+**  By default, the RRPGE system is clocked at 12.5MHz (12500000U), producing
+**  60Hz display refresh rate. Real time synchronization is maintained through
+**  the audio subsystem. With this function, this clock frequency may be
+**  changed any time for an emulator instance, thus affecting the video
+**  refresh rate. It may be used to establish Vertical Retrace synchronization
+**  or to accelerate emulation.
+**
+**  /param[in]   hnd   Emulator instance to work with.
+**  /param[in]   clk   New clock frequency in Hz.
+*/
+void rrpge_set_clock(rrpge_object_t* hnd, rrpge_iuint clk);
 
 
 

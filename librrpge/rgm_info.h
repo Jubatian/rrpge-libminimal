@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.09.04
+**  \date      2015.09.11
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -67,6 +67,9 @@ struct rrpge_object_s{
  rrpge_m_dev_t dev;  /* Input device emulation structure */
 
  auint  hlt;         /* Halt causes (accessed using rgm_halt) */
+
+ auint  clk;         /* Main clock frequency. Typically 12500000U for 12.5MHz */
+ auint  clkf;        /* Clock fraction, for accurately reproducing the main clock from the audio sync */
 
  auint  rebr;        /* Receive data buffer read pointer */
  auint  rebw;        /* Receive data buffer write pointer */
