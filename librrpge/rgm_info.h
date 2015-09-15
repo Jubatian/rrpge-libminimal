@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.09.11
+**  \date      2015.09.15
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -31,6 +31,7 @@
 #include "rgm_vidt.h"
 #include "rgm_acct.h"
 #include "rgm_devt.h"
+#include "rgm_mixt.h"
 
 
 
@@ -65,6 +66,7 @@ struct rrpge_object_s{
  rrpge_m_vid_t vid;  /* Video (GDG) emulation structure */
  rrpge_m_acc_t acc;  /* Graphic Accelerator emulation structure */
  rrpge_m_dev_t dev;  /* Input device emulation structure */
+ rrpge_m_mix_t mix;  /* Mixer emulation structure */
 
  auint  hlt;         /* Halt causes (accessed using rgm_halt) */
 

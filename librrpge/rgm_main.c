@@ -21,6 +21,7 @@
 #include "rgm_vid.h"
 #include "rgm_acc.h"
 #include "rgm_dev.h"
+#include "rgm_mix.h"
 
 
 
@@ -35,6 +36,7 @@ void rrpge_init_lib(rrpge_malloc_t* alc, rrpge_free_t* fre)
  rrpge_m_vid_init();
  rrpge_m_acc_init();
  rrpge_m_dev_init();
+ rrpge_m_mix_init();
 }
 
 
