@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.09.04
+**  \date      2015.09.16
 */
 
 
@@ -48,7 +48,6 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
 
  /* Export Application state data into info structure */
 
- rrpge_m_info.atc = stat[RRPGE_STA_VARS + 0x13U] & 0xFFFFU;
  rrpge_m_info.cyf[0] = ((stat[RRPGE_STA_VARS + 0x22U] & 0xFFFFU) << 16) +
                        ((stat[RRPGE_STA_VARS + 0x23U] & 0xFFFFU));
  rrpge_m_info.cyf[1] = ((stat[RRPGE_STA_VARS + 0x2AU] & 0xFFFFU) << 16) +
@@ -97,7 +96,7 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
   /* Audio processing. This may also raise an audio halt cause indicating an
   ** 512 sample streak. */
 
-  rrpge_m_audproc(cy);
+  rrpge_m_aud_proc(hnd, cy);
 
   /* Video processing. Generates display output (including calling the line
   ** callback), and processes Display List clear. */
@@ -132,7 +131,6 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
 
  /* Write-back Application state data from info structure */
 
- stat[RRPGE_STA_VARS + 0x13U] = (rrpge_m_info.atc) & 0xFFFFU;
  stat[RRPGE_STA_VARS + 0x22U] = (rrpge_m_info.cyf[0] >> 16) & 0xFFFFU;
  stat[RRPGE_STA_VARS + 0x23U] = (rrpge_m_info.cyf[0]      ) & 0xFFFFU;
  stat[RRPGE_STA_VARS + 0x2AU] = (rrpge_m_info.cyf[1] >> 16) & 0xFFFFU;

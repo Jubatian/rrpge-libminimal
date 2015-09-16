@@ -17,8 +17,8 @@
 #include "rgm_type.h"
 
 
-/* Accelerator emulation structure. Components defined here are private to the
-** accelerator emulation, only used by the rgm_acc*.c sources. */
+/* Mixer emulation structure. Components defined here are private to the mixer
+** emulation, only used by the rgm_mix*.c sources. */
 typedef struct{
 
  auint dbk;               /* Destination bank select (16 bits; 0x8) */

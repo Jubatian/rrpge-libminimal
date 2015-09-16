@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.09.11
+**  \date      2015.09.16
 */
 
 
@@ -16,6 +16,7 @@
 #include "rgm_stat.h"
 #include "rgm_vid.h"
 #include "rgm_dev.h"
+#include "rgm_aud.h"
 
 
 /* State: Nonzero elements in the VARS area (address, data high, data low) */
@@ -1009,21 +1010,14 @@ static void rrpge_m_ires_initl(rrpge_object_t* obj)
  /* No halt causes */
  rrpge_m_halt_clrall(obj);
 
- /* No audio events waiting for servicing, double buffer empty */
- obj->aco = 0;
- obj->audp = 0;
-
  /* Kernel internal task cycles: set up to start with a reasonable amount of
  ** free time first. */
  obj->kfc = 400U * 64U;              /* 64 lines */
 
- /* Main clock frequency: Use default rate. */
- obj->clk  = RRPGE_M_OSC;
- obj->clkf = 0U;
-
  /* Components needing object init */
  rrpge_m_vid_initres(obj);
  rrpge_m_dev_initres(obj);
+ rrpge_m_aud_initres(obj);
 }
 
 

@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.13
+**  \date      2015.09.16
 */
 
 
@@ -67,24 +67,17 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_wr_data(rrpge_object_t* hnd, auint val
 
  }else{                        /* User Peripheral Area */
 
-  /* !!! The 0x00 - 0x1F range has to be written by rrpge_m_stat_set() once
-  ** the targets implement it properly */
+  /* !!! This range has to be written by rrpge_m_stat_set() once the targets
+  ** implement it properly */
 
   switch (hnd->cpu.ada & 0x3CU){
-
-   case 0x00U:                     /* Writes ignored */
-    break;
-
-   case 0x04U:                     /* Audio writable regs: Writes proceed */
-    hnd->st.stat[RRPGE_STA_UPA + hnd->cpu.ada] = val & 0xFFFFU;
-    break;
 
    case 0x08U:
    case 0x0CU:                     /* FIFO */
     rrpge_m_fifowrite(hnd->cpu.ada, val);
     break;
 
-   default:                        /* Graphics & PRAM interface */
+   default:                        /* Audio, Graphics & PRAM interface */
     rrpge_m_stat_write(hnd, RRPGE_STA_UPA + hnd->cpu.ada, val);
     break;
 

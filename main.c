@@ -2,11 +2,11 @@
 **  \file
 **  \brief     The main program file
 **  \author    Sandor Zsuga (Jubatian)
-**  \license   2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.04
+**  \date      2015.09.16
 */
 
 
@@ -41,7 +41,7 @@ static char const* main_appicon = "RRPGE";
 
 /* Other elements */
 static char const* main_appauth = "By: Sandor Zsuga (Jubatian)\n";
-static char const* main_copyrig = "License: 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public\nLicense) extended as RRPGEvt (temporary version of the RRPGE License):\nsee LICENSE.GPLv3 and LICENSE.RRPGEvt in the project root.\n";
+static char const* main_copyrig = "Copyright: 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public\nLicense) extended as RRPGEvt (temporary version of the RRPGE License):\nsee LICENSE.GPLv3 and LICENSE.RRPGEvt in the project root.\n";
 
 
 /* Subroutines */
@@ -199,14 +199,14 @@ static void main_errexit(auint h, rrpge_object_t* obj)
 
 int main(int argc, char** argv)
 {
- auint  j;
- auint  t;
- auint  cdi = 0U;
- auint  auc = 0U;
- uint8* lpt;
- uint8* rpt;
- uint16 edt;           /* Event data (just one) */
- auint  mid;           /* Mouse device id */
+ auint   j;
+ auint   t;
+ auint   cdi = 0U;
+ auint   auc = 0U;
+ uint16* lpt;
+ uint16* rpt;
+ uint16  edt;          /* Event data (just one) */
+ auint   mid;          /* Mouse device id */
  SDL_Event event;      /* The event got from the queue */
  rrpge_object_t* emu = NULL;
 

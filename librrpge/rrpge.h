@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.09.11
+**  \date      2015.09.16
 */
 
 
@@ -285,18 +285,18 @@ rrpge_iuint rrpge_gethaltcause(rrpge_object_t* hnd);
 **  might be more. This indicates skipping.
 **
 **  The provided left and right buffers are filled with the data fetched in
-**  the last audio tick, 512 samples each. The format is 8 bit unsigned.
+**  the last audio tick, 512 samples each. The format is 16 bit unsigned.
 **
 **  When called without experiencing an audio halt cause the return value is
 **  zero, and it is implementation defined whether the buffers receive any
 **  data.
 **
 **  \param[in]   hnd   Emulation instance.
-**  \param[out]  lbuf  8bit audio buffer to receive left sample data.
-**  \param[out]  rbuf  8bit audio buffer to receive right sample data.
+**  \param[out]  lbuf  16 bit audio buffer to receive left sample data.
+**  \param[out]  rbuf  16 bit audio buffer to receive right sample data.
 **  \return            Number of audio events pending.
 */
-rrpge_iuint rrpge_getaudio(rrpge_object_t* hnd, rrpge_uint8* lbuf, rrpge_uint8* rbuf);
+rrpge_iuint rrpge_getaudio(rrpge_object_t* hnd, rrpge_uint16* lbuf, rrpge_uint16* rbuf);
 
 
 

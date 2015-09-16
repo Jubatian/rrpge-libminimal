@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.09.11
+**  \date      2015.09.16
 */
 
 
@@ -22,6 +22,7 @@
 #include "rgm_acc.h"
 #include "rgm_dev.h"
 #include "rgm_mix.h"
+#include "rgm_aud.h"
 
 
 
@@ -37,6 +38,7 @@ void rrpge_init_lib(rrpge_malloc_t* alc, rrpge_free_t* fre)
  rrpge_m_acc_init();
  rrpge_m_dev_init();
  rrpge_m_mix_init();
+ rrpge_m_aud_init();
 }
 
 
@@ -234,15 +236,6 @@ void rrpge_reset(rrpge_object_t* hnd)
 {
  if (hnd->inss != RRPGE_INI_RESET){ return; } /* No sufficient initialization */
  rrpge_m_ires_init(hnd);
-}
-
-
-
-/* Sets main clock frequency - implementation of RRPGE library function */
-void rrpge_set_clock(rrpge_object_t* hnd, rrpge_iuint clk)
-{
- if (clk < 1000000U){ clk = 1000000U; } /* Don't allow below 1 MHz */
- hnd->clk = clk;
 }
 
 
