@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.09.15
+**  \date      2015.09.16
 */
 
 
@@ -20,17 +20,14 @@
 RRPGE_M_FASTCALL static auint rrpge_m_mix_stat_regs_read(rrpge_object_t* hnd, auint adr, auint rmw)
 {
  switch (adr){
-  case 0x05U: return (hnd->mix.dbk) & 0x000FU; break;
-  case 0x06U: return (hnd->mix.dof) & 0x8FFFU; break;
-  case 0x07U: return (hnd->mix.dct) & 0xF01FU; break;
-  case 0x08U: return (hnd->mix.scf) & 0xFFFFU; break;
-  case 0x09U: return (hnd->mix.spr) & 0xFFFFU; break;
-  case 0x0AU: return (hnd->mix.sfa) & 0xFFFFU; break;
-  case 0x0BU: return (hnd->mix.sfr) & 0xFFFFU; break;
-  case 0x0CU: return (hnd->mix.ama) & 0xFFFFU; break;
-  case 0x0DU: return (hnd->mix.ami) & 0xFFFFU; break;
-  case 0x0EU: return (hnd->mix.soh) & 0x01FFU; break;
-  case 0x0FU: return (hnd->mix.sol) & 0xFFFFU; break;
+  case 0x08U: return (hnd->mix.dbk) & 0x000FU; break;
+  case 0x09U: return (hnd->mix.dof) & 0x8FFFU; break;
+  case 0x0AU: return (hnd->mix.dct) & 0xF01FU; break;
+  case 0x0BU: return (hnd->mix.scf) & 0xFFFFU; break;
+  case 0x0CU: return (hnd->mix.sfa) & 0xFFFFU; break;
+  case 0x0DU: return (hnd->mix.ama) & 0xFFFFU; break;
+  case 0x0EU: return (hnd->mix.ami) & 0xFFFFU; break;
+  case 0x0FU: return (hnd->mix.sdo) & 0xFFFEU; break;
   default:    return 0U;                       break;
  }
 }
@@ -40,17 +37,14 @@ RRPGE_M_FASTCALL static auint rrpge_m_mix_stat_regs_read(rrpge_object_t* hnd, au
 RRPGE_M_FASTCALL static void rrpge_m_mix_stat_regs_write(rrpge_object_t* hnd, auint adr, auint val)
 {
  switch (adr){
-  case 0x05U: hnd->mix.dbk = val & 0x000FU; break;
-  case 0x06U: hnd->mix.dof = val & 0x8FFFU; break;
-  case 0x07U: hnd->mix.dct = val & 0xF01FU; break;
-  case 0x08U: hnd->mix.scf = val & 0xFFFFU; break;
-  case 0x09U: hnd->mix.spr = val & 0xFFFFU; break;
-  case 0x0AU: hnd->mix.sfa = val & 0xFFFFU; break;
-  case 0x0BU: hnd->mix.sfr = val & 0xFFFFU; break;
-  case 0x0CU: hnd->mix.ama = val & 0xFFFFU; break;
-  case 0x0DU: hnd->mix.ami = val & 0xFFFFU; break;
-  case 0x0EU: hnd->mix.soh = val & 0x01FFU; break;
-  case 0x0FU: hnd->mix.sol = val & 0xFFFFU; break;
+  case 0x08U: hnd->mix.dbk = val & 0x000FU; break;
+  case 0x09U: hnd->mix.dof = val & 0x8FFFU; break;
+  case 0x0AU: hnd->mix.dct = val & 0xF01FU; break;
+  case 0x0BU: hnd->mix.scf = val & 0xFFFFU; break;
+  case 0x0CU: hnd->mix.sfa = val & 0xFFFFU; break;
+  case 0x0DU: hnd->mix.ama = val & 0xFFFFU; break;
+  case 0x0EU: hnd->mix.ami = val & 0xFFFFU; break;
+  case 0x0FU: hnd->mix.sdo = val & 0xFFFEU; break;
   default:                                  break;
  }
 }

@@ -75,6 +75,7 @@ void  rrpge_m_mixo_init(void)
 auint rrpge_m_mixo(rrpge_object_t* hnd)
 {
  uint32* pram = &(hnd->st.pram[0]); /* Address of Peripheral RAM */
+ auint sdof = hnd->mix.sdo;         /* Source descriptor offset */
  auint soff;                        /* Source bit offset (incrementing part) */
  auint spar;                        /* Source partition select bits */
  auint spms;                        /* Source partition mask (applied on source bit offset) */
@@ -82,7 +83,7 @@ auint rrpge_m_mixo(rrpge_object_t* hnd)
  auint swdm;                        /* Sample bit width mask (for fetching samples) */
  auint scfg = hnd->mix.scf;         /* Source configuration */
  auint sfad;                        /* Sample pointer fraction add value */
- auint sfrc = hnd->mix.sfr;         /* Sample pointer fraction */
+ auint sfrc;                        /* Sample pointer fraction */
  auint ampl;                        /* Current amplitudo */
  auint ampa;                        /* Amplitudo add value */
  auint ilth;                        /* 64 bit source input register, high (left) */
@@ -94,7 +95,6 @@ auint rrpge_m_mixo(rrpge_object_t* hnd)
  auint dcnt;                        /* Destination count */
  auint rsm0;                        /* First result sample */
  auint rsm1;                        /* Second result sample */
- auint i;
  auint t;
  auint ret;
 
@@ -103,18 +103,23 @@ auint rrpge_m_mixo(rrpge_object_t* hnd)
  dofh = dofh & (PRAMS - 1U);        /* Keep within PRAM */
  dcnt = ((hnd->mix.dct - 1U) & 0xFFFU) + 1U; /* Count of cells to do */
 
+ /* Load source descriptor elements */
+
+ sdof = ((sdof & 0xFFFEU) | ((scfg & 0x0F00U) << 8)) & (PRAMS - 1U);
+ soff = pram[sdof     ];
+ t    = pram[sdof | 1U];
+ spar = (t >> 11) & 0x1FFFE0U;
+ sfrc = t & 0xFFFFU;
+
  /* Prepare source offsets */
 
  if ((scfg & 0x0010U) != 0U){       /* Use full PRAM */
   spms = (PRAMS << 5) - 1U;
-  soff = (((hnd->mix.soh) << 16) | (hnd->mix.sol)) & spms;
   spar = 0U;
  }else{                             /* Apply partitioning */
-  i = scfg & 0x000FU;
-  if (i < 4U){ i = 4U; }
-  spms = (2U << i) - 1U;
-  soff = hnd->mix.sol;
-  spar = (((hnd->mix.soh) << 16) | ((hnd->mix.spr) & (~spms))) & ((PRAMS << 5) - 1U);
+  t = scfg & 0x000FU;
+  spms = (32U << t) - 1U;
+  spar = ((soff & 0xFFE00000U) | (spar & (~spms))) & ((PRAMS << 5) - 1U);
  }
 
  /* Prepare source parameters */
@@ -126,10 +131,23 @@ auint rrpge_m_mixo(rrpge_object_t* hnd)
  swdm = (1 << swdt) - 1U;
  scfg = (scfg & 0xF01FU) | ((hnd->mix.dct & 0x8000U) >> 4); /* Saturated add necessary flag */
 
+ /* Generate result source descriptor */
+
+ t    = sfrc + (sfad * (dcnt << 1));
+ if ((scfg & 0x0010U) != 0U){       /* Use full PRAM (25 bits wide bit offset) */
+  pram[sdof] = ((soff + ((t >> 16) * swdt)) & 0x01FFFFFFU);
+ }else{                             /* Partitioned: Only low 21 bits increment */
+  pram[sdof] = (soff & 0x01E00000U) |
+               ((soff + ((t >> 16) * swdt)) & 0x001FFFFFU);
+ }
+ pram[sdof | 1U] = (pram[sdof | 1U] & 0xFFFF0000U) |
+                   (t & 0xFFFFU);
+
  /* Prepare amplitudo */
 
  ampa = hnd->mix.ama;
- ampl = ((hnd->mix.ami - 1U) & 0xFFFFU) + 1U;
+ if ((ampa & 0x8000U) != 0U){ ampa |= 0x70000U; } /* Sign-extend to 19 bits */
+ ampl = (((hnd->mix.ami - 1U) & 0xFFFFU) + 1U) << 3;
 
  /* Initialize memories */
 
@@ -152,7 +170,7 @@ auint rrpge_m_mixo(rrpge_object_t* hnd)
 
  /* Calculate return value (cycles consumed) */
 
- ret = (dcnt * 6U) + 30U;
+ ret = (dcnt * 6U) + 40U;
 
  /* In the main loop the scfg variable is used for conditional processing.
  ** This variable is not changed in the loop, so branch prediction works just
@@ -206,17 +224,21 @@ auint rrpge_m_mixo(rrpge_object_t* hnd)
 
   /* Apply amplitude on the samples */
 
-  rsm0 = (((rsm0 * ampl) >> 15) + 0x10000U - ampl) >> 1;
-  rsm1 = (((rsm1 * ampl) >> 15) + 0x10000U - ampl) >> 1;
+  t    = ampl >> 3;
+  rsm0 = (((rsm0 * t) >> 15) + 0x10000U - t) >> 1;
+  rsm1 = (((rsm1 * t) >> 15) + 0x10000U - t) >> 1;
 
-  /* Add amplitude add value to amplitude */
+  /* Add amplitude add value to amplitude. Uses ordinary conditionals since
+  ** the direction changes at most one time during the output, so there is
+  ** no much loss coming from jump mispredictions (rather be fast when the
+  ** predictor guesses right). Note the unsigned arithmetic for decrements. */
 
   ampl = ampl + ampa;
   if ((ampa & 0x8000U) == 0U){ /* Increment */
-   ampl = ampl & ( 0xFFFFU + (ampl >> 16)); /* Saturate at 0x10000U */
+   if (ampl > 0x80000U){ ampl  = 0x80000U; }
   }else{                       /* Decrement */
-   ampl = ampl & (0x10000U - (ampl >> 16)); /* Saturate at 0 */
-   ampl = ampl + ((0x10000U - ampl) >> 16); /* Make it 1 if it was 0 */
+   if (ampl > 0x80007U){ ampl &= 0x7FFFFU; }
+   else                { ampl  = 8U;       }
   }
 
   /* Add to destination if requested */
