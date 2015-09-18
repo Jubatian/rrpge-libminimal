@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.09.15
+**  \date      2015.09.18
 */
 
 
@@ -70,6 +70,7 @@ static void audio_cb(void* udata, Uint8 *stream, int len)
 ** The sample format is unsigned 16 bits. Returns 0 on success, 1 on fault. */
 auint   audio_set(auint b)
 {
+ auint i;
  SDL_AudioSpec des;
 
  des.freq     = 48000U;
@@ -87,9 +88,10 @@ auint   audio_set(auint b)
 
  if (SDL_OpenAudio(&des, NULL) < 0) return 1U;
 
- /* Fills with 0x8080, good enough for now... */
- memset(&(audio_buf_l[0]), 0x80U, sizeof(audio_buf_l));
- memset(&(audio_buf_r[0]), 0x80U, sizeof(audio_buf_r));
+ for (i = 0U; i < AUDIO_BUF_MAX; i++){
+  audio_buf_l[i] = 0x8000U;
+  audio_buf_r[i] = 0x8000U;
+ }
  audio_bpt_r = 0;
  audio_bpt_w = 0;
 

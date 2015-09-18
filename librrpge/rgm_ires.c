@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.09.16
+**  \date      2015.09.18
 */
 
 
@@ -20,24 +20,22 @@
 
 
 /* State: Nonzero elements in the VARS area (address, data high, data low) */
-#define STANZ_CT 24U
+#define STANZ_CT 22U
 static const uint8  rrpge_m_ires_stanz[3U * STANZ_CT] = {
  0x48U, 0x66U, 0x66U, /* XM register */
- 0x55U, 0xFFU, 0x00U, /* GDG display list definition latch */
- 0x95U, 0x05U, 0x58U, /* Mixer partitioning */
- 0x99U, 0x01U, 0x00U, /* Mixer amplitudo */
+ 0x55U, 0xF8U, 0x00U, /* GDG display list definition latch */
  0xA0U, 0xFFU, 0xFFU, /* Accelerator write mask high */
  0xA1U, 0xFFU, 0xFFU, /* Accelerator write mask low */
- 0xC4U, 0xFFU, 0x80U, /* Audio left buffer */
- 0xC5U, 0xFFU, 0x80U, /* Audio right buffer */
- 0xC6U, 0xFFU, 0xC0U, /* Audio buffer size mask */
+ 0xC4U, 0xFBU, 0x80U, /* Audio left buffer */
+ 0xC5U, 0xFBU, 0x80U, /* Audio right buffer */
+ 0xC6U, 0xFFU, 0x80U, /* Audio buffer size mask */
  0xC7U, 0x00U, 0x01U, /* Audio divider */
- 0xC8U, 0x1FU, 0xFCU, /* Mixer FIFO location & size */
- 0xCCU, 0x4FU, 0xE0U, /* Graphics FIFO location & size */
+ 0xC8U, 0x1FU, 0xFEU, /* Mixer FIFO location & size */
+ 0xCCU, 0x5FU, 0xC0U, /* Graphics FIFO location & size */
  0xD2U, 0x10U, 0x00U, /* GDG double scan split */
  0xD4U, 0x28U, 0x00U, /* GDG shift mode region A */
  0xD5U, 0x28U, 0x00U, /* GDG shift mode region B */
- 0xD6U, 0xFFU, 0x00U, /* GDG display list definition */
+ 0xD6U, 0xF8U, 0x00U, /* GDG display list definition */
  0xD8U, 0x00U, 0x28U, /* GDG source A0 */
  0xE3U, 0x00U, 0x01U, /* Pointer 0 increment */
  0xEBU, 0x00U, 0x04U, /* Pointer 1 increment */
@@ -52,38 +50,38 @@ static const uint8  rrpge_m_ires_stanz[3U * STANZ_CT] = {
 static const uint8  rrpge_m_ires_sinq8[64] = {
  0x81U, 0x84U, 0x87U, 0x8AU, 0x8EU, 0x91U, 0x94U, 0x97U,
  0x9AU, 0x9DU, 0xA0U, 0xA3U, 0xA6U, 0xA9U, 0xACU, 0xAFU,
- 0xB2U, 0xB5U, 0xB7U, 0xBAU, 0xBDU, 0xC0U, 0xC2U, 0xC5U,
+ 0xB2U, 0xB5U, 0xB8U, 0xBAU, 0xBDU, 0xC0U, 0xC3U, 0xC5U,
  0xC8U, 0xCAU, 0xCDU, 0xCFU, 0xD2U, 0xD4U, 0xD6U, 0xD9U,
  0xDBU, 0xDDU, 0xDFU, 0xE1U, 0xE3U, 0xE5U, 0xE7U, 0xE9U,
- 0xEAU, 0xECU, 0xEEU, 0xEFU, 0xF1U, 0xF2U, 0xF3U, 0xF5U,
+ 0xEBU, 0xECU, 0xEEU, 0xEFU, 0xF1U, 0xF2U, 0xF4U, 0xF5U,
  0xF6U, 0xF7U, 0xF8U, 0xF9U, 0xFAU, 0xFBU, 0xFCU, 0xFCU,
- 0xFDU, 0xFDU, 0xFEU, 0xFEU, 0xFFU, 0xFFU, 0xFFU, 0xFFU
+ 0xFDU, 0xFEU, 0xFEU, 0xFEU, 0xFFU, 0xFFU, 0xFFU, 0xFFU
 };
 
 /* 1st quarter for the hq (512 element, 2 complement) sine table */
 static const uint16 rrpge_m_ires_sinq16[128] = {
- 0x0000U, 0x00C9U, 0x0192U, 0x025BU, 0x0323U, 0x03ECU, 0x04B5U, 0x057DU,
- 0x0645U, 0x070DU, 0x07D5U, 0x089CU, 0x0964U, 0x0A2AU, 0x0AF1U, 0x0BB6U,
- 0x0C7CU, 0x0D41U, 0x0E05U, 0x0EC9U, 0x0F8CU, 0x104FU, 0x1111U, 0x11D3U,
- 0x1294U, 0x1354U, 0x1413U, 0x14D1U, 0x158FU, 0x164CU, 0x1708U, 0x17C3U,
- 0x187DU, 0x1937U, 0x19EFU, 0x1AA6U, 0x1B5DU, 0x1C12U, 0x1CC6U, 0x1D79U,
- 0x1E2BU, 0x1EDCU, 0x1F8BU, 0x2039U, 0x20E7U, 0x2192U, 0x223DU, 0x22E6U,
- 0x238EU, 0x2434U, 0x24DAU, 0x257DU, 0x261FU, 0x26C0U, 0x275FU, 0x27FDU,
- 0x2899U, 0x2934U, 0x29CDU, 0x2A65U, 0x2AFAU, 0x2B8EU, 0x2C21U, 0x2CB2U,
- 0x2D41U, 0x2DCEU, 0x2E5AU, 0x2EE3U, 0x2F6BU, 0x2FF1U, 0x3076U, 0x30F8U,
- 0x3179U, 0x31F7U, 0x3274U, 0x32EEU, 0x3367U, 0x33DEU, 0x3453U, 0x34C6U,
- 0x3536U, 0x35A5U, 0x3612U, 0x367CU, 0x36E5U, 0x374BU, 0x37AFU, 0x3811U,
- 0x3871U, 0x38CFU, 0x392AU, 0x3983U, 0x39DAU, 0x3A2FU, 0x3A82U, 0x3AD2U,
- 0x3B20U, 0x3B6CU, 0x3BB6U, 0x3BFDU, 0x3C42U, 0x3C84U, 0x3CC5U, 0x3D02U,
- 0x3D3EU, 0x3D77U, 0x3DAEU, 0x3DE2U, 0x3E14U, 0x3E44U, 0x3E71U, 0x3E9CU,
- 0x3EC5U, 0x3EEBU, 0x3F0EU, 0x3F2FU, 0x3F4EU, 0x3F6AU, 0x3F84U, 0x3F9CU,
- 0x3FB1U, 0x3FC3U, 0x3FD3U, 0x3FE1U, 0x3FECU, 0x3FF4U, 0x3FFBU, 0x3FFEU
+ 0x0000U, 0x00C9U, 0x0192U, 0x025BU, 0x0324U, 0x03EDU, 0x04B5U, 0x057EU,
+ 0x0646U, 0x070EU, 0x07D6U, 0x089DU, 0x0964U, 0x0A2BU, 0x0AF1U, 0x0BB7U,
+ 0x0C7CU, 0x0D41U, 0x0E06U, 0x0ECAU, 0x0F8DU, 0x1050U, 0x1112U, 0x11D3U,
+ 0x1294U, 0x1354U, 0x1413U, 0x14D2U, 0x1590U, 0x164CU, 0x1709U, 0x17C4U,
+ 0x187EU, 0x1937U, 0x19EFU, 0x1AA7U, 0x1B5DU, 0x1C12U, 0x1CC6U, 0x1D79U,
+ 0x1E2BU, 0x1EDCU, 0x1F8CU, 0x203AU, 0x20E7U, 0x2193U, 0x223DU, 0x22E7U,
+ 0x238EU, 0x2435U, 0x24DAU, 0x257EU, 0x2620U, 0x26C1U, 0x2760U, 0x27FEU,
+ 0x289AU, 0x2935U, 0x29CEU, 0x2A65U, 0x2AFBU, 0x2B8FU, 0x2C21U, 0x2CB2U,
+ 0x2D41U, 0x2DCFU, 0x2E5AU, 0x2EE4U, 0x2F6CU, 0x2FF2U, 0x3076U, 0x30F9U,
+ 0x3179U, 0x31F8U, 0x3274U, 0x32EFU, 0x3368U, 0x33DFU, 0x3453U, 0x34C6U,
+ 0x3537U, 0x35A5U, 0x3612U, 0x367DU, 0x36E5U, 0x374BU, 0x37B0U, 0x3812U,
+ 0x3871U, 0x38CFU, 0x392BU, 0x3984U, 0x39DBU, 0x3A30U, 0x3A82U, 0x3AD3U,
+ 0x3B21U, 0x3B6DU, 0x3BB6U, 0x3BFDU, 0x3C42U, 0x3C85U, 0x3CC5U, 0x3D03U,
+ 0x3D3FU, 0x3D78U, 0x3DAFU, 0x3DE3U, 0x3E15U, 0x3E45U, 0x3E72U, 0x3E9DU,
+ 0x3EC5U, 0x3EEBU, 0x3F0FU, 0x3F30U, 0x3F4FU, 0x3F6BU, 0x3F85U, 0x3F9CU,
+ 0x3FB1U, 0x3FC4U, 0x3FD4U, 0x3FE1U, 0x3FECU, 0x3FF5U, 0x3FFBU, 0x3FFFU
 };
 
-/* High 12 entries for the audio frequency table */
-static const uint32 rrpge_m_ires_ft[12] = {
-  55678343U,  58989149U,  62496826U,  66213081U,  70150316U,  74321671U,
-  78741067U,  83423255U,  88383859U,  93639437U,  99207528U, 105106715U
+/* Audio frequency table */
+static const uint16 rrpge_m_ires_ft[12] = {
+ 0x85CDU, 0x8DC2U, 0x9630U, 0x9F1EU, 0xA894U, 0xB29AU,
+ 0xBD39U, 0xC87AU, 0xD465U, 0xE107U, 0xEE68U, 0xFC95U
 };
 
 /* Palette */
@@ -993,6 +991,17 @@ static void rrpge_m_ires_setb(uint32* d, auint o, auint v)
 
 
 
+/* Read a byte from 32 bit memory */
+static auint rrpge_m_ires_getb(uint32* d, auint o)
+{
+ auint oh = o >> 2;
+ auint ol = ((o & 3U) ^ 3U) << 3;
+
+ return ((d[oh] >> ol) & 0xFFU);
+}
+
+
+
 /* Initializes library specific portions of the emulation instance. */
 static void rrpge_m_ires_initl(rrpge_object_t* obj)
 {
@@ -1028,9 +1037,6 @@ static void rrpge_m_ires_initl(rrpge_object_t* obj)
 void rrpge_m_ires_initdata(rrpge_object_t* obj)
 {
  auint   i;
- auint   j;
- auint   t;
- auint   r;
  uint16* d = &(obj->dini[0]);
 
  /* Reset data memory initializer */
@@ -1042,27 +1048,19 @@ void rrpge_m_ires_initdata(rrpge_object_t* obj)
  /* Populate it */
 
  /* Color palette */
+
  for (i = 0U; i < 64U; i++){
-  d[0xFA00U + i] = rrpge_m_ires_pal[i];
+  d[0xFAC0U + i] = rrpge_m_ires_pal[i];
  }
 
  /* Musical logarithmic table */
- j = 12U;
- t = 0U;
- i = 256U;
- do{
-  i--;
-  j--;
-  r = rrpge_m_ires_ft[j] >> t;
-  d[0xF800U + (i << 1)] = (r >> 16) & 0xFFFFU;
-  d[0xF801U + (i << 1)] = (r      ) & 0xFFFFU;
-  if (j == 0U){
-   t++;
-   j = 12U;
-  }
- }while (i != 0U);
+
+ for (i = 0U; i < 12U; i++){
+  d[0xFAB4U + i] = rrpge_m_ires_ft[i];
+ }
 
  /* Large sine table */
+
  d[0xFE00U] = 0x0000U;
  d[0xFE80U] = 0x4000U;
  d[0xFF00U] = 0x0000U;
@@ -1081,6 +1079,7 @@ void rrpge_m_ires_initdata(rrpge_object_t* obj)
  }
 
  /* User Library initializers */
+
  for (i = 0U; i < RRPGE_M_ULIB_ICNT; i++){
   d[0xFD00U + (rrpge_m_ulib_idat[i * 3U] & 0xFFU)] =
       ((rrpge_m_ulib_idat[(i * 3U) + 1U] & 0xFFU) << 8) +
@@ -1156,6 +1155,43 @@ void rrpge_m_ires_initstat(rrpge_object_t* obj)
 
 
 
+/* Rate reduction for a 32 bit memory area, into a subsequent half-sized
+** area. Offset and length is in bytes, pointing at the data which is to
+** be reduced to the location off + len. */
+static void rrpge_m_ires_redstep(uint32* d, auint off, auint len)
+{
+ auint i;
+ auint t;
+
+ for (i = 0U; i < (len >> 1); i++){
+  t = rrpge_m_ires_getb(d, off + (i << 1) + 0U) +
+      rrpge_m_ires_getb(d, off + (i << 1) + 1U);
+  t = (t + (t >> 8)) >> 1;
+  rrpge_m_ires_setb(d, off + len + i, t);
+ }
+}
+
+
+
+/* Full rate reduction (all steps) for a 256 byte sample into the
+** subsequent 256 byte area. Offset is in cells (32 bits). */
+static void rrpge_m_ires_red(uint32* d, auint off)
+{
+ off <<= 2;
+ rrpge_m_ires_redstep(d, off,        256U);
+ rrpge_m_ires_redstep(d, off + 256U, 128U);
+ rrpge_m_ires_redstep(d, off + 384U,  64U);
+ rrpge_m_ires_redstep(d, off + 448U,  32U);
+ rrpge_m_ires_redstep(d, off + 480U,  16U);
+ rrpge_m_ires_redstep(d, off + 496U,   8U);
+ rrpge_m_ires_redstep(d, off + 504U,   4U);
+ off >>= 2;
+ d[off + 127U] = (d[off + 127U] & 0xFFFF0000U) |
+                 (d[off + 127U] >> 16);
+}
+
+
+
 /* Initializes starting resources for an RRPGE emulator object after an
 ** application was loaded. This should be used before starting emulation or
 ** when resetting it. Does not depend on state correctness, so a state check
@@ -1186,115 +1222,143 @@ void rrpge_m_ires_init(rrpge_object_t* obj)
 
  /* Populate Peripheral RAM with initial data blocks */
 
- /* 0xFC500 - 0xFDFFF: User Library font */
+ /* Audio buffers: Silence */
+
+ for (i = 0U; i < 2048U; i++){
+  p[0xFB800U + i] = 0x80008000U;
+  p[0xF7800U + i] = 0x80008000U;
+ }
+
+ /* 0xFEA00 - 0xFF7FF: User Library font */
+
  for (i = 0U; i < 1536U; i += 12U){
   for (j = 0U; j < 12U; j++){
    r = rrpge_m_ires_font[i + j];
-   p[0xFC500U + i + j] =  r;
-   p[0xFCBC0U + i + j] = ~r;
+   p[0xFEA00U + i + j] =  r;
+   p[0xFF100U + i + j] = ~r;
   }
  }
 
- /* 0xFC100 - 0xFC47F: UTF to font translation table. Note: Table is padded to
+ /* 0xFE600 - 0xFE97F: UTF to font translation table. Note: Table is padded to
  ** even, so loop doesn't have to care about odd UTFT_SIZ. */
- p[0xFC100U] = (UTFT_UNK << 16) | UTFT_SIZ;
+
+ p[0xFE600U] = (UTFT_UNK << 16) | UTFT_SIZ;
  for (i = 0U; i < UTFT_SIZ; i += 2U){
   r = (i * 3U) >> 1U;
-  p[0xFC101U + r     ] = ((auint)(0x0000U) << 16) |
+  p[0xFE601U + r     ] = ((auint)(0x0000U) << 16) |
                          ((auint)(rrpge_m_ires_utft[(i << 1) + 0U]));
-  p[0xFC101U + r + 1U] = ((auint)(rrpge_m_ires_utft[(i << 1) + 1U]) << 16) |
+  p[0xFE601U + r + 1U] = ((auint)(rrpge_m_ires_utft[(i << 1) + 1U]) << 16) |
                          ((auint)(0x0000U));
-  p[0xFC101U + r + 2U] = ((auint)(rrpge_m_ires_utft[(i << 1) + 2U]) << 16) |
+  p[0xFE601U + r + 2U] = ((auint)(rrpge_m_ires_utft[(i << 1) + 2U]) << 16) |
                          ((auint)(rrpge_m_ires_utft[(i << 1) + 3U]));
  }
 
- /* 0xFC480 - 0xFC4FF: CP 437 to UTF translation table */
+ /* 0xFE980 - 0xFE9FF: CP 437 to UTF translation table */
+
  for (i = 0U; i < 128U; i++){
-  p[0xFC480U + i] = rrpge_m_ires_cptt[i];
+  p[0xFE980U + i] = rrpge_m_ires_cptt[i];
  }
 
- /* 0xFFE00 - 0xFFE3F: 50% square wave */
+ /* 8 bit sample area, start with Silence */
+
+ for (i = 0U; i < 2048U; i++){
+  p[0xFF800U + i] = 0x80808080U;
+ }
+
+ /* 0xFFC00 - 0xFFC7F: 50% square wave */
+
  for (i = 0U; i < 0x80U; i++){
-  rrpge_m_ires_setb(p, (0xFFE00U << 2) + i, 0xFFU);
- }
- for (i = 0U; i < 0x80U; i++){
-  rrpge_m_ires_setb(p, (0xFFE20U << 2) + i, 0x00U);
- }
-
- /* 0xFFE40 - 0xFFE7F: Sine */
- for (i = 0U; i < 0x40U; i++){
-  rrpge_m_ires_setb(p, (0xFFE40U << 2) + i, rrpge_m_ires_sinq8[i]);
- }
- for (i = 0U; i < 0x40U; i++){
-  rrpge_m_ires_setb(p, (0xFFE50U << 2) + i, rrpge_m_ires_sinq8[0x3FU - i]);
- }
- for (i = 0U; i < 0x40U; i++){
-  rrpge_m_ires_setb(p, (0xFFE60U << 2) + i, 0xFFU - rrpge_m_ires_sinq8[i]);
- }
- for (i = 0U; i < 0x40U; i++){
-  rrpge_m_ires_setb(p, (0xFFE70U << 2) + i, 0xFFU - rrpge_m_ires_sinq8[0x3FU - i]);
- }
-
- /* 0xFFE80 - 0xFFEBF: Triangle */
- for (i = 0U; i < 0x40U; i++){
-  rrpge_m_ires_setb(p, (0xFFE80U << 2) + i, (i << 1) + 0x80U);
+  rrpge_m_ires_setb(p, (0xFFC00U << 2) + i, 0xFFU);
  }
  for (i = 0U; i < 0x80U; i++){
-  rrpge_m_ires_setb(p, (0xFFE90U << 2) + i, ((0x7FU - i) << 1) + 0x01U);
+  rrpge_m_ires_setb(p, (0xFFC20U << 2) + i, 0x00U);
  }
- for (i = 0U; i < 0x40U; i++){
-  rrpge_m_ires_setb(p, (0xFFEB0U << 2) + i, (i << 1));
- }
+ rrpge_m_ires_red(p, 0xFFC00U);
 
- /* 0xFFEC0 - 0xFFEFF: Spikes */
- for (i = 0U; i < 0x40U; i++){
-  rrpge_m_ires_setb(p, (0xFFEC0U << 2) + i, 0x80U + (0xFFU - rrpge_m_ires_sinq8[0x3FU - i]));
- }
- for (i = 0U; i < 0x40U; i++){
-  rrpge_m_ires_setb(p, (0xFFED0U << 2) + i, 0x80U + (0xFFU - rrpge_m_ires_sinq8[i]));
- }
- for (i = 0U; i < 0x40U; i++){
-  rrpge_m_ires_setb(p, (0xFFEE0U << 2) + i, rrpge_m_ires_sinq8[0x3FU - i] - 0x80U);
- }
- for (i = 0U; i < 0x40U; i++){
-  rrpge_m_ires_setb(p, (0xFFEF0U << 2) + i, rrpge_m_ires_sinq8[i] - 0x80U);
- }
+ /* 0xFFC80 - 0xFFCFF: Sine */
 
- /* 0xFFF00 - 0xFFF3F: Sawtooth, incremental */
+ for (i = 0U; i < 0x40U; i++){
+  rrpge_m_ires_setb(p, (0xFFC80U << 2) + i, rrpge_m_ires_sinq8[i]);
+ }
+ for (i = 0U; i < 0x40U; i++){
+  rrpge_m_ires_setb(p, (0xFFC90U << 2) + i, rrpge_m_ires_sinq8[0x3FU - i]);
+ }
+ for (i = 0U; i < 0x40U; i++){
+  rrpge_m_ires_setb(p, (0xFFCA0U << 2) + i, 0xFFU - rrpge_m_ires_sinq8[i]);
+ }
+ for (i = 0U; i < 0x40U; i++){
+  rrpge_m_ires_setb(p, (0xFFCB0U << 2) + i, 0xFFU - rrpge_m_ires_sinq8[0x3FU - i]);
+ }
+ rrpge_m_ires_red(p, 0xFFC80U);
+
+ /* 0xFFD00 - 0xFFD7F: Triangle */
+
+ for (i = 0U; i < 0x40U; i++){
+  rrpge_m_ires_setb(p, (0xFFD00U << 2) + i, (i << 1) + 0x80U);
+ }
+ for (i = 0U; i < 0x80U; i++){
+  rrpge_m_ires_setb(p, (0xFFD10U << 2) + i, ((0x7FU - i) << 1) + 0x01U);
+ }
+ for (i = 0U; i < 0x40U; i++){
+  rrpge_m_ires_setb(p, (0xFFD30U << 2) + i, (i << 1));
+ }
+ rrpge_m_ires_red(p, 0xFFD00U);
+
+ /* 0xFFD80 - 0xFFDFF: Spikes */
+
+ for (i = 0U; i < 0x40U; i++){
+  rrpge_m_ires_setb(p, (0xFFD80U << 2) + i, 0x80U + (0xFFU - rrpge_m_ires_sinq8[0x3FU - i]));
+ }
+ for (i = 0U; i < 0x40U; i++){
+  rrpge_m_ires_setb(p, (0xFFD90U << 2) + i, 0x80U + (0xFFU - rrpge_m_ires_sinq8[i]));
+ }
+ for (i = 0U; i < 0x40U; i++){
+  rrpge_m_ires_setb(p, (0xFFDA0U << 2) + i, rrpge_m_ires_sinq8[0x3FU - i] - 0x80U);
+ }
+ for (i = 0U; i < 0x40U; i++){
+  rrpge_m_ires_setb(p, (0xFFDB0U << 2) + i, rrpge_m_ires_sinq8[i] - 0x80U);
+ }
+ rrpge_m_ires_red(p, 0xFFD80U);
+
+ /* 0xFFE00 - 0xFFE7F: Sawtooth, incremental */
+
  for (i = 0U; i < 0x100U; i++){
-  rrpge_m_ires_setb(p, (0xFFF00U << 2) + i, i);
+  rrpge_m_ires_setb(p, (0xFFE00U << 2) + i, i);
  }
+ rrpge_m_ires_red(p, 0xFFE00U);
 
- /* 0xFFF40 - 0xFFF7F: Sawtooth, decremental */
+ /* 0xFFE80 - 0xFFEFF: Sawtooth, decremental */
+
  for (i = 0U; i < 0x100U; i++){
-  rrpge_m_ires_setb(p, (0xFFF40U << 2) + i, 0xFFU - i);
+  rrpge_m_ires_setb(p, (0xFFE80U << 2) + i, 0xFFU - i);
  }
+ rrpge_m_ires_red(p, 0xFFE80U);
 
- /* 0xFFF80 - 0xFFFBF: Noise 1 */
+ /* 0xFFF00 - 0xFFF7F: Noise 1 */
+
+ r = 0U;
+ for (i = 0U; i < 0x100U; i++){
+  rrpge_m_ires_setb(p, (0xFFF00U << 2) + i, r);
+  r = (((r >> 7) + (r + r) + 0xBBU) ^ 0x7FU) & 0xFFU;
+ }
+ rrpge_m_ires_red(p, 0xFFF00U);
+
+ /* 0xFFF80 - 0xFFFFF: Noise 2 */
+
  r = 0U;
  for (i = 0U; i < 0x100U; i++){
   rrpge_m_ires_setb(p, (0xFFF80U << 2) + i, r);
-  r = (((r >> 7) + (r + r) + 0xBBU) ^ 0x7FU) & 0xFFU;
- }
-
- /* 0xFFFC0 - 0xFFFFF: Noise 2 */
- r = 0U;
- for (i = 0U; i < 0x100U; i++){
-  rrpge_m_ires_setb(p, (0xFFFC0U << 2) + i, r);
   r = (((r >> 7) + (r + r) + 0xA3U) ^ 0xB3U) & 0xFFU;
  }
+ rrpge_m_ires_red(p, 0xFFF80U);
 
 
  /* Populate Peripheral RAM with boot data blocks */
 
- /* 0xFF000 - 0xFF7FF: Display list (only first 1600 entries used) */
- for (i = 0U; i < 400U; i++){
-  p[0xFF000U + (i * 4U) + 1U] = 0x00000400U + (i * 0x500000U);
- }
+ /* 0xF8000 - 0xF87FF: Display list (only first 1600 entries used) */
 
- /* 0xFF800 - 0xFFBFF: Audio buffers (silence) */
- for (i = 0U; i < 1024U; i++){
-  p[0xFF800U + i] = 0x80808080U;
+ for (i = 0U; i < 400U; i++){
+  p[0xF8000U + (i * 4U) + 1U] = 0x00000400U + (i * 0x500000U);
  }
 
 
