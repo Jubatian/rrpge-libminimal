@@ -34,6 +34,13 @@ however maybe containing sub-structures for the individual components.
 Changes:
 
 
+2015.10.01
+
+Refactoring is mostly complete, the FIFO is notably still there to finish, and
+import & export routines of the RRPGE library have to be written. Then the
+old state related elements (including the exposed type) may be removed.
+
+
 2015.08.03
 
 Finalized the PRAM access component with integrating the stall cycles.
