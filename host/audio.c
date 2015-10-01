@@ -2,11 +2,11 @@
 **  \file
 **  \brief     SDL audio handling functions
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2015.09.18
 */
 
 
@@ -23,8 +23,8 @@
 
 
 /* Left & Right audio buffers */
-static uint8 audio_buf_l[AUDIO_BUF_MAX];
-static uint8 audio_buf_r[AUDIO_BUF_MAX];
+static uint16 audio_buf_l[AUDIO_BUF_MAX];
+static uint16 audio_buf_r[AUDIO_BUF_MAX];
 /* Pointers into the audio buffers */
 static volatile auint audio_bpt_r;
 static volatile auint audio_bpt_w;
@@ -39,14 +39,16 @@ static void audio_cb(void* udata, Uint8 *stream, int len)
  auint i;
  SDL_Event auev;
 
- len >>= 1; /* Convert to samples */
+ len >>= 2; /* Convert to samples */
  if (len > AUDIO_BUF_MAX) len = AUDIO_BUF_MAX;
 
  /* Output samples */
 
  for (i = 0; i < len; i++){
-  stream[(i << 1) + 0U] = audio_buf_l[audio_bpt_r];
-  stream[(i << 1) + 1U] = audio_buf_r[audio_bpt_r];
+  stream[(i << 2) + 0U] =  audio_buf_l[audio_bpt_r]       & 0xFFU;
+  stream[(i << 2) + 1U] = (audio_buf_l[audio_bpt_r] >> 8) & 0xFFU;
+  stream[(i << 2) + 2U] =  audio_buf_r[audio_bpt_r]       & 0xFFU;
+  stream[(i << 2) + 3U] = (audio_buf_r[audio_bpt_r] >> 8) & 0xFFU;
   audio_bpt_r = (audio_bpt_r + 1U) & audio_bsm;
  }
 
@@ -65,14 +67,15 @@ static void audio_cb(void* udata, Uint8 *stream, int len)
 
 /* Set up audio. The 'b' parameter defines the total buffer size, must be a
 ** power of two. This buffer size may be set larger to avoid audio skipping.
-** The sample format is unsigned 8 bits. Returns 0 on success, 1 on fault. */
+** The sample format is unsigned 16 bits. Returns 0 on success, 1 on fault. */
 auint   audio_set(auint b)
 {
+ auint i;
  SDL_AudioSpec des;
 
  des.freq     = 48000U;
  des.samples  = 1024U;
- des.format   = AUDIO_U8;
+ des.format   = AUDIO_U16;
  des.channels = 2U;
  des.callback = &audio_cb;
  des.userdata = NULL;
@@ -85,8 +88,10 @@ auint   audio_set(auint b)
 
  if (SDL_OpenAudio(&des, NULL) < 0) return 1U;
 
- memset(&(audio_buf_l[0]), 0x80U, sizeof(audio_buf_l));
- memset(&(audio_buf_r[0]), 0x80U, sizeof(audio_buf_r));
+ for (i = 0U; i < AUDIO_BUF_MAX; i++){
+  audio_buf_l[i] = 0x8000U;
+  audio_buf_r[i] = 0x8000U;
+ }
  audio_bpt_r = 0;
  audio_bpt_w = 0;
 
@@ -111,7 +116,7 @@ void    audio_free()
 ** 1024 will be used depending on the set up mode. The buffers should be
 ** filled immediately after an AUDIO_EVENT from the main thread to avoid
 ** skipping (by a subsequent audio event). */
-void    audio_getbufptrs(uint8** lpt, uint8** rpt)
+void    audio_getbufptrs(uint16** lpt, uint16** rpt)
 {
  *lpt = &(audio_buf_l[audio_bpt_w]);
  *rpt = &(audio_buf_r[audio_bpt_w]);

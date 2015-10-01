@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.03
+**  \date      2015.09.16
 */
 
 
@@ -46,20 +46,11 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_rd_data(rrpge_object_t* hnd, auint rmw
 
  }else{                        /* User Peripheral Area */
 
-  if ((hnd->cpu.ada & 0x20U) == 0U){
+  /* PRAM access read stalls are generated here (1 cycle for any PRAM access)
+  ** since it is not possible for the pram component to signal this back. */
 
-   hnd->cpu.add = rrpge_m_stat_get(hnd, RRPGE_STA_UPA + hnd->cpu.ada);
-
-  }else{
-
-   /* PRAM access. The read stalls are generated here (1 cycle for any PRAM
-   ** access) since it is not possible for the pram component to signal this
-   ** back. */
-
-   hnd->cpu.add = rrpge_m_pram_read(hnd, hnd->cpu.ada, rmw);
-   if ((hnd->cpu.ada & 0x06U) == 0x6U){ hnd->cpu.ocy ++; }
-
-  }
+  hnd->cpu.add = rrpge_m_stat_read(hnd, RRPGE_STA_UPA + hnd->cpu.ada, rmw);
+  if ((hnd->cpu.ada & 0x26U) == 0x26U){ hnd->cpu.ocy ++; }
 
  }
 }
@@ -76,32 +67,18 @@ RRPGE_M_FASTCALL static void rrpge_m_addr_wr_data(rrpge_object_t* hnd, auint val
 
  }else{                        /* User Peripheral Area */
 
-  /* !!! The 0x00 - 0x1F range has to be written by rrpge_m_stat_set() once
-  ** the targets implement it properly */
+  /* !!! This range has to be written by rrpge_m_stat_set() once the targets
+  ** implement it properly */
 
   switch (hnd->cpu.ada & 0x3CU){
-
-   case 0x00U:                     /* Writes ignored */
-    break;
-
-   case 0x04U:                     /* Audio writable regs: Writes proceed */
-    hnd->st.stat[RRPGE_STA_UPA + hnd->cpu.ada] = val & 0xFFFFU;
-    break;
 
    case 0x08U:
    case 0x0CU:                     /* FIFO */
     rrpge_m_fifowrite(hnd->cpu.ada, val);
     break;
 
-   case 0x10U:
-   case 0x14U:
-   case 0x18U:
-   case 0x1CU:                     /* Graphics */
-    rrpge_m_vidwrite(hnd->cpu.ada, val);
-    break;
-
-   default:                        /* PRAM interface */
-    rrpge_m_pram_write(hnd, hnd->cpu.ada, val);
+   default:                        /* Audio, Graphics & PRAM interface */
+    rrpge_m_stat_write(hnd, RRPGE_STA_UPA + hnd->cpu.ada, val);
     break;
 
   }

@@ -2,11 +2,11 @@
 **  \file
 **  \brief     Collection of implementations for rrpge_aq.h
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2015.08.04
 */
 
 
@@ -35,14 +35,6 @@ rrpge_iuint rrpge_getlastdev(rrpge_object_t* hnd, rrpge_iuint dev)
 rrpge_iuint rrpge_getalloweddevs(rrpge_object_t* hnd)
 {
  return ((hnd->st.stat[RRPGE_STA_VARS + 0x1CU]) & 0xFFFFU);
-}
-
-
-
-/* Get video mode - implementation of RRPGE library function */
-rrpge_iuint rrpge_getvidmode(rrpge_object_t* hnd)
-{
- return ((hnd->st.stat[RRPGE_STA_UPA_G + 0x7U] >> 12) & 1U);
 }
 
 

@@ -2,11 +2,11 @@
 **  \file
 **  \brief     SDL audio handling functions
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.10.25
+**  \date      2015.09.15
 */
 
 
@@ -27,7 +27,7 @@
 
 /* Set up audio. The 'b' parameter defines the total buffer size, must be a
 ** power of two. This buffer size may be set larger to avoid audio skipping.
-** The sample format is unsigned 8 bits. Returns 0 on success, 1 on fault. */
+** The sample format is unsigned 16 bits. Returns 0 on success, 1 on fault. */
 auint   audio_set(auint b);
 
 /* Cleans up the previously set up audio. */
@@ -39,7 +39,7 @@ void    audio_free();
 ** 1024 will be used depending on the set up mode. The buffers should be
 ** filled immediately after an AUDIO_EVENT from the main thread to avoid
 ** skipping (by a subsequent audio event). */
-void    audio_getbufptrs(uint8** lpt, uint8** rpt);
+void    audio_getbufptrs(uint16** lpt, uint16** rpt);
 
 /* Requests whether the audio subsystem needs servicing (needing an additional
 ** call to audio_getbufptrs()). Note that when an audio event is sent, it may

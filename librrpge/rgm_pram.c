@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.03
+**  \date      2015.08.13
 */
 
 
@@ -32,46 +32,28 @@ static const uint16 rrpge_m_pram_dms[8] = {0x0001U, 0x0003U, 0x000FU, 0x00FFU, 0
 
 
 /* State: PRAM interface (0x0E0 - 0x0FF), getter */
-static auint rrpge_m_pram_stat_get(rrpge_object_t* hnd, auint adr)
-{
- /* The memory-mapped PRAM is not provided through here, just the interface
- ** registers as they are. Simple. */
-
- if (adr < 0x20){ return (hnd->prm.sta[adr]) & 0xFFFFU; }
- return 0U;
-}
-
-
-
-/* State: PRAM interface (0x0E0 - 0x0FF), setter */
-static auint rrpge_m_pram_stat_set(rrpge_object_t* hnd, auint adr, auint val)
+RRPGE_M_FASTCALL static auint rrpge_m_pram_stat_get(rrpge_object_t* hnd, auint adr)
 {
  /* The memory-mapped PRAM is not provided through here, just the interface
  ** registers as they are. Simple. */
 
  if (adr < 0x20){
-  hnd->prm.sta[adr] = val & (auint)(rrpge_m_pram_wms[adr & 0x7U]);
-  return (hnd->prm.sta[adr]);
+  return ((hnd->prm.sta[adr]) & (auint)(rrpge_m_pram_wms[adr & 0x7U]));
  }
  return 0U;
 }
 
 
 
-/* Initializes PRAM emulation adding the appropriate handlers to the state
-** manager. */
-void rrpge_m_pram_init(void)
+/* State: PRAM interface (0x0E0 - 0x0FF), setter */
+RRPGE_M_FASTCALL static void  rrpge_m_pram_stat_set(rrpge_object_t* hnd, auint adr, auint val)
 {
- rrpge_m_stat_addhandler(&rrpge_m_pram_stat_get, &rrpge_m_pram_stat_set,
-                         RRPGE_STA_UPA_P, 32U);
- rrpge_m_stat_setmmcell(RRPGE_STA_UPA_P + 0x06U, 1U);
- rrpge_m_stat_setmmcell(RRPGE_STA_UPA_P + 0x07U, 1U);
- rrpge_m_stat_setmmcell(RRPGE_STA_UPA_P + 0x0EU, 1U);
- rrpge_m_stat_setmmcell(RRPGE_STA_UPA_P + 0x0FU, 1U);
- rrpge_m_stat_setmmcell(RRPGE_STA_UPA_P + 0x16U, 1U);
- rrpge_m_stat_setmmcell(RRPGE_STA_UPA_P + 0x17U, 1U);
- rrpge_m_stat_setmmcell(RRPGE_STA_UPA_P + 0x1EU, 1U);
- rrpge_m_stat_setmmcell(RRPGE_STA_UPA_P + 0x1FU, 1U);
+ /* The memory-mapped PRAM is not provided through here, just the interface
+ ** registers as they are. Simple. */
+
+ if (adr < 0x20){
+  hnd->prm.sta[adr] = val & (auint)(rrpge_m_pram_wms[adr & 0x7U]);
+ }
 }
 
 
@@ -79,7 +61,7 @@ void rrpge_m_pram_init(void)
 /* Operates the memory mapped Peripheral RAM interface for Reads. Only the
 ** low 5 bits of the address are used. Generates Peripheral bus stalls if
 ** necessary. */
-RRPGE_M_FASTCALL auint rrpge_m_pram_read(rrpge_object_t* hnd, auint adr, auint rmw)
+RRPGE_M_FASTCALL static auint rrpge_m_pram_stat_read(rrpge_object_t* hnd, auint adr, auint rmw)
 {
  auint   r;
  auint   a;
@@ -126,9 +108,9 @@ RRPGE_M_FASTCALL auint rrpge_m_pram_read(rrpge_object_t* hnd, auint adr, auint r
 
 /* Operates the memory mapped Peripheral RAM interface for Writes. Only the
 ** low 5 bits of the address are used. Generates Peripheral bus stalls if
-** necessary. Note that it assumes a Read (rrpge_m_pramread() call) happened
-** before. */
-RRPGE_M_FASTCALL void  rrpge_m_pram_write(rrpge_object_t* hnd, auint adr, auint val)
+** necessary. Note that it assumes a Read (rrpge_m_pram_stat_read() call)
+** happened before. */
+RRPGE_M_FASTCALL static void  rrpge_m_pram_stat_write(rrpge_object_t* hnd, auint adr, auint val)
 {
  auint m;
  auint s;
@@ -148,6 +130,18 @@ RRPGE_M_FASTCALL void  rrpge_m_pram_write(rrpge_object_t* hnd, auint adr, auint 
  hnd->st.pram[hnd->prm.pia] = (hnd->prm.pid & (~m)) | (val & m);
 
  rrpge_m_pram_cys_add(hnd, 2U); /* Add PRAM stall cycles to Peripheral bus stall */
+}
+
+
+
+/* Initializes PRAM emulation adding the appropriate handlers to the state
+** manager. */
+void rrpge_m_pram_init(void)
+{
+ rrpge_m_stat_add_rw_handler(&rrpge_m_pram_stat_read, &rrpge_m_pram_stat_write,
+                             RRPGE_STA_UPA_P, 32U);
+ rrpge_m_stat_add_ac_handler(&rrpge_m_pram_stat_get, &rrpge_m_pram_stat_set,
+                             RRPGE_STA_UPA_P, 32U);
 }
 
 

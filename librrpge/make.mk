@@ -6,13 +6,22 @@
 #           root.
 #
 
-OBJECTS+= $(OBD)rgm_aq.o   $(OBD)rgm_aud.o  $(OBD)rgm_cb.o   $(OBD)rgm_chk.o
-OBJECTS+= $(OBD)rgm_cpu.o  $(OBD)rgm_cpua.o $(OBD)rgm_cpuo.o $(OBD)rgm_db.o
-OBJECTS+= $(OBD)rgm_fifo.o $(OBD)rgm_grln.o $(OBD)rgm_grop.o $(OBD)rgm_halt.o
-OBJECTS+= $(OBD)rgm_info.o $(OBD)rgm_ires.o $(OBD)rgm_krnm.o $(OBD)rgm_main.o
-OBJECTS+= $(OBD)rgm_mix.o  $(OBD)rgm_pram.o $(OBD)rgm_prng.o $(OBD)rgm_run.o
+OBJECTS+= $(OBD)rgm_acc.o  $(OBD)rgm_acco.o $(OBD)rgm_aq.o   $(OBD)rgm_aud.o
+OBJECTS+= $(OBD)rgm_cb.o   $(OBD)rgm_chk.o  $(OBD)rgm_cpu.o  $(OBD)rgm_cpua.o
+OBJECTS+= $(OBD)rgm_cpuo.o $(OBD)rgm_db.o   $(OBD)rgm_dev.o  $(OBD)rgm_devk.o
+OBJECTS+= $(OBD)rgm_devx.o $(OBD)rgm_fifo.o $(OBD)rgm_halt.o $(OBD)rgm_info.o
+OBJECTS+= $(OBD)rgm_ires.o $(OBD)rgm_krnm.o $(OBD)rgm_main.o $(OBD)rgm_mix.o
+OBJECTS+= $(OBD)rgm_mixo.o $(OBD)rgm_pram.o $(OBD)rgm_prng.o $(OBD)rgm_run.o
 OBJECTS+= $(OBD)rgm_ser.o  $(OBD)rgm_stat.o $(OBD)rgm_task.o $(OBD)rgm_ulib.o
-OBJECTS+= $(OBD)rgm_vid.o
+OBJECTS+= $(OBD)rgm_vid.o  $(OBD)rgm_vidl.o
+
+$(OBD)rgm_acc.o: librrpge/rgm_acc.c librrpge/*.h
+	$(CC) -c librrpge/rgm_acc.c -o $(OBD)rgm_acc.o $(CFSPD)
+	$(CC) -S librrpge/rgm_acc.c -o $(OBD)rgm_acc.asm $(CFSPD)
+
+$(OBD)rgm_acco.o: librrpge/rgm_acco.c librrpge/*.h
+	$(CC) -c librrpge/rgm_acco.c -o $(OBD)rgm_acco.o $(CFSPD)
+	$(CC) -S librrpge/rgm_acco.c -o $(OBD)rgm_acco.asm $(CFSPD)
 
 $(OBD)rgm_aq.o: librrpge/rgm_aq.c librrpge/*.h
 	$(CC) -c librrpge/rgm_aq.c -o $(OBD)rgm_aq.o $(CFSPD)
@@ -31,8 +40,8 @@ $(OBD)rgm_chk.o: librrpge/rgm_chk.c librrpge/*.h
 	$(CC) -S librrpge/rgm_chk.c -o $(OBD)rgm_chk.asm $(CFSIZ)
 
 $(OBD)rgm_cpu.o: librrpge/rgm_cpu.c librrpge/*.h
-	$(CC) -c librrpge/rgm_cpu.c -o $(OBD)rgm_cpu.o $(CFSIZ)
-	$(CC) -S librrpge/rgm_cpu.c -o $(OBD)rgm_cpu.asm $(CFSIZ)
+	$(CC) -c librrpge/rgm_cpu.c -o $(OBD)rgm_cpu.o $(CFSPD)
+	$(CC) -S librrpge/rgm_cpu.c -o $(OBD)rgm_cpu.asm $(CFSPD)
 
 $(OBD)rgm_cpua.o: librrpge/rgm_cpua.c librrpge/*.h
 	$(CC) -c librrpge/rgm_cpua.c -o $(OBD)rgm_cpua.o -fomit-frame-pointer $(CFSPD)
@@ -46,13 +55,21 @@ $(OBD)rgm_db.o: librrpge/rgm_db.c librrpge/*.h
 	$(CC) -c librrpge/rgm_db.c -o $(OBD)rgm_db.o $(CFSPD)
 	$(CC) -S librrpge/rgm_db.c -o $(OBD)rgm_db.asm $(CFSPD)
 
+$(OBD)rgm_dev.o: librrpge/rgm_dev.c librrpge/*.h
+	$(CC) -c librrpge/rgm_dev.c -o $(OBD)rgm_dev.o $(CFSPD)
+	$(CC) -S librrpge/rgm_dev.c -o $(OBD)rgm_dev.asm $(CFSPD)
+
+$(OBD)rgm_devk.o: librrpge/rgm_devk.c librrpge/*.h
+	$(CC) -c librrpge/rgm_devk.c -o $(OBD)rgm_devk.o $(CFSPD)
+	$(CC) -S librrpge/rgm_devk.c -o $(OBD)rgm_devk.asm $(CFSPD)
+
+$(OBD)rgm_devx.o: librrpge/rgm_devx.c librrpge/*.h
+	$(CC) -c librrpge/rgm_devx.c -o $(OBD)rgm_devx.o $(CFSPD)
+	$(CC) -S librrpge/rgm_devx.c -o $(OBD)rgm_devx.asm $(CFSPD)
+
 $(OBD)rgm_fifo.o: librrpge/rgm_fifo.c librrpge/*.h
 	$(CC) -c librrpge/rgm_fifo.c -o $(OBD)rgm_fifo.o $(CFSPD)
 	$(CC) -S librrpge/rgm_fifo.c -o $(OBD)rgm_fifo.asm $(CFSPD)
-
-$(OBD)rgm_grln.o: librrpge/rgm_grln.c librrpge/*.h
-	$(CC) -c librrpge/rgm_grln.c -o $(OBD)rgm_grln.o $(CFSPD)
-	$(CC) -S librrpge/rgm_grln.c -o $(OBD)rgm_grln.asm $(CFSPD)
 
 $(OBD)rgm_grop.o: librrpge/rgm_grop.c librrpge/*.h
 	$(CC) -c librrpge/rgm_grop.c -o $(OBD)rgm_grop.o $(CFSPD)
@@ -81,6 +98,10 @@ $(OBD)rgm_main.o: librrpge/rgm_main.c librrpge/*.h
 $(OBD)rgm_mix.o: librrpge/rgm_mix.c librrpge/*.h
 	$(CC) -c librrpge/rgm_mix.c -o $(OBD)rgm_mix.o $(CFSPD)
 	$(CC) -S librrpge/rgm_mix.c -o $(OBD)rgm_mix.asm $(CFSPD)
+
+$(OBD)rgm_mixo.o: librrpge/rgm_mixo.c librrpge/*.h
+	$(CC) -c librrpge/rgm_mixo.c -o $(OBD)rgm_mixo.o $(CFSPD)
+	$(CC) -S librrpge/rgm_mixo.c -o $(OBD)rgm_mixo.asm $(CFSPD)
 
 $(OBD)rgm_pram.o: librrpge/rgm_pram.c librrpge/*.h
 	$(CC) -c librrpge/rgm_pram.c -o $(OBD)rgm_pram.o $(CFSPD)
@@ -113,3 +134,7 @@ $(OBD)rgm_ulib.o: librrpge/rgm_ulib.c librrpge/*.h
 $(OBD)rgm_vid.o: librrpge/rgm_vid.c librrpge/*.h
 	$(CC) -c librrpge/rgm_vid.c -o $(OBD)rgm_vid.o $(CFSPD)
 	$(CC) -S librrpge/rgm_vid.c -o $(OBD)rgm_vid.asm $(CFSPD)
+
+$(OBD)rgm_vidl.o: librrpge/rgm_vidl.c librrpge/*.h
+	$(CC) -c librrpge/rgm_vidl.c -o $(OBD)rgm_vidl.o $(CFSPD)
+	$(CC) -S librrpge/rgm_vidl.c -o $(OBD)rgm_vidl.asm $(CFSPD)

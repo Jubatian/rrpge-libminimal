@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.03
+**  \date      2015.09.16
 **
 **
 ** The global structure's fields are used within servicing one RRPGE library
@@ -28,6 +28,11 @@
 #include "rgm_type.h"
 #include "rgm_cput.h"
 #include "rgm_prmt.h"
+#include "rgm_vidt.h"
+#include "rgm_acct.h"
+#include "rgm_devt.h"
+#include "rgm_mixt.h"
+#include "rgm_audt.h"
 
 
 
@@ -49,9 +54,6 @@ struct rrpge_object_s{
  uint16 reci[512U];  /* Receive source ID buffer (64 sources, 8 words each) */
  auint  recl[64U];   /* Receive packet length buffer */
 
- uint8  audl[1024U]; /* Audio left double buffer (2 x 512 samples) */
- uint8  audr[1024U]; /* Audio right double buffer (2 x 512 samples) */
-
  rrpge_cb_line_t*     cb_lin; /* Line renderer callback */
  rrpge_cb_kcalltsk_t* cb_tsk[RRPGE_CB_IDRANGE]; /* Kernel task callbacks */
  rrpge_cb_kcallsub_t* cb_sub[RRPGE_CB_IDRANGE]; /* Kernel subroutine callbacks */
@@ -59,6 +61,11 @@ struct rrpge_object_s{
 
  rrpge_m_cpu_t cpu;  /* CPU emulation structure */
  rrpge_m_prm_t prm;  /* PRAM emulation structure */
+ rrpge_m_vid_t vid;  /* Video (GDG) emulation structure */
+ rrpge_m_acc_t acc;  /* Graphic Accelerator emulation structure */
+ rrpge_m_dev_t dev;  /* Input device emulation structure */
+ rrpge_m_mix_t mix;  /* Mixer emulation structure */
+ rrpge_m_aud_t aud;  /* Audio emulation structure */
 
  auint  hlt;         /* Halt causes (accessed using rgm_halt) */
 
@@ -67,20 +74,10 @@ struct rrpge_object_s{
  auint  reir;        /* Receive ID & pk. length buffer read pointer */
  auint  reiw;        /* Receive ID & pk. length buffer write pointer */
 
- auint  rena;        /* Render Enable flags.
-                     ** bit0: Requested state
-                     ** bit1: Current state
-                     ** The current state copies the requested state when
-                     ** passing frame boundary. It controls whether graphic
-                     ** display is computed for the given display frame. */
-
  auint  tsfl;        /* Task started flags.
                      ** Set if the according kernel task is already started,
                      ** cleared otherwise. The 16 kernel tasks are mapped from
                      ** bit 0 to bit 15. */
-
- auint  audp;        /* Audio double buffer next fill pointer */
- auint  aco;         /* Count of audio events needing service */
 
  auint  kfc;         /* Free cycle count remaining between kernel internal
                      ** process takeovers. */
@@ -94,16 +91,11 @@ struct rrpge_object_s{
 
 /* Global info structure. This is used to accelerate emulation. Note that
 ** preferably all globals are placed here to increase locality, and to have
-** everything preventing threaded use in one place. */
+** everything preventing threaded use in one place. TODO: This will be removed
+** as part of the refactoring process once everything adapts the new
+** structure. */
 typedef struct{
 
- uint8  grb[512];    /* Recolor bank data extracted from the state */
- auint  grr;         /* Recolor bank load necessary flag: set on entry, will
-                     ** ask for populating grb[] when it is needed. */
-
- auint  vln;         /* Video line count (State: 0x050) */
- auint  vlc;         /* Video remaining cycles within line (State: 0x051) */
- auint  atc;         /* Cycles until next audio tick (State: 0x053) */
  auint  cyf[2];      /* FIFO cycles:
                      ** 0: Cycles remaining from mixer op. (State: 0x062-0x063)
                      ** 1: Cycles remaining from video acc. op. (State: 0x06A-0x06B) */

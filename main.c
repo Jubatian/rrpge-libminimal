@@ -2,11 +2,11 @@
 **  \file
 **  \brief     The main program file
 **  \author    Sandor Zsuga (Jubatian)
-**  \license   2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.02
+**  \date      2015.09.16
 */
 
 
@@ -16,7 +16,6 @@
 #include "host/audio.h"
 #include "host/filels.h"
 #include "iface/render.h"
-#include "iface/input.h"
 
 #include "librrpge/rrpge.h"
 
@@ -42,38 +41,30 @@ static char const* main_appicon = "RRPGE";
 
 /* Other elements */
 static char const* main_appauth = "By: Sandor Zsuga (Jubatian)\n";
-static char const* main_copyrig = "License: 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public\nLicense) extended as RRPGEvt (temporary version of the RRPGE License):\nsee LICENSE.GPLv3 and LICENSE.RRPGEvt in the project root.\n";
+static char const* main_copyrig = "Copyright: 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public\nLicense) extended as RRPGEvt (temporary version of the RRPGE License):\nsee LICENSE.GPLv3 and LICENSE.RRPGEvt in the project root.\n";
 
 
 /* Subroutines */
-static const rrpge_cbd_sub_t main_cbsub[4] = {
- { RRPGE_CB_SETPAL,    &render_pal         },
- { RRPGE_CB_MODE,      &render_mode        },
- { RRPGE_CB_DROPDEV,   &inputcom_dropdev   }
+static const rrpge_cbd_sub_t main_cbsub[1] = {
+ { RRPGE_CB_SETPAL,    &render_pal         }
 };
 /* Tasks */
 static const rrpge_cbd_tsk_t main_cbtsk[1] = {
  { RRPGE_CB_LOADBIN,   &main_loadbin       }
 };
 /* Functions */
-static const rrpge_cbd_fun_t main_cbfun[6] = {
- { RRPGE_CB_GETPROPS,  &inputcom_getprops  },
- { RRPGE_CB_GETDIDESC, &inputcom_getdidesc },
- { RRPGE_CB_GETAIDESC, &inputcom_getaidesc },
- { RRPGE_CB_GETDI,     &inputcom_getdi     },
- { RRPGE_CB_GETAI,     &inputcom_getai     },
- { RRPGE_CB_POPCHAR,   &inputcom_popchar   }
-};
+/* static const rrpge_cbd_fun_t main_cbfun[0] = { */
+/* }; */
 
 /* Callback structure for the emulator. Only line rendering for now. */
 static const rrpge_cbpack_t main_cbpack={
  &render_line,
  1,                           /* Task callbacks */
  &main_cbtsk[0],
- 3,                           /* Subroutine callbacks */
+ 1,                           /* Subroutine callbacks */
  &main_cbsub[0],
- 6,                           /* Function callbacks */
- &main_cbfun[0]
+ 0,                           /* Function callbacks */
+ NULL
 };
 
 
@@ -208,12 +199,14 @@ static void main_errexit(auint h, rrpge_object_t* obj)
 
 int main(int argc, char** argv)
 {
- auint  j;
- auint  t;
- auint  cdi = 0U;
- auint  auc = 0U;
- uint8* lpt;
- uint8* rpt;
+ auint   j;
+ auint   t;
+ auint   cdi = 0U;
+ auint   auc = 0U;
+ uint16* lpt;
+ uint16* rpt;
+ uint16  edt;          /* Event data (just one) */
+ auint   mid;          /* Mouse device id */
  SDL_Event event;      /* The event got from the queue */
  rrpge_object_t* emu = NULL;
 
@@ -263,6 +256,7 @@ int main(int argc, char** argv)
   main_printrerr(t);
   goto loadfault;
  }
+ mid = rrpge_dev_add(emu, RRPGE_DEV_POINT); /* Add mouse (pointing device) */
 
  /* Initialize renderer */
  render_reset(emu);
@@ -276,10 +270,6 @@ int main(int argc, char** argv)
 
  /* Set up audio */
  if (audio_set(2048U) != 0U) return -1;
-
- /* Set up input */
- input_init();
- input_reset(emu);
 
  /* OK, let's go! */
 
@@ -364,23 +354,32 @@ int main(int argc, char** argv)
 
   }else if (event.type==SDL_MOUSEBUTTONDOWN){
 
-   if      (event.button.button == SDL_BUTTON_LEFT){   imouse_setbuttons(0x0010U, 0x0000U); }
-   else if (event.button.button == SDL_BUTTON_RIGHT){  imouse_setbuttons(0x0020U, 0x0000U); }
-   else if (event.button.button == SDL_BUTTON_MIDDLE){ imouse_setbuttons(0x0040U, 0x0000U); }
+   edt = (uint16)(event.button.x);
+   rrpge_dev_push(emu, mid, 2U, 1U, &edt);
+   edt = (uint16)(event.button.y);
+   rrpge_dev_push(emu, mid, 3U, 1U, &edt);
+   if      (event.button.button == SDL_BUTTON_LEFT){   edt = 1U; rrpge_dev_push(emu, mid, 0U, 1U, &edt); }
+   else if (event.button.button == SDL_BUTTON_RIGHT){  edt = 2U; rrpge_dev_push(emu, mid, 0U, 1U, &edt); }
+   else if (event.button.button == SDL_BUTTON_MIDDLE){ edt = 3U; rrpge_dev_push(emu, mid, 0U, 1U, &edt); }
    else {}
-   imouse_setcoords(event.button.x, event.button.y);
 
   }else if (event.type==SDL_MOUSEBUTTONUP){
 
-   if      (event.button.button == SDL_BUTTON_LEFT){   imouse_setbuttons(0x0000U, 0x0010U); }
-   else if (event.button.button == SDL_BUTTON_RIGHT){  imouse_setbuttons(0x0000U, 0x0020U); }
-   else if (event.button.button == SDL_BUTTON_MIDDLE){ imouse_setbuttons(0x0000U, 0x0040U); }
+   edt = (uint16)(event.button.x);
+   rrpge_dev_push(emu, mid, 2U, 1U, &edt);
+   edt = (uint16)(event.button.y);
+   rrpge_dev_push(emu, mid, 3U, 1U, &edt);
+   if      (event.button.button == SDL_BUTTON_LEFT){   edt = 1U; rrpge_dev_push(emu, mid, 1U, 1U, &edt); }
+   else if (event.button.button == SDL_BUTTON_RIGHT){  edt = 2U; rrpge_dev_push(emu, mid, 1U, 1U, &edt); }
+   else if (event.button.button == SDL_BUTTON_MIDDLE){ edt = 3U; rrpge_dev_push(emu, mid, 1U, 1U, &edt); }
    else {}
-   imouse_setcoords(event.button.x, event.button.y);
 
   }else if (event.type==SDL_MOUSEMOTION){
 
-   imouse_setcoords(event.motion.x, event.motion.y);
+   edt = (uint16)(event.motion.x);
+   rrpge_dev_push(emu, mid, 2U, 1U, &edt);
+   edt = (uint16)(event.motion.y);
+   rrpge_dev_push(emu, mid, 3U, 1U, &edt);
 
   }
 

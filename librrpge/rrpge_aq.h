@@ -2,11 +2,11 @@
 **  \file
 **  \brief     LibRRPGE standard header package - application query helpers
 **  \author    Sandor Zsuga (Jubatian)
-**  \copyright 2013 - 2014, GNU GPLv3 (version 3 of the GNU General Public
+**  \copyright 2013 - 2015, GNU GPLv3 (version 3 of the GNU General Public
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2014.12.10
+**  \date      2015.08.04
 */
 
 
@@ -59,20 +59,6 @@ rrpge_iuint rrpge_getlastdev(rrpge_object_t* hnd, rrpge_iuint dev);
 **  \return            The device types allowed by the application.
 */
 rrpge_iuint rrpge_getalloweddevs(rrpge_object_t* hnd);
-
-
-
-/**
-**  \brief     Get current video mode.
-**
-**  Returns current video mode. 0: 640x400, 4bit; 1: 320x400, 8bit. Double
-**  scanning is handled by the emulation library, so those are not returned
-**  (640x200 returns 0, 320x200 returns 1).
-**
-**  \param[in]   hnd   Emulation instance populated by rrpge_init().
-**  \return            Video mode.
-*/
-rrpge_iuint rrpge_getvidmode(rrpge_object_t* hnd);
 
 
 

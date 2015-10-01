@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.03
+**  \date      2015.09.15
 **
 **
 **  Contains the Graphics & Mixer FIFO's logic. The FIFOs operate detached
@@ -17,9 +17,10 @@
 
 
 #include "rgm_fifo.h"
-#include "rgm_grop.h"
+#include "rgm_acc.h"
 #include "rgm_mix.h"
 #include "rgm_pram.h"
+#include "rgm_stat.h"
 
 
 
@@ -34,13 +35,13 @@
 RRPGE_M_FASTCALL static void rrpge_m_fifoacc(auint adr, auint val)
 {
  if ((adr & 0x100U) == 0U){
-  rrpge_m_edat->st.stat[RRPGE_STA_ACC   + (adr & 0x1FU)] = val & 0xFFFFU;
+  rrpge_m_stat_write(rrpge_m_edat, RRPGE_STA_ACC   + (adr & 0x1FU), val);
   if ((adr & 0x1FU) == 0x1FU){ /* Trigger */
-   rrpge_m_info.cyf[1] += rrpge_m_grop_accel();
+   rrpge_m_info.cyf[1] += rrpge_m_acc_op(rrpge_m_edat);
    rrpge_m_edat->st.stat[RRPGE_STA_UPA_GF + 1U] |= 1U; /* FIFO / Peripheral working */
   }
  }else{
-  rrpge_m_edat->st.stat[RRPGE_STA_REIND + (adr & 0xFFU)] = val & 0xFFFFU;
+  rrpge_m_stat_write(rrpge_m_edat, RRPGE_STA_REIND + (adr & 0xFFU), val);
  }
 }
 
@@ -52,7 +53,7 @@ RRPGE_M_FASTCALL static void rrpge_m_fifomix(auint adr, auint val)
 {
  rrpge_m_edat->st.stat[RRPGE_STA_MIXER + (adr & 0xFU)] = val & 0xFFFFU;
  if ((adr & 0xFU) == 0xFU){ /* Trigger */
-  rrpge_m_info.cyf[0] += rrpge_m_mixerop();
+  rrpge_m_info.cyf[0] += rrpge_m_mix_op(rrpge_m_edat);
   rrpge_m_edat->st.stat[RRPGE_STA_UPA_MF + 1U] |= 1U; /* FIFO / Peripheral working */
  }
 }

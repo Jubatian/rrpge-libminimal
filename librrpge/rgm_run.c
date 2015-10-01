@@ -6,7 +6,7 @@
 **             License) extended as RRPGEvt (temporary version of the RRPGE
 **             License): see LICENSE.GPLv3 and LICENSE.RRPGEvt in the project
 **             root.
-**  \date      2015.08.02
+**  \date      2015.09.16
 */
 
 
@@ -19,6 +19,7 @@
 #include "rgm_halt.h"
 #include "rgm_cpu.h"
 #include "rgm_pram.h"
+#include "rgm_dev.h"
 
 
 
@@ -47,15 +48,12 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
 
  /* Export Application state data into info structure */
 
- rrpge_m_info.vln = stat[RRPGE_STA_VARS + 0x10U] & 0xFFFFU;
- rrpge_m_info.vlc = stat[RRPGE_STA_VARS + 0x11U] & 0xFFFFU;
- rrpge_m_info.atc = stat[RRPGE_STA_VARS + 0x13U] & 0xFFFFU;
  rrpge_m_info.cyf[0] = ((stat[RRPGE_STA_VARS + 0x22U] & 0xFFFFU) << 16) +
                        ((stat[RRPGE_STA_VARS + 0x23U] & 0xFFFFU));
  rrpge_m_info.cyf[1] = ((stat[RRPGE_STA_VARS + 0x2AU] & 0xFFFFU) << 16) +
                        ((stat[RRPGE_STA_VARS + 0x2BU] & 0xFFFFU));
+
  rrpge_m_pram_cys_clr(hnd);    /* Stall cycles are always consumed right away (no carry-over between runs) */
- rrpge_m_info.grr = 1U;        /* Reload recolor banks */
 
 
  /* Enter main loop */
@@ -66,12 +64,12 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
   ** video line. Random kernel stall is only applied after this: it is
   ** irrelevant if it extends into more video lines. */
 
-  cy = rrpge_m_cpu_run(hnd, rmod, rrpge_m_info.vlc);
+  cy = rrpge_m_cpu_run(hnd, rmod, rrpge_m_vid_getremcy(hnd));
 
   /* Roll and add kernel internal task cycles if necessary. This is done here
   ** since it needs to produce CPU cycles. */
 
-  if ((rrpge_m_edat->kfc & 0x80000000U) != 0U){ /* Free cycles exhausted */
+  while ((rrpge_m_edat->kfc & 0x80000000U) != 0U){ /* Free cycles exhausted */
    i   = (rrpge_m_prng() & 0x7FU) * 100U;
    i  += 400U * 32U;           /* 32 - 64 lines of free time */
    rrpge_m_edat->kfc += i + (i >> 2);
@@ -98,12 +96,17 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
   /* Audio processing. This may also raise an audio halt cause indicating an
   ** 512 sample streak. */
 
-  rrpge_m_audproc(cy);
+  rrpge_m_aud_proc(hnd, cy);
 
   /* Video processing. Generates display output (including calling the line
   ** callback), and processes Display List clear. */
 
-  rrpge_m_vidproc(cy);
+  rrpge_m_vid_proc(hnd, cy);
+
+  /* Event processing: Once for each display frame. Use the FRAME halt cause
+  ** for this. */
+
+  if (rrpge_m_halt_isset(hnd, RRPGE_HLT_FRAME)){ rrpge_m_dev_proc(hnd); }
 
 
   /* If halt causes were set, break out of the main loop before scheduling
@@ -128,9 +131,6 @@ rrpge_iuint rrpge_run(rrpge_object_t* hnd, rrpge_iuint rmod)
 
  /* Write-back Application state data from info structure */
 
- stat[RRPGE_STA_VARS + 0x10U] = (rrpge_m_info.vln) & 0xFFFFU;
- stat[RRPGE_STA_VARS + 0x11U] = (rrpge_m_info.vlc) & 0xFFFFU;
- stat[RRPGE_STA_VARS + 0x13U] = (rrpge_m_info.atc) & 0xFFFFU;
  stat[RRPGE_STA_VARS + 0x22U] = (rrpge_m_info.cyf[0] >> 16) & 0xFFFFU;
  stat[RRPGE_STA_VARS + 0x23U] = (rrpge_m_info.cyf[0]      ) & 0xFFFFU;
  stat[RRPGE_STA_VARS + 0x2AU] = (rrpge_m_info.cyf[1] >> 16) & 0xFFFFU;
